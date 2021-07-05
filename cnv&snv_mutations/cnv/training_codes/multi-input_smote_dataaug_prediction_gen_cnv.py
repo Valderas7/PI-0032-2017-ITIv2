@@ -101,9 +101,9 @@ en que filas se puede encontrar el ID del gen que se quiere predecir. Se almacen
 donde se encuentra ese ID. """
 list_gen = []
 
-""" Se crea esta lista de los pacientes que tienen mutación 'CNV' del gen BRCA2 porque hay un fallo en el diccionario 
+""" Se crea esta lista de los pacientes que tienen mutación 'CNV' de estos genes porque hay un fallo en el diccionario 
 de mutaciones 'CNV' y no identifica sus mutaciones. Por tanto, se ha recopilado manualmente los 'IDs' de los pacientes
-que tienen mutaciones en el gen BRCA2 (gracias a cBioPortal) para poner un '1' en la columna 'CNV' de esos 'IDs'. """
+que tienen mutaciones en el gen (gracias a cBioPortal) para poner un '1' en la columna 'CNV' de esos 'IDs'. """
 brca1_list = ['TCGA-A2-A0EO', 'TCGA-A7-A13D', 'TCGA-A8-A09G', 'TCGA-AC-A2FB', 'TCGA-AN-A04C', 'TCGA-AR-A24H',
               'TCGA-B6-A0IG', 'TCGA-B6-A0IN', 'TCGA-BH-A0AW', 'TCGA-BH-A0C0', 'TCGA-BH-A42T', 'TCGA-C8-A12L',
               'TCGA-C8-A9FZ', 'TCGA-E2-A105', 'TCGA-E2-A1L7', 'TCGA-E9-A1RI', 'TCGA-EW-A1OX', 'TCGA-LD-A9QF']
@@ -113,9 +113,6 @@ brca2_list = ['TCGA-A2-A04T', 'TCGA-A7-A0CE', 'TCGA-A8-A06R', 'TCGA-A8-A08I', 'T
               'TCGA-D8-A147', 'TCGA-D8-A1JB', 'TCGA-D8-A1JD', 'TCGA-D8-A1Y2', 'TCGA-E2-A14T', 'TCGA-E2-A1LG',
               'TCGA-EW-A1OX', 'TCGA-EW-A1P7', 'TCGA-PE-A5DC', 'TCGA-S3-AA10']
 
-""" Se crea esta lista de los pacientes que tienen mutación 'CNV' del gen CDK1NB porque hay un fallo en el diccionario 
-de mutaciones 'CNV' y no identifica sus mutaciones. Por tanto, se ha recopilado manualmente los 'IDs' de los pacientes
-que tienen mutaciones en el gen BRCA2 (gracias a cBioPortal) para poner un '1' en la columna 'CNV' de esos 'IDs'. """
 cdkn1b_list = ['TCGA-A1-A0SK', 'TCGA-A1-A0SP', 'TCGA-A2-A04T', 'TCGA-A2-A04U', 'TCGA-A2-A3XT', 'TCGA-A7-A4SD',
               'TCGA-A7-A6VW', 'TCGA-A8-A06R', 'TCGA-AC-A2FM', 'TCGA-AN-A0AJ', 'TCGA-AN-A0FJ', 'TCGA-AQ-A54N',
               'TCGA-AR-A24M', 'TCGA-C8-A12L', 'TCGA-C8-A1HJ', 'TCGA-E9-A22G', 'TCGA-LL-A8F5', 'TCGA-OL-A5RU']
