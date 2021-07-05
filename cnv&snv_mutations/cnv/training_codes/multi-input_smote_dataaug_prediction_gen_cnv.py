@@ -8,7 +8,7 @@ import imageio
 import imgaug as ia
 import imgaug.augmenters as iaa
 import glob
-import imblearn
+from imblearn.over_sampling import SMOTE
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -35,6 +35,7 @@ list_to_read = ['CNV_oncomine', 'age', 'all_oncomine', 'mutations_oncomine', 'ca
                 'pfs_months', 'pfs_status', 'radiation_therapy']
 
 filename = '/home/avalderas/img_slides/data/brca_tcga_pan_can_atlas_2018.out'
+#filename = 'C:\\Users\\valde\Desktop\Datos_repositorio\cbioportal\data/brca_tcga_pan_can_atlas_2018.out'
 
 """ Se almacena en cada variable un diccionario. """
 with shelve.open(filename) as data:
@@ -77,10 +78,10 @@ df_tumor_type = pd.DataFrame.from_dict(tumor_type.items()); df_tumor_type.rename
 df_new_tumor = pd.DataFrame.from_dict(new_tumor.items()); df_new_tumor.rename(columns = {0 : 'ID', 1 : 'new_tumor'}, inplace = True)
 df_prior_diagnosis = pd.DataFrame.from_dict(prior_diagnosis.items()); df_prior_diagnosis.rename(columns = {0 : 'ID', 1 : 'prior_diagnosis'}, inplace = True)
 
-df_snv = pd.DataFrame.from_dict(snv.items()); df_snv.rename(columns = {0 : 'ID', 1 : 'SNV'}, inplace = True)
+df_cnv = pd.DataFrame.from_dict(cnv.items()); df_cnv.rename(columns = {0 : 'ID', 1 : 'CNV'}, inplace = True)
 
 df_list = [df_age, df_cancer_type_detailed, df_neoadjuvant, df_path_m_stage, df_path_n_stage, df_path_t_stage, df_stage,
-           df_subtype, df_tumor_type, df_prior_diagnosis, df_os_status, df_snv]
+           df_subtype, df_tumor_type, df_prior_diagnosis, df_os_status, df_cnv]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
 esté descuadrado en la fila que no le corresponda. """
@@ -92,7 +93,7 @@ valores y posteriormente se usa ese índice para buscar con qué clave (ID) se c
 key_list = list(dict_genes.keys())
 val_list = list(dict_genes.values())
 
-position = val_list.index('PIK3CA') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN SNV SE QUIERE PREDECIR
+position = val_list.index('BRCA1') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN CNV SE QUIERE PREDECIR
 id_gen = (key_list[position]) # Número
 
 """ Se hace un bucle sobre la columna de mutaciones del dataframe. Así, se busca en cada mutación de cada fila para ver
@@ -100,19 +101,54 @@ en que filas se puede encontrar el ID del gen que se quiere predecir. Se almacen
 donde se encuentra ese ID. """
 list_gen = []
 
-for index, row in enumerate (df_all_merge['SNV']): # Para cada fila...
-    for mutation in row: # Para cada mutación de cada fila...
-        if mutation[1] == id_gen: # Si el segundo elemento de la lista es el mismo número que identifica al gen...
-            list_gen.append(index)
+""" Se crea esta lista de los pacientes que tienen mutación 'CNV' del gen BRCA2 porque hay un fallo en el diccionario 
+de mutaciones 'CNV' y no identifica sus mutaciones. Por tanto, se ha recopilado manualmente los 'IDs' de los pacientes
+que tienen mutaciones en el gen BRCA2 (gracias a cBioPortal) para poner un '1' en la columna 'CNV' de esos 'IDs'. """
+brca1_list = ['TCGA-A2-A0EO', 'TCGA-A7-A13D', 'TCGA-A8-A09G', 'TCGA-AC-A2FB', 'TCGA-AN-A04C', 'TCGA-AR-A24H',
+              'TCGA-B6-A0IG', 'TCGA-B6-A0IN', 'TCGA-BH-A0AW', 'TCGA-BH-A0C0', 'TCGA-BH-A42T', 'TCGA-C8-A12L',
+              'TCGA-C8-A9FZ', 'TCGA-E2-A105', 'TCGA-E2-A1L7', 'TCGA-E9-A1RI', 'TCGA-EW-A1OX', 'TCGA-LD-A9QF']
+
+brca2_list = ['TCGA-A2-A04T', 'TCGA-A7-A0CE', 'TCGA-A8-A06R', 'TCGA-A8-A08I', 'TCGA-A8-A09V', 'TCGA-A8-A0AB',
+              'TCGA-AN-A04D', 'TCGA-AN-A0AS', 'TCGA-AR-A24H', 'TCGA-B6-A0IQ', 'TCGA-BH-A0GZ', 'TCGA-BH-A1EV',
+              'TCGA-D8-A147', 'TCGA-D8-A1JB', 'TCGA-D8-A1JD', 'TCGA-D8-A1Y2', 'TCGA-E2-A14T', 'TCGA-E2-A1LG',
+              'TCGA-EW-A1OX', 'TCGA-EW-A1P7', 'TCGA-PE-A5DC', 'TCGA-S3-AA10']
+
+""" Se crea esta lista de los pacientes que tienen mutación 'CNV' del gen CDK1NB porque hay un fallo en el diccionario 
+de mutaciones 'CNV' y no identifica sus mutaciones. Por tanto, se ha recopilado manualmente los 'IDs' de los pacientes
+que tienen mutaciones en el gen BRCA2 (gracias a cBioPortal) para poner un '1' en la columna 'CNV' de esos 'IDs'. """
+cdkn1b_list = ['TCGA-A1-A0SK', 'TCGA-A1-A0SP', 'TCGA-A2-A04T', 'TCGA-A2-A04U', 'TCGA-A2-A3XT', 'TCGA-A7-A4SD',
+              'TCGA-A7-A6VW', 'TCGA-A8-A06R', 'TCGA-AC-A2FM', 'TCGA-AN-A0AJ', 'TCGA-AN-A0FJ', 'TCGA-AQ-A54N',
+              'TCGA-AR-A24M', 'TCGA-C8-A12L', 'TCGA-C8-A1HJ', 'TCGA-E9-A22G', 'TCGA-LL-A8F5', 'TCGA-OL-A5RU']
+
+if id_gen == 672: # BRCA1
+    for patient_brca1 in brca1_list:
+        for index_brca1, row_brca1 in enumerate(df_all_merge['ID']):
+            if patient_brca1 == row_brca1:
+                list_gen.append(index_brca1)
+if id_gen == 675: # BRCA2
+    for patient_brca2 in brca2_list:
+        for index_brca2, row_brca2 in enumerate(df_all_merge['ID']):
+            if patient_brca2 == row_brca2:
+                list_gen.append(index_brca2)
+elif id_gen == 1027: # CDKN1B
+    for patient_cdkn1b in cdkn1b_list:
+        for index_cdkn1b, row_cdkn1b in enumerate(df_all_merge['ID']):
+            if patient_cdkn1b == row_cdkn1b:
+                list_gen.append(index_cdkn1b)
+else:
+    for index, row in enumerate (df_all_merge['CNV']): # Para cada fila...
+        for mutation in row: # Para cada mutación de cada fila...
+            if mutation[1] == id_gen: # Si el segundo elemento de la lista es el mismo número que identifica al gen...
+                list_gen.append(index)
 
 """ Una vez se tienen almacenados los índices de las filas donde se produce esa mutación, como la salida de la red será
 binaria, se transforman todos los valores de la columna 'SNV' a '0' (no hay mutación del gen específico). Y una 
 vez hecho esto, ya se añaden los '1' (sí hay mutación del gen específico) en las filas cuyos índices estén almacenados 
 en la lista 'list_gen'. """
-df_all_merge['SNV'] = 0
+df_all_merge['CNV'] = 0
 
 for index in list_gen:
-    df_all_merge.loc[index, 'SNV'] = 1
+    df_all_merge.loc[index, 'CNV'] = 1
 
 """ En este caso, el número de muestras de imágenes y de datos deben ser iguales. Las imágenes de las que se disponen se 
 enmarcan según el sistema de estadificación TNM como N1A, N1, N2A, N2, N3A, N1MI, N1B, N3, NX, N3B, N1C o N3C según la
@@ -154,14 +190,18 @@ subconjuntos de entrenamiento y test simultáneamente, ya que al añadir las im�
 # @random_state: Se establece una semilla para que en cada ejecución la repartición sea la misma, aunque esté barajada
 # @stratify: Mantiene la proporción de valores de la variable especificada entre ambos subconjuntos de datos
 # IMPORTANTE: Los datos y las imágenes tienen que tener el mismo número de muestras, si no, hay error.
-train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20, stratify= df_all_merge['SNV'],
+train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20, stratify= df_all_merge['CNV'],
                                                          random_state = 42)
+
+train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.20,
+                                                          stratify= train_tabular_data['CNV'], random_state = 42)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de imágenes con cáncer y sin cáncer: """
 image_dir = '/home/avalderas/img_slides/img_lotes'
+#image_dir = 'C:\\Users\\valde\Desktop\Datos_repositorio\img_slides\img_lotes'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
 cancer_dir = glob.glob(image_dir + "/img_lote*_cancer/*") # 1702 imágenes con cáncer en total
@@ -179,16 +219,17 @@ series_img = pd.Series(cancer_dir)
 series_img.index = series_img.str.extract(fr"({'|'.join(df_all_merge['ID'])})", expand=False)
 
 train_tabular_data = train_tabular_data.join(series_img.rename('img_path'), on='ID')
+valid_tabular_data = valid_tabular_data.join(series_img.rename('img_path'), on='ID')
 test_tabular_data = test_tabular_data.join(series_img.rename('img_path'), on='ID')
 
 """ Hay valores nulos, por lo que se ha optado por eliminar esas filas en ambos subconjuntos para que se pueda entrenar 
 posteriormente el modelo. Aparte de eso, se ordena el dataframe según los valores de la columna 'ID': """
 # 1510 filas resultantes entre ambos subconjuntos, como en la versión anterior del programa:
 train_tabular_data.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
-#train_tabular_data = train_tabular_data.sort_values('ID')
+train_tabular_data = train_tabular_data.sort_index()
 
+valid_tabular_data.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
 test_tabular_data.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
-#test_tabular_data = test_tabular_data.sort_values('ID')
 
 """ Una vez se tienen todas las imágenes y quitados los valores nulos, tambiés es necesario deshacernos de aquellas 
 imágenes que son intraoperatorias. Para ello se toma como referencia el archivo 'Pacientes_MGR' para eliminar las filas 
@@ -201,8 +242,10 @@ remove_img_list = ['TCGA-A2-A0EW', 'TCGA-E2-A153', 'TCGA-E2-A15A', 'TCGA-E2-A15E
 
 for id_img in remove_img_list:
     index_train = train_tabular_data.loc[df_all_merge['ID'] == id_img].index
+    index_valid = valid_tabular_data.loc[df_all_merge['ID'] == id_img].index
     index_test = test_tabular_data.loc[df_all_merge['ID'] == id_img].index
     train_tabular_data.drop(index_train, inplace=True)
+    valid_tabular_data.drop(index_valid, inplace=True)
     test_tabular_data.drop(index_test, inplace=True)
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
@@ -217,63 +260,57 @@ mitad_ancho = int(ancho/2)
 """ Se leen y se redimensionan posteriormente las imágenes de ambos subconjuntos a las dimensiones especificadas arriba
 y se añaden a una lista: """
 pre_train_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de entrenamiento
+valid_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de validación
 test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
 
 for imagen_train in train_tabular_data['img_path']:
     pre_train_image_data.append(cv2.resize(cv2.imread(imagen_train,cv2.IMREAD_COLOR),(ancho,alto),
                                            interpolation=cv2.INTER_CUBIC))
 
+for imagen_valid in valid_tabular_data['img_path']:
+    valid_image_data.append(cv2.resize(cv2.imread(imagen_valid,cv2.IMREAD_COLOR),(ancho,alto),
+                                          interpolation=cv2.INTER_CUBIC))
+
 for imagen_test in test_tabular_data['img_path']:
     test_image_data.append(cv2.resize(cv2.imread(imagen_test,cv2.IMREAD_COLOR),(ancho,alto),
                                           interpolation=cv2.INTER_CUBIC))
 
-train_image_data = []
-
-for image in pre_train_image_data:
-    train_image_data.append(image)
-    #rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
-    #train_image_data.append(rotate.augment_image(image))
-    gaussian_noise = iaa.AdditiveGaussianNoise(10, 20)
-    train_image_data.append(gaussian_noise.augment_image(image))
-    #crop = iaa.Crop(percent=(0, 0.3))
-    #train_image_data.append(crop.augment_image(image))
-    #shear = iaa.Affine(shear=(0, 40), mode= 'edge')
-    #train_image_data.append(shear.augment_image(image))
-    flip_hr = iaa.Fliplr(p=1.0)
-    train_image_data.append(flip_hr.augment_image(image))
-    flip_vr = iaa.Flipud(p=1.0)
-    train_image_data.append(flip_vr.augment_image(image))
-    contrast = iaa.GammaContrast(gamma=2.0)
-    train_image_data.append(contrast.augment_image(image))
-    #scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
-    #train_image_data.append(scale_im.augment_image(image))
-
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
 se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
 array con forma (X, alto, ancho, canales). """
-train_image_data = (np.array(train_image_data) / 255.0)
-test_image_data = (np.array(test_image_data) / 255.0)
+valid_image_data = (np.array(valid_image_data) / 255)
+test_image_data = (np.array(test_image_data) / 255)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-""" Una vez se tienen hechos los recortes de imágenes, se procede a replicar las filas de ambos subconjuntos de datos
-para que el número de imágenes utilizadas y el número de filas del marco de datos sea el mismo: """
-train_tabular_data = pd.DataFrame(np.repeat(train_tabular_data.values, 5, axis=0), columns=train_tabular_data.columns)
+""" Antes de nada se van a recopilar solo las imagenes de las que se tiene mutado el gen, para utilizarlas después,
+cuando se sobremuestree la clase minoritaria con la tecnica SMOTE. """
+df_mutations = train_tabular_data.loc[train_tabular_data['CNV'] == 1]
+mutation_image_data = []
+
+for image_mutation in df_mutations['img_path']:
+    mutation_image_data.append(cv2.resize(cv2.imread(image_mutation, cv2.IMREAD_COLOR), (ancho, alto),
+                                           interpolation=cv2.INTER_CUBIC))
 
 """ Una vez ya se tienen las imágenes convertidas en arrays de numpy, se puede eliminar de los dos subconjuntos tanto la
-columna 'ID' como la columna 'path_img' que no son útiles para la red MLP: """
+columna 'ID' como la columna 'path_img' que no son útiles para la red MLP. En el caso del subconjunto de entrenamiento,
+se guardan ambas columnas para usarlas posteriormente como referencia: """
 #@inplace = True para que devuelva el resultado en la misma variable
 train_tabular_data.drop(['ID'], axis=1, inplace= True)
 train_tabular_data.drop(['img_path'], axis=1, inplace= True)
 
+valid_tabular_data.drop(['ID'], axis=1, inplace= True)
+valid_tabular_data.drop(['img_path'], axis=1, inplace= True)
+
 test_tabular_data.drop(['ID'], axis=1, inplace= True)
 test_tabular_data.drop(['img_path'], axis=1, inplace= True)
 
-""" Se extrae la columna 'SNV' del dataframe de ambos subconjuntos, puesto que ésta es la salida del modelo que se va a 
+""" Se extrae la columna 'CNV' del dataframe de ambos subconjuntos, puesto que ésta es la salida del modelo que se va a 
 entrenar."""
-train_labels = train_tabular_data.pop('SNV')
-test_labels = test_tabular_data.pop('SNV')
+train_labels = train_tabular_data.pop('CNV')
+valid_labels = valid_tabular_data.pop('CNV')
+test_labels = test_tabular_data.pop('CNV')
 
 """ Ahora se procede a procesar las columnas continuas, que se escalarán para que estén en el rango de (0-1), es decir, 
 como la salida de la red. """
@@ -282,16 +319,112 @@ scaler = MinMaxScaler()
 """ Hay 'warning' si se hace directamente, así que se hace de esta manera. Se transforman los datos guardándolos en una
 variable. Posteriormente se modifica la columna de las tablas con esa variable. """
 train_continuous = scaler.fit_transform(train_tabular_data[['Age']])
+valid_continuous = scaler.transform(valid_tabular_data[['Age']])
 test_continuous = scaler.transform(test_tabular_data[['Age']])
 
 train_tabular_data.loc[:,'Age'] = train_continuous[:,0]
+valid_tabular_data.loc[:,'Age'] = valid_continuous[:,0]
 test_tabular_data.loc[:,'Age'] = test_continuous[:,0]
+
+""" Oversampling. Para intentar corregir el desbalance de clases se va a utilizar la tecnica SMOTE para generar muestras
+de la clase minoritaria. Habra el mismo numero de muestras para las dos clases """
+smote = SMOTE(sampling_strategy= 'minority')
+train_tabular_data_smote, train_labels_smote = smote.fit_resample(X = train_tabular_data, y = train_labels)
+oversampling_number = len(train_tabular_data_smote) - len(train_tabular_data)
+
+""" Ahora hay que igualar el numero de imagenes para que se corresponda con el numero de muestras. Todas las muestras
+añadidas son de la clase minoritaria y se añaden al final de la ultima fila, por lo que solo habra que añadir imagenes 
+de esta clase al final del array de imagenes hasta igualar el numero de muestras."""
+difference = oversampling_number - len(mutation_image_data)
+
+for image in mutation_image_data:
+    rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
+    mutation_image_data.append(rotate.augment_image(image))
+    difference-= 1
+    if difference <= 0:
+        break
+    gaussian_noise = iaa.AdditiveGaussianNoise(10, 20)
+    mutation_image_data.append(gaussian_noise.augment_image(image))
+    difference-= 1
+    if difference <= 0:
+        break
+    crop = iaa.Crop(percent=(0, 0.3))
+    mutation_image_data.append(crop.augment_image(image))
+    difference-= 1
+    if difference <= 0:
+        break
+    shear = iaa.Affine(shear=(0, 40), mode= 'edge')
+    mutation_image_data.append(shear.augment_image(image))
+    difference-= 1
+    if difference <= 0:
+        break
+    flip_hr = iaa.Fliplr(p=1.0)
+    mutation_image_data.append(flip_hr.augment_image(image))
+    difference-= 1
+    if difference <= 0:
+        break
+    flip_vr = iaa.Flipud(p=1.0)
+    mutation_image_data.append(flip_vr.augment_image(image))
+    difference-= 1
+    if difference <= 0:
+        break
+    contrast = iaa.GammaContrast(gamma=2.0)
+    mutation_image_data.append(contrast.augment_image(image))
+    difference-= 1
+    if difference <= 0:
+        break
+    scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
+    mutation_image_data.append(scale_im.augment_image(image))
+    difference-= 1
+    if difference <= 0:
+        break
+
+""" Una vez hecho esto, se unen las listas de las imágenes que ya teniamos con las imagenes exclusivamente que
+tienen mutacion en el gen: """
+pre_train_image_data = pre_train_image_data + mutation_image_data
+
+""" Se hace data augmentation a todas las imágenes:"""
+train_image_data = []
+
+for image in pre_train_image_data:
+    train_image_data.append(image)
+    #rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
+    #train_image_data.append(rotate.augment_image(image))
+    gaussian_noise = iaa.AdditiveGaussianNoise(10, 20)
+    train_image_data.append(gaussian_noise.augment_image(image))
+    crop = iaa.Crop(percent=(0, 0.3))
+    train_image_data.append(crop.augment_image(image))
+    #shear = iaa.Affine(shear=(0, 40), mode= 'edge')
+    #train_image_data.append(shear.augment_image(image))
+    flip_hr = iaa.Fliplr(p=1.0)
+    train_image_data.append(flip_hr.augment_image(image))
+    #flip_vr = iaa.Flipud(p=1.0)
+    #train_image_data.append(flip_vr.augment_image(image))
+    contrast = iaa.GammaContrast(gamma=2.0)
+    train_image_data.append(contrast.augment_image(image))
+    #scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
+    #train_image_data.append(scale_im.augment_image(image))
+
+train_image_data = (np.array(train_image_data) / 255)
+
+""" Una vez se tienen hechos los recortes de imágenes, se procede a replicar las filas de ambos subconjuntos de datos
+para que el número de imágenes utilizadas y el número de filas del marco de datos sea el mismo: """
+# @squeeze = Para transformar una columna de un dataframe en una serie de pandas
+# @rename = Para cambiarle el nombre a una serie de pandas
+train_tabular_data_smote = pd.DataFrame(np.repeat(train_tabular_data_smote.values, 5, axis=0),
+                                        columns=train_tabular_data_smote.columns)
+train_labels_smote = pd.DataFrame(np.repeat(train_labels_smote.values, 5, axis=0))
+train_labels_smote = train_labels_smote.squeeze().rename('CNV')
 
 """ Para poder entrenar la red hace falta transformar los dataframes de entrenamiento y test en arrays de numpy, así 
 como también la columna de salida de ambos subconjuntos (las imágenes YA fueron convertidas anteriormente, por lo que no
 hace falta transformarlas de nuevo). """
-train_tabular_data = np.asarray(train_tabular_data).astype('float32')
-train_labels = np.asarray(train_labels).astype('float32')
+train_tabular_data_smote = np.asarray(train_tabular_data_smote).astype('float32')
+train_labels_smote = np.asarray(train_labels_smote).astype('float32')
+
+valid_tabular_data = np.asarray(valid_tabular_data).astype('float32')
+valid_labels = np.asarray(valid_labels).astype('float32')
+
 test_tabular_data = np.asarray(test_tabular_data).astype('float32')
 test_labels = np.asarray(test_labels).astype('float32')
 
@@ -375,22 +508,23 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
 checkpoint_path = 'model_snv_MTOR_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
-""" Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
+""" Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balanceen, ya que el conjunto
 de datos que se tratan en este problema es muy imbalanceado. """
 from sklearn.utils import class_weight
-class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels),
-                                                  y = train_labels)
+class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels_smote),
+                                                  y = train_labels_smote)
 class_weight_dict = dict(enumerate(class_weights))
+print(class_weight_dict)
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = [train_tabular_data, train_image_data],  # Datos de entrada.
-                           y = train_labels,  # Datos objetivos.
-                           epochs = 7,
+neural_network = model.fit(x = [train_tabular_data_smote, train_image_data],  # Datos de entrada.
+                           y = train_labels_smote,  # Datos objetivos.
+                           epochs = 4,
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,
                            #callbacks= mcp_save,
-                           validation_split = 0.2) # Datos de validación.
+                           validation_data = ([valid_tabular_data, valid_image_data], valid_labels)) # Datos de validación.
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -399,7 +533,7 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 #model = keras.models.load_model('model_cnv_pik3ca_epoch{epoch:02d}-recall{val_recall:.2f}-precision{val_precision:.2f}.h5')
 results = model.evaluate([test_tabular_data, test_image_data],test_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %".format((results[0]),
+      "Precisión del conjunto de prueba: {:.2f}\n""Accuracy del conjunto de prueba: {:.2f} %".format((results[0]),
                                                                                                    (results[5]),
                                                                                                    (results[6]),
                                                                                                    results[7] * 100))

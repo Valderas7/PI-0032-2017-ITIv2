@@ -8,7 +8,7 @@ import imageio
 import imgaug as ia
 import imgaug.augmenters as iaa
 import glob
-import imblearn
+from imblearn.over_sampling import SMOTE
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -412,9 +412,9 @@ neural_network = model.fit(x = [train_tabular_data, train_image_data],  # Datos 
                            y = train_labels,  # Datos objetivos.
                            epochs = 10,
                            verbose = 1,
-                           batch_size= 32,
-                           class_weight= class_weight_dict,
-                           callbacks= mcp_save,
+                           batch_size = 32,
+                           class_weight = class_weight_dict,
+                           callbacks = mcp_save,
                            validation_split = 0.2) # Datos de validación.
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
