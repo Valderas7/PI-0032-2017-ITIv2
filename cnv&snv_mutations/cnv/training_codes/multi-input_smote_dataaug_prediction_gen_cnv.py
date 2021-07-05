@@ -125,7 +125,7 @@ if id_gen == 672: # BRCA1
         for index_brca1, row_brca1 in enumerate(df_all_merge['ID']):
             if patient_brca1 == row_brca1:
                 list_gen.append(index_brca1)
-if id_gen == 675: # BRCA2
+elif id_gen == 675: # BRCA2
     for patient_brca2 in brca2_list:
         for index_brca2, row_brca2 in enumerate(df_all_merge['ID']):
             if patient_brca2 == row_brca2:

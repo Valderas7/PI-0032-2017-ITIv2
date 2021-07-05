@@ -115,7 +115,12 @@ cdkn1b_list = ['TCGA-A1-A0SK', 'TCGA-A1-A0SP', 'TCGA-A2-A04T', 'TCGA-A2-A04U', '
               'TCGA-A7-A6VW', 'TCGA-A8-A06R', 'TCGA-AC-A2FM', 'TCGA-AN-A0AJ', 'TCGA-AN-A0FJ', 'TCGA-AQ-A54N',
               'TCGA-AR-A24M', 'TCGA-C8-A12L', 'TCGA-C8-A1HJ', 'TCGA-E9-A22G', 'TCGA-LL-A8F5', 'TCGA-OL-A5RU']
 
-if id_gen == 675: # BRCA2
+if id_gen == 672: # BRCA1
+    for patient_brca1 in brca1_list:
+        for index_brca1, row_brca1 in enumerate(df_all_merge['ID']):
+            if patient_brca1 == row_brca1:
+                list_gen.append(index_brca1)
+elif id_gen == 675: # BRCA2
     for patient_brca2 in brca2_list:
         for index_brca2, row_brca2 in enumerate(df_all_merge['ID']):
             if patient_brca2 == row_brca2:

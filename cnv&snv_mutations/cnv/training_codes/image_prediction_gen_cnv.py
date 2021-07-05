@@ -70,10 +70,45 @@ en que filas se puede encontrar el ID del gen que se quiere predecir. Se almacen
 donde se encuentra ese ID. """
 list_gen = []
 
-for index, row in enumerate (df_all_merge['CNV']): # Para cada fila...
-    for mutation in row: # Para cada mutación de cada fila...
-        if mutation[1] == id_gen:
-            list_gen.append(index)
+""" Se crea esta lista de los pacientes que tienen mutación 'CNV' del gen BRCA2 porque hay un fallo en el diccionario 
+de mutaciones 'CNV' y no identifica sus mutaciones. Por tanto, se ha recopilado manualmente los 'IDs' de los pacientes
+que tienen mutaciones en el gen BRCA2 (gracias a cBioPortal) para poner un '1' en la columna 'CNV' de esos 'IDs'. """
+brca1_list = ['TCGA-A2-A0EO', 'TCGA-A7-A13D', 'TCGA-A8-A09G', 'TCGA-AC-A2FB', 'TCGA-AN-A04C', 'TCGA-AR-A24H',
+              'TCGA-B6-A0IG', 'TCGA-B6-A0IN', 'TCGA-BH-A0AW', 'TCGA-BH-A0C0', 'TCGA-BH-A42T', 'TCGA-C8-A12L',
+              'TCGA-C8-A9FZ', 'TCGA-E2-A105', 'TCGA-E2-A1L7', 'TCGA-E9-A1RI', 'TCGA-EW-A1OX', 'TCGA-LD-A9QF']
+
+brca2_list = ['TCGA-A2-A04T', 'TCGA-A7-A0CE', 'TCGA-A8-A06R', 'TCGA-A8-A08I', 'TCGA-A8-A09V', 'TCGA-A8-A0AB',
+              'TCGA-AN-A04D', 'TCGA-AN-A0AS', 'TCGA-AR-A24H', 'TCGA-B6-A0IQ', 'TCGA-BH-A0GZ', 'TCGA-BH-A1EV',
+              'TCGA-D8-A147', 'TCGA-D8-A1JB', 'TCGA-D8-A1JD', 'TCGA-D8-A1Y2', 'TCGA-E2-A14T', 'TCGA-E2-A1LG',
+              'TCGA-EW-A1OX', 'TCGA-EW-A1P7', 'TCGA-PE-A5DC', 'TCGA-S3-AA10']
+
+""" Se crea esta lista de los pacientes que tienen mutación 'CNV' del gen CDK1NB porque hay un fallo en el diccionario 
+de mutaciones 'CNV' y no identifica sus mutaciones. Por tanto, se ha recopilado manualmente los 'IDs' de los pacientes
+que tienen mutaciones en el gen BRCA2 (gracias a cBioPortal) para poner un '1' en la columna 'CNV' de esos 'IDs'. """
+cdkn1b_list = ['TCGA-A1-A0SK', 'TCGA-A1-A0SP', 'TCGA-A2-A04T', 'TCGA-A2-A04U', 'TCGA-A2-A3XT', 'TCGA-A7-A4SD',
+              'TCGA-A7-A6VW', 'TCGA-A8-A06R', 'TCGA-AC-A2FM', 'TCGA-AN-A0AJ', 'TCGA-AN-A0FJ', 'TCGA-AQ-A54N',
+              'TCGA-AR-A24M', 'TCGA-C8-A12L', 'TCGA-C8-A1HJ', 'TCGA-E9-A22G', 'TCGA-LL-A8F5', 'TCGA-OL-A5RU']
+
+if id_gen == 672: # BRCA1
+    for patient_brca1 in brca1_list:
+        for index_brca1, row_brca1 in enumerate(df_all_merge['ID']):
+            if patient_brca1 == row_brca1:
+                list_gen.append(index_brca1)
+elif id_gen == 675: # BRCA2
+    for patient_brca2 in brca2_list:
+        for index_brca2, row_brca2 in enumerate(df_all_merge['ID']):
+            if patient_brca2 == row_brca2:
+                list_gen.append(index_brca2)
+elif id_gen == 1027: # CDKN1B
+    for patient_cdkn1b in cdkn1b_list:
+        for index_cdkn1b, row_cdkn1b in enumerate(df_all_merge['ID']):
+            if patient_cdkn1b == row_cdkn1b:
+                list_gen.append(index_cdkn1b)
+else:
+    for index, row in enumerate (df_all_merge['CNV']): # Para cada fila...
+        for mutation in row: # Para cada mutación de cada fila...
+            if mutation[1] == id_gen: # Si el segundo elemento de la lista es el mismo número que identifica al gen...
+                list_gen.append(index)
 
 """ Una vez se tienen almacenados los índices de las filas donde se produce esa mutación, como la salida de la red será
 binaria, se transforman todos los valores de la columna 'mutations' a '0' (no hay mutación del gen específico). Y una 
