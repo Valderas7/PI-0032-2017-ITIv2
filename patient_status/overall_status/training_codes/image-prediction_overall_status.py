@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import cv2 #OpenCV
 import glob
 from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.models import load_model
 import imageio
 import imgaug as ia
 import imgaug.augmenters as iaa
@@ -34,6 +35,7 @@ list_to_read = ['CNV_oncomine', 'age', 'all_oncomine', 'mutations_oncomine', 'ca
                 'pfs_months', 'pfs_status', 'radiation_therapy']
 
 filename = '/home/avalderas/img_slides/data/brca_tcga_pan_can_atlas_2018.out'
+#filename = 'C:\\Users\\valde\Desktop\Datos_repositorio\cbioportal\data/brca_tcga_pan_can_atlas_2018.out'
 
 """ Almacenamos en una variable el diccionario de las mutaciones SNV (mutations), en otra el diccionario de genes, que
 hará falta para identificar los ID de los distintos genes a predecir y por último el diccionario de la categoría N del 
@@ -41,6 +43,7 @@ sistema de estadificación TNM: """
 with shelve.open(filename) as data:
     dict_genes = data.get('dict_genes')
     path_n_stage = data.get('path_n_stage')
+    snv = data.get('mutations')
     cnv = data.get('CNAs')
 
 """ Se crea un dataframe para el diccionario de mutaciones SNV y otro para el diccionario de la categoría N del sistema
@@ -48,41 +51,70 @@ de estadificación TNM. Posteriormente, se renombran las dos columnas para que t
 dataframes. En una columna tendremos el ID del paciente, en otra las distintas mutaciones SNV y en la otra la 
 categoría N para dicho paciente. """
 df_path_n_stage = pd.DataFrame.from_dict(path_n_stage.items()); df_path_n_stage.rename(columns = {0 : 'ID', 1 : 'path_n_stage'}, inplace = True)
+df_snv = pd.DataFrame.from_dict(snv.items()); df_snv.rename(columns = {0 : 'ID', 1 : 'SNV'}, inplace = True)
 df_cnv = pd.DataFrame.from_dict(cnv.items()); df_cnv.rename(columns = {0 : 'ID', 1 : 'CNV'}, inplace = True)
 
-df_list = [df_path_n_stage, df_cnv]
+df_list = [df_path_n_stage, df_snv, df_cnv]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
 esté descuadrado en la fila que no le corresponda. """
 df_all_merge = reduce(lambda left,right: pd.merge(left,right,on=['ID'], how='left'), df_list)
 
-""" Ahora se va a encontrar cual es el ID del gen que se quiere predecir. Para ello se crean dos variables para
-crear una lista de claves y otra de los valores del diccionario de genes. Se extrae el índice del gen en la lista de
-valores y posteriormente se usa ese índice para buscar con qué clave (ID) se corresponde en la lista de claves. """
+""" Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para ello se crean dos variables para
+crear una lista de claves y otra de los valores del diccionario de genes. Se extrae el índice de los genes en la lista 
+de valores y posteriormente se usan esos índices para buscar con qué claves (ID) se corresponden en la lista de claves. 
+Se almacenan todos los IDs de los genes en una lista. """
+snv_list = ['PIK3CA' , 'TP53', 'PTEN', 'MTOR', 'EGFR']
+id_snv_list = []
+
+cnv_list = ['MYC' , 'BRCA2', 'CCND1', 'BRCA1', 'ERBB2']
+id_cnv_list = []
+
 key_list = list(dict_genes.keys())
 val_list = list(dict_genes.values())
 
-position = val_list.index('ERBB2') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN SNV SE QUIERE PREDECIR
-id_gen = (key_list[position]) # Número
+for gen_snv in snv_list:
+    position = val_list.index(gen_snv) # Número
+    id_gen_snv = (key_list[position]) # Número
+    id_snv_list.append(id_gen_snv) # Se añaden todos los IDs en la lista vacía
+
+for gen_cnv in cnv_list:
+    position = val_list.index(gen_cnv) # Número
+    id_gen_cnv = (key_list[position]) # Número
+    id_cnv_list.append(id_gen_cnv) # Se añaden todos los IDs en la lista vacía
 
 """ Se hace un bucle sobre la columna de mutaciones del dataframe. Así, se busca en cada mutación de cada fila para ver
-en que filas se puede encontrar el ID del gen que se quiere predecir. Se almacenan en una lista los índices de las filas
-donde se encuentra ese ID. """
-list_gen = []
+en que filas encuentra el ID del gen que se quiere predecir. Se almacenan en una lista de listas los índices de las 
+filas donde se encuentran esos IDs de esos cinco genes, de forma que se tiene una lista para cada gen. """
+# SNV:
+list_gen_snv = [[] for ID in range(5)]
 
-for index, row in enumerate (df_all_merge['CNV']): # Para cada fila...
-    for mutation in row: # Para cada mutación de cada fila...
-        if mutation[1] == id_gen:
-            list_gen.append(index)
+for index, id_snv in enumerate (id_snv_list): # Para cada ID del gen SNV de la lista...
+    for index_row, row in enumerate (df_all_merge['SNV']): # Para cada fila dentro de la columna 'SNV'...
+        for mutation in row: # Para cada mutación dentro de cada fila...
+            if mutation[1] == id_snv: # Si el ID de la mutación es el mismo que el ID de la lista de genes...
+                list_gen_snv[index].append(index_row) # Se almacena el índice de la fila en la lista de listas
 
+# CNV:
+list_gen_cnv = [[] for ID in range(5)]
+
+for index, id_cnv in enumerate (id_cnv_list): # Para cada ID del gen SNV de la lista...
+    for index_row, row in enumerate (df_all_merge['CNV']): # Para cada fila dentro de la columna 'SNV'...
+        for mutation in row: # Para cada mutación dentro de cada fila...
+            if mutation[1] == id_cnv: # Si el ID de la mutación es el mismo que el ID de la lista de genes...
+                list_gen_cnv[index].append(index_row) # Se almacena el índice de la fila en la lista de listas
+
+print(list_gen_snv)
+print(list_gen_cnv)
+quit()
 """ Una vez se tienen almacenados los índices de las filas donde se produce esa mutación, como la salida de la red será
 binaria, se transforman todos los valores de la columna 'mutations' a '0' (no hay mutación del gen específico). Y una 
 vez hecho esto, ya se añaden los '1' (sí hay mutación del gen específico) en las filas cuyos índices estén almacenados 
 en la lista 'list_gen'. """
-df_all_merge['CNV'] = 0
+df_all_merge['SNV'] = 0
 
 for index in list_gen:
-    df_all_merge.loc[index, 'CNV'] = 1
+    df_all_merge.loc[index, 'SNV'] = 1
 
 """ En este caso, el número de muestras de imágenes y de datos deben ser iguales. Las imágenes de las que se disponen se 
 enmarcan según el sistema de estadificación TNM como N1A, N1, N2A, N2, N3A, N1MI, N1B, N3, NX, N3B, N1C o N3C según la
@@ -97,13 +129,14 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['CNV'],
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['SNV'],
                                          random_state = 42)
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de imágenes con cáncer y sin cáncer: """
 image_dir = '/home/avalderas/img_slides/img_lotes'
+#image_dir = 'C:\\Users\\valde\Desktop\Datos_repositorio\img_slides\img_lotes'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
 cancer_dir = glob.glob(image_dir + "/img_lote*_cancer/*") # 1702 imágenes con cáncer en total
@@ -194,8 +227,8 @@ train_data = pd.DataFrame(np.repeat(train_data.values, 9, axis=0), columns=train
 
 """ Una vez ya se tienen las imágenes convertidas en arrays y en el orden establecido por cada paciente, se puede
 extraer del dataframe la columna 'SNV', que será la salida de la red:"""
-train_labels = train_data.pop('CNV')
-test_labels = test_data.pop('CNV')
+train_labels = train_data.pop('SNV')
+test_labels = test_data.pop('SNV')
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada: """
 del df_all_merge, df_path_n_stage, df_list
@@ -247,27 +280,26 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.Precision(name='precision'), # TP / (TP + FP)
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
 
-""" Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
-checkpoint_path = 'model_cnv_image_myc_epoch{epoch:02d}.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
-
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
               optimizer = keras.optimizers.Adam(learning_rate = 0.001),
               metrics = metrics)
 
+""" Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
+checkpoint_path = 'model_snv_image_mtor_epoch{epoch:02d}.h5'
+mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
+
 """ Se calculan los pesos de las dos clases del problema: """
-class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels),
-                                                  y = train_labels)
+class_weights = class_weight.compute_class_weight('balanced', np.unique(train_labels), train_labels)
 class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido el modelo, se entrena: """
 neural_network = model.fit(x = train_image_data,  # Datos de entrada.
                            y = train_labels,  # Datos de salida.
-                           class_weight=class_weight_dict,
-                           epochs = 7,
-                           #callbacks= mcp_save,
+                           class_weight = class_weight_dict,
+                           epochs = 6,
                            verbose = 2,
                            batch_size= 32,
+                           callbacks= mcp_save,
                            validation_split = 0.2) # Datos de validación.
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas

@@ -391,7 +391,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.TrueNegatives(name='tn'), keras.metrics.FalseNegatives(name='fn'),
            keras.metrics.Recall(name='recall'), # TP / (TP + FN)
            keras.metrics.Precision(name='precision'), # TP / (TP + FP)
-           keras.metrics.BinaryAccuracy(name='accuracy')]
+           keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
 
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
               optimizer = keras.optimizers.Adam(learning_rate = 0.001),
@@ -404,7 +404,8 @@ mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
 de datos que se tratan en este problema es muy imbalanceado. """
 from sklearn.utils import class_weight
-class_weights = class_weight.compute_class_weight('balanced', np.unique(train_labels),train_labels)
+class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels),
+                                                  y = train_labels)
 class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
@@ -414,7 +415,7 @@ neural_network = model.fit(x = [train_tabular_data, train_image_data],  # Datos 
                            verbose = 1,
                            batch_size = 32,
                            class_weight = class_weight_dict,
-                           callbacks = mcp_save,
+                           #callbacks = mcp_save,
                            validation_split = 0.2) # Datos de validación.
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
@@ -424,10 +425,9 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 #model = keras.models.load_model('model_cnv_pik3ca_epoch{epoch:02d}-recall{val_recall:.2f}-precision{val_precision:.2f}.h5')
 results = model.evaluate([test_tabular_data, test_image_data],test_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Accuracy del conjunto de prueba: {:.2f} %".format((results[0]),
-                                                                                                   (results[5]),
-                                                                                                   (results[6]),
-                                                                                                   results[7] * 100))
+      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
+      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,
+                                                               results[8]))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
 posteriormentes para dibujar las gráficas de la 'loss', la sensibilidad y la precisión del entrenamiento y  validación 

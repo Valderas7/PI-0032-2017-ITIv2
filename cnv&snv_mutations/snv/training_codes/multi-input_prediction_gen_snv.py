@@ -365,7 +365,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.TrueNegatives(name='tn'), keras.metrics.FalseNegatives(name='fn'),
            keras.metrics.Recall(name='recall'), # TP / (TP + FN)
            keras.metrics.Precision(name='precision'), # TP / (TP + FP)
-           keras.metrics.BinaryAccuracy(name='accuracy')]
+           keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
 
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
               optimizer = keras.optimizers.Adam(learning_rate = 0.001),
@@ -399,10 +399,9 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 #model = keras.models.load_model('model_cnv_pik3ca_epoch{epoch:02d}-recall{val_recall:.2f}-precision{val_precision:.2f}.h5')
 results = model.evaluate([test_tabular_data, test_image_data],test_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %".format((results[0]),
-                                                                                                   (results[5]),
-                                                                                                   (results[6]),
-                                                                                                   results[7] * 100))
+      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
+      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,
+                                                               results[8]))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
 posteriormentes para dibujar las gráficas de la 'loss', la sensibilidad y la precisión del entrenamiento y  validación 
