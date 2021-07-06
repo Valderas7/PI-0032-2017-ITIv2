@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import cv2 #OpenCV
 import glob
 from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.models import load_model
 import imageio
 import imgaug as ia
 import imgaug.augmenters as iaa
@@ -278,7 +277,7 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 results = model.evaluate(test_image_data,test_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
       "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
-      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,
+      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6], results[7] * 100,
                                                                results[8]))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 

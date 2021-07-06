@@ -4,9 +4,7 @@ import numpy as np
 import seaborn as sns # Para realizar gráficas sobre datos
 import matplotlib.pyplot as plt
 import cv2 #OpenCV
-import imageio
-import imgaug as ia
-import imgaug.augmenters as iaa
+from tensorflow.keras import backend as K
 import glob
 import imblearn
 import tensorflow as tf
@@ -14,10 +12,8 @@ from tensorflow import keras
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.models import load_model
 from tensorflow.keras import layers
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.layers import Input # Para instanciar tensores de Keras
 from functools import reduce # 'reduce' aplica una función pasada como argumento para todos los miembros de una lista.
-from sklearn.model_selection import train_test_split # Se importa la librería para dividir los datos en entreno y test.
 from sklearn.preprocessing import MinMaxScaler # Para escalar valores
 from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
 
@@ -26,6 +22,11 @@ model = load_model('/home/avalderas/img_slides/modelos/SNV/image/model_snv_image
 test_image_data = np.load('/home/avalderas/img_slides/cnv&snv_mutations/snv/inferencia/test_data/image_only/test_image.npy')
 test_labels = np.load('/home/avalderas/img_slides/cnv&snv_mutations/snv/inferencia/test_data/image_only/test_labels.npy')
 
+test_image_data[0] = np.expand_dims(test_image_data[0], axis=0)
+print(test_image_data[0].shape)
+#separable_conv2d_5
+quit()
+
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
@@ -33,7 +34,7 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 results = model.evaluate(test_image_data,test_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
       "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
-      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,
+      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6], results[7] * 100,
                                                                results[8]))
 
 """ Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
