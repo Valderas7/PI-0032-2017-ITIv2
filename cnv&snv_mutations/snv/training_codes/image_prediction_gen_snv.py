@@ -63,7 +63,7 @@ valores y posteriormente se usa ese índice para buscar con qué clave (ID) se c
 key_list = list(dict_genes.keys())
 val_list = list(dict_genes.values())
 
-position = val_list.index('MTOR') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN SNV SE QUIERE PREDECIR
+position = val_list.index('PIK3CA') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN SNV SE QUIERE PREDECIR
 id_gen = (key_list[position]) # Número
 
 """ Se hace un bucle sobre la columna de mutaciones del dataframe. Así, se busca en cada mutación de cada fila para ver
@@ -144,8 +144,8 @@ for id_img in remove_img_list:
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
 # IMPORTANTE: La anchura no puede ser más alta que la altura.
-alto = 100 # 630
-ancho = 100 # 1480
+alto = 315 # 630
+ancho = 740 # 1480
 canales = 3 # Imágenes a color (RGB) = 3
 
 """ Se leen y se redimensionan posteriormente las imágenes a las dimensiones especificadas arriba: """
@@ -153,11 +153,11 @@ pre_train_image_data = [] # Lista con las imágenes redimensionadas
 test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
 
 for imagen_train in train_data['img_path']:
-    pre_train_image_data.append(cv2.resize(cv2.imread(imagen_train, cv2.IMREAD_COLOR), (alto, ancho),
+    pre_train_image_data.append(cv2.resize(cv2.imread(imagen_train, cv2.IMREAD_COLOR), (ancho, alto),
                                            interpolation=cv2.INTER_CUBIC))
 
 for imagen_test in test_data['img_path']:
-    test_image_data.append(cv2.resize(cv2.imread(imagen_test, cv2.IMREAD_COLOR), (alto, ancho),
+    test_image_data.append(cv2.resize(cv2.imread(imagen_test, cv2.IMREAD_COLOR), (ancho, alto),
                                            interpolation=cv2.INTER_CUBIC))
 
 train_image_data = []
@@ -253,19 +253,20 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
-checkpoint_path = 'model_snv_image_mtor_epoch{epoch:02d}.h5'
+checkpoint_path = 'model_snv_image_pik3ca_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Se calculan los pesos de las dos clases del problema: """
-class_weights = class_weight.compute_class_weight('balanced', np.unique(train_labels), train_labels)
+class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels),
+                                                  y = train_labels)
 class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido el modelo, se entrena: """
 neural_network = model.fit(x = train_image_data,  # Datos de entrada.
                            y = train_labels,  # Datos de salida.
                            class_weight = class_weight_dict,
-                           epochs = 6,
-                           verbose = 2,
+                           epochs = 7,
+                           verbose = 1,
                            batch_size= 32,
                            callbacks= mcp_save,
                            validation_split = 0.2) # Datos de validación.
@@ -281,16 +282,9 @@ print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de p
                                                                results[8]))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
-posteriormentes para dibujar las gráficas de la 'loss', la sensibilidad y la precisión del entrenamiento y  validación 
-de cada iteración."""
+posteriormentes para dibujar la gráfica de la 'loss'."""
 loss = neural_network.history['loss']
 val_loss = neural_network.history['val_loss']
-
-recall = neural_network.history['recall']
-val_recall = neural_network.history['val_recall']
-
-precision = neural_network.history['precision']
-val_precision = neural_network.history['val_precision']
 
 epochs = neural_network.epoch
 
@@ -303,28 +297,6 @@ plt.ylabel('Loss')
 plt.xlabel('Epochs')
 plt.legend()
 plt.figure() # Crea o activa una figura
-
-""" Gráfica de la sensibilidad del entreno y la validación: """
-plt.plot(epochs, recall, 'r', label='Sensibilidad del entreno')
-plt.plot(epochs, val_recall, 'b--', label='Sensibilidad de la validación')
-plt.title('Sensibilidad del entreno y de la validación')
-plt.ylabel('Sensibilidad')
-plt.xlabel('Epochs')
-plt.legend()
-plt.figure()
-
-""" Gráfica de la precisión del entreno y la validación: """
-plt.plot(epochs, precision, 'r', label='Precisión del entreno')
-plt.plot(epochs, val_precision, 'b--', label='Precisión de la validación')
-plt.title('Precisión del entreno y de la validación')
-plt.ylabel('Precisión')
-plt.xlabel('Epochs')
-plt.legend()
-plt.figure()
-plt.show() # Se muestran todas las gráficas
-
-""" Se guarda el modelo en caso de que sea necesario"""
-# model.save('model_BRCA1.h5')
 
 """ -------------------------------------------------------------------------------------------------------------------
 ------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
@@ -340,6 +312,7 @@ print("Predicciones:\n", np.round(model.predict(test_image_data[:10])))
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
+# @zip: Une las tuplas del nombre de los grupos con la de la cantidad de casos por grupo
 y_true = test_labels # Etiquetas verdaderas de 'test'
 y_pred = np.round(model.predict(test_image_data)) # Predicción de etiquetas de 'test'
 
@@ -348,11 +321,32 @@ matrix = confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz d
 group_names = ['True Neg','False Pos','False Neg','True Pos'] # Nombres de los grupos
 group_counts = ['{0:0.0f}'.format(value) for value in matrix.flatten()] # Cantidad de casos por grupo
 
-""" @zip: Une las tuplas del nombre de los grupos con la de la cantidad de casos por grupo """
 labels = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names,group_counts)]
 labels = np.asarray(labels).reshape(2,2)
 sns.heatmap(matrix, annot=labels, fmt='', cmap='Blues')
-plt.show() # Muestra la gráfica de la matriz de confusión
+plt.show()
 
+""" Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
+documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
+tasa de falsos positivos, por lo que resume el comportamiento del clasificador para diferenciar clases.
+Para implementarla, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
+# @ravel: Aplana el vector a 1D
+from sklearn.metrics import roc_curve
+from sklearn.metrics import auc
+
+y_pred = y_pred.ravel()
+fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+auc = auc(fpr, tpr)
+
+plt.figure(1)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.plot(fpr, tpr, label='area = {:.3f})'.format(auc))
+plt.xlabel('False positive rate')
+plt.ylabel('True positive rate')
+plt.title('ROC curve')
+plt.legend(loc='best')
+plt.show()
+
+""" Para guardar los arrays del conjunto de test para utilizarlos con un modelo recien cargado"""
 #np.save('test_image', test_image_data)
 #np.save('test_labels', test_labels)
