@@ -9,7 +9,6 @@ import imgaug as ia
 import imgaug.augmenters as iaa
 import glob
 import imblearn
-import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.models import load_model
@@ -21,10 +20,10 @@ from sklearn.model_selection import train_test_split # Se importa la librería p
 from sklearn.preprocessing import MinMaxScaler # Para escalar valores
 from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
 
-model = load_model('/home/avalderas/img_slides/cnv&snv_mutations/cnv/training_codes/model_cnv_image_myc_epoch07.h5')
+model = load_model('/home/avalderas/img_slides/cnv&snv_mutations/cnv/training_codes/model_cnv_image_myc_epoch03.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/cnv&snv_mutations/cnv/inferencia/test_data/image_only/test_image.npy')
-test_labels = np.load('/home/avalderas/img_slides/cnv&snv_mutations/cnv/inferencia/test_data/image_only/test_labels.npy')
+test_image_data = np.load('/home/avalderas/img_slides/cnv&snv_mutations/cnv/training_codes/test_image.npy')
+test_labels = np.load('/home/avalderas/img_slides/cnv&snv_mutations/cnv/training_codes/test_labels.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -32,10 +31,9 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_image_data,test_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Accuracy del conjunto de prueba: {:.2f} %".format((results[0]),
-                                                                                                   (results[5]),
-                                                                                                   (results[6]),
-                                                                                                   results[7] * 100))
+      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
+      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,
+                                                               results[8]))
 
 """ Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
 conjunto de datos de test que se definió anteriormente al repartir los datos. """

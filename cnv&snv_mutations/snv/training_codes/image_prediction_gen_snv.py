@@ -10,7 +10,6 @@ import imageio
 import imgaug as ia
 import imgaug.augmenters as iaa
 from sklearn.utils import class_weight
-import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.layers import Input # Para instanciar tensores de Keras
@@ -62,7 +61,7 @@ valores y posteriormente se usa ese índice para buscar con qué clave (ID) se c
 key_list = list(dict_genes.keys())
 val_list = list(dict_genes.values())
 
-position = val_list.index('PIK3CA') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN SNV SE QUIERE PREDECIR
+position = val_list.index('TP53') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN SNV SE QUIERE PREDECIR
 id_gen = (key_list[position]) # Número
 
 """ Se hace un bucle sobre la columna de mutaciones del dataframe. Así, se busca en cada mutación de cada fila para ver
@@ -210,30 +209,18 @@ test_labels = np.asarray(test_labels).astype('float32')
 --------------------------------------------------------------------------------------------------------------------"""
 """ En esta ocasión, se crea un modelo secuencial para la red neuronal convolucional que será la encargada de procesar
 todas las imágenes: """
-model = keras.models.Sequential()
-model.add(layers.SeparableConv2D(32, (3, 3), input_shape = (alto, ancho, canales),padding="same", activation='relu'))
-model.add(layers.BatchNormalization(axis=3))
-model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-model.add(layers.Dropout(0.25))
-model.add(layers.SeparableConv2D(64, (3, 3), padding="same", activation='relu'))
-model.add(layers.BatchNormalization(axis=3))
-model.add(layers.SeparableConv2D(64, (3, 3), padding="same", activation='relu'))
-model.add(layers.BatchNormalization(axis=3))
-model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-model.add(layers.Dropout(0.25))
-model.add(layers.SeparableConv2D(128, (3, 3), padding="same", activation='relu'))
-model.add(layers.BatchNormalization(axis=3))
-model.add(layers.SeparableConv2D(128, (3, 3), padding="same", activation='relu'))
-model.add(layers.BatchNormalization(axis=3))
-model.add(layers.SeparableConv2D(128, (3, 3), padding="same", activation='relu'))
-model.add(layers.BatchNormalization(axis=3))
-model.add(layers.MaxPooling2D(pool_size=(2, 2)))
-model.add(layers.Dropout(0.25))
-model.add(layers.Flatten())
-model.add(layers.Dense(256, activation='relu'))
-model.add(layers.BatchNormalization())
-model.add(layers.Dropout(0.5))
-model.add(layers.Dense(1, activation= 'sigmoid'))
+model = keras.applications.EfficientNetB7(weights='imagenet', input_shape=(alto, ancho, canales),
+                                              include_top=False)
+model.trainable = False
+
+inputs = keras.Input(shape=(alto, ancho, canales))
+x = model(inputs, training=False)
+x = layers.GlobalAveragePooling2D()(x)
+x = layers.Dropout(0.5)(x)
+x = layers.BatchNormalization()(x)
+x = layers.Dense(16)(x)
+x = layers.Dense(1, activation= 'sigmoid')(x)
+model = keras.models.Model(inputs = inputs, outputs = x)
 model.summary()
 
 """ Hay que definir las métricas de la red y configurar los distintos hiperparámetros para entrenar la red. El modelo ya
@@ -252,7 +239,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
-checkpoint_path = 'model_snv_image_pik3ca_epoch{epoch:02d}.h5'
+checkpoint_path = 'model_snv_image_tp53_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Se calculan los pesos de las dos clases del problema: """
@@ -264,11 +251,36 @@ class_weight_dict = dict(enumerate(class_weights))
 neural_network = model.fit(x = train_image_data,  # Datos de entrada.
                            y = train_labels,  # Datos de salida.
                            class_weight = class_weight_dict,
-                           epochs = 7,
+                           epochs = 2,
                            verbose = 1,
                            batch_size= 32,
-                           callbacks= mcp_save,
+                           #callbacks= mcp_save,
                            validation_split = 0.2) # Datos de validación.
+
+""" Una vez el modelo ya ha sido entrenado, se puede descongelar el modelo base de la red EfficientNetB7 y reeentrenar
+todo el modelo de principio a fin con una tasa de aprendizaje muy baja ('fine tuning'). Este es un último paso opcional
+que puede dar grandes mejoras o un rápido sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
+con las capas congeladas, ya que sino, podría destruir todo lo realizado anteriormente. 
+Para ello, primero se descongela el modelo base. Destacar que aunque el modelo base ahora pasa a ser entrenable, todavía
+se ejecuta en modo inferencia, ya que se pasó el argumento @training = False anteriormente, al contruir el modelo."""
+cnn_model.trainable = True
+model.summary()
+
+""" Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
+se tomen en cuenta (y se utiliza un 'learning rate' muy pequeño): """
+model.compile(optimizer = keras.optimizers.Adam (learning_rate = 1e-5),
+              loss = 'binary_crossentropy',
+              metrics = metrics)
+
+""" Se entrena el modelo de principio a fin: """
+model.fit(x = train_image_data,  # Datos de entrada.
+          y = train_labels,
+          epochs = 3,
+          batch_size= 32,
+          verbose= 1,
+          class_weight= class_weight_dict,
+          validation_split = 0.2,
+          callbacks = mcp_save)
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -347,5 +359,5 @@ plt.legend(loc='best')
 plt.show()
 
 """ Para guardar los arrays del conjunto de test para utilizarlos con un modelo recien cargado"""
-#np.save('test_image', test_image_data)
-#np.save('test_labels', test_labels)
+np.save('test_image', test_image_data)
+np.save('test_labels', test_labels)

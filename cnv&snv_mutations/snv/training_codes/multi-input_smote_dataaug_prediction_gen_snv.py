@@ -303,8 +303,7 @@ oversampling_number = len(train_tabular_data_smote) - len(train_tabular_data)
 añadidas son de la clase minoritaria y se añaden al final de la ultima fila, por lo que solo habra que añadir imagenes 
 de esta clase al final del array de imagenes hasta igualar el numero de muestras."""
 difference = oversampling_number - len(mutation_image_data)
-print(len(mutation_image_data))
-print(difference)
+
 for image in mutation_image_data:
     rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
     mutation_image_data.append(rotate.augment_image(image))

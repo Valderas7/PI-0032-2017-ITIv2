@@ -10,7 +10,6 @@ import imageio
 import imgaug as ia
 import imgaug.augmenters as iaa
 from sklearn.utils import class_weight
-import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.layers import Input # Para instanciar tensores de Keras
@@ -62,7 +61,7 @@ valores y posteriormente se usa ese índice para buscar con qué clave (ID) se c
 key_list = list(dict_genes.keys())
 val_list = list(dict_genes.values())
 
-position = val_list.index('ERBB2') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN SNV SE QUIERE PREDECIR
+position = val_list.index('MYC') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN SNV SE QUIERE PREDECIR
 id_gen = (key_list[position]) # Número
 
 """ Se hace un bucle sobre la columna de mutaciones del dataframe. Así, se busca en cada mutación de cada fila para ver
@@ -284,7 +283,7 @@ checkpoint_path = 'model_cnv_image_myc_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.Adam(learning_rate = 0.001),
+              optimizer = keras.optimizers.Adagrad(learning_rate = 0.001),
               metrics = metrics)
 
 """ Se calculan los pesos de las dos clases del problema: """
@@ -296,8 +295,8 @@ class_weight_dict = dict(enumerate(class_weights))
 neural_network = model.fit(x = train_image_data,  # Datos de entrada.
                            y = train_labels,  # Datos de salida.
                            class_weight=class_weight_dict,
-                           epochs = 7,
-                           #callbacks= mcp_save,
+                           epochs = 3,
+                           callbacks= mcp_save,
                            verbose = 2,
                            batch_size= 32,
                            validation_split = 0.2) # Datos de validación.
@@ -386,5 +385,5 @@ labels = np.asarray(labels).reshape(2,2)
 sns.heatmap(matrix, annot=labels, fmt='', cmap='Blues')
 plt.show() # Muestra la gráfica de la matriz de confusión
 
-#np.save('test_image', test_image_data)
-#np.save('test_labels', test_labels)
+np.save('test_image', test_image_data)
+np.save('test_labels', test_labels)

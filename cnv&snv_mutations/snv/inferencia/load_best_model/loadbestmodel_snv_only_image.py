@@ -16,16 +16,113 @@ from tensorflow.keras.layers import Input # Para instanciar tensores de Keras
 from functools import reduce # 'reduce' aplica una función pasada como argumento para todos los miembros de una lista.
 from sklearn.preprocessing import MinMaxScaler # Para escalar valores
 from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
+from pytorch_grad_cam import GradCAM # Hace falta instalar pytorch, ttach, torchvision, tqdm y el propio GRAD-CAM
 
-model = load_model('/home/avalderas/img_slides/modelos/SNV/image/model_snv_image_pik3ca_epoch03.h5')
+alto = 315 # 630
+ancho = 740 # 1480
+canales = 3 # Imágenes a color (RGB) = 3
 
-test_image_data = np.load('/home/avalderas/img_slides/cnv&snv_mutations/snv/inferencia/test_data/image_only/test_image.npy')
-test_labels = np.load('/home/avalderas/img_slides/cnv&snv_mutations/snv/inferencia/test_data/image_only/test_labels.npy')
+model = load_model('/modelos/SNV/image/model_snv_image_tp53_epoch02.h5')
 
-test_image_data[0] = np.expand_dims(test_image_data[0], axis=0)
-print(test_image_data[0].shape)
-#separable_conv2d_5
-quit()
+test_image_data = np.load('/home/avalderas/img_slides/cnv&snv_mutations/snv/training_codes/test_image.npy')
+test_labels = np.load('/home/avalderas/img_slides/cnv&snv_mutations/snv/training_codes/test_labels.npy')
+
+"""last_conv_layer_name = 'separable_conv2d_5'
+classifier_layer_names =  ['max_pooling2d_2', 'flatten', 'dense', 'dense_1']
+
+image = cv2.imread('/home/avalderas/Descargas/ductal-carcinoma.jpg')
+image = image.astype('float32') / 255
+image = cv2.resize(image, (ancho, alto))
+img_array = np.expand_dims(image, axis=0)
+
+prediction = model.predict(img_array)
+print(prediction)
+index = np.argmax(prediction)
+print([prediction[0]][index])
+
+
+def make_gradcam_heatmap(img_array, model, last_conv_layer_name, classifier_layer_names):
+    # Modelo que mapea la imagen de entrada a la capa convolucional última,
+    # donde se calculará la activación
+    last_conv_layer = model.get_layer(last_conv_layer_name)
+    conv_model = keras.Model(model.inputs, last_conv_layer.output)
+
+    # Modelo que mapea las activaciones a la salida final
+    classifier_input = keras.Input(shape=last_conv_layer.output.shape[1:])
+    x = classifier_input
+    for layer_name in classifier_layer_names:
+        x = model.get_layer(layer_name)(x)
+    classifier_model = keras.Model(classifier_input, x)
+
+    # Cálculo del gradiente la salida  del modelo clasificador respecto a
+    with tf.GradientTape() as tape:
+
+        # Calcula activacion del modelo base convolucional
+        last_conv_layer_output = conv_model(img_array)
+        tape.watch(last_conv_layer_output)
+
+        # Calcula la predicción con modelo clasificador, para la clase mas probable
+        preds = classifier_model(last_conv_layer_output)
+        top_pred_index = tf.argmax(preds[0])
+        print(top_pred_index)
+        top_class_channel = preds[:, top_pred_index]
+
+    # Obtenemos el gradiente en la capa final clasificadora con respecto a
+    # la salida del modelo base convolucional
+    grads = tape.gradient(top_class_channel, last_conv_layer_output)
+
+    # Vector de pesos: medias del gradiente por capas,
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+
+    # salida de la última capa convolucional
+    last_conv_layer_output = last_conv_layer_output.numpy()[0]
+
+    # saliencia es la respuesta promedio de la última capa convolucional
+    saliency = np.mean(last_conv_layer_output, axis=-1)
+    saliency = np.maximum(saliency, 0) / np.max(saliency)
+
+    # Multiplicación de cada canal por el vector de pesos
+    pooled_grads = pooled_grads.numpy()
+    for i in range(pooled_grads.shape[-1]):
+        last_conv_layer_output[:, :, i] *= pooled_grads[i]
+
+    # Heatmap: promedio de cada canal por su peso
+    grad_cam = np.mean(last_conv_layer_output, axis=-1)
+    grad_cam = np.maximum(grad_cam, 0) / np.max(grad_cam)
+
+    return grad_cam, saliency
+
+# Generate class activation heatmap
+grad_cam, saliency = make_gradcam_heatmap(img_array, 
+                                          model, 
+                                          last_conv_layer_name, 
+                                          classifier_layer_names)
+
+def show_hotmap(img, heatmap, title='Heatmap', alpha=0.6, cmap='jet', axisOnOff='off'):
+    '''
+    img     :    Image
+    heatmap :    2d narray
+    '''
+    resized_heatmap = resize(heatmap, img.size)
+
+    fig, ax = plt.subplots()
+    ax.imshow(img)
+    ax.imshow(resized_heatmap, alpha=alpha, cmap=cmap)
+    plt.axis(axisOnOff)
+    plt.title(title)
+    plt.show()
+
+plt.subplot(121)
+plt.imshow(grad_cam, 'jet')
+plt.title('GradCam')
+plt.subplot(122)
+plt.imshow(saliency, 'jet')
+plt.title('Saliencia')
+plt.show()
+
+show_hotmap(img=image, heatmap=grad_cam, title=f'Grad Cam: {model.name}')
+
+quit()"""
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -76,7 +173,7 @@ auc = auc(fpr, tpr)
 
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--')
-plt.plot(fpr, tpr, label='AUC = {:.3f})'.format(auc))
+plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
 plt.title('ROC curve')
