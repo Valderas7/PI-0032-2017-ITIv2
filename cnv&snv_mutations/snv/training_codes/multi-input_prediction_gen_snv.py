@@ -92,7 +92,7 @@ valores y posteriormente se usa ese índice para buscar con qué clave (ID) se c
 key_list = list(dict_genes.keys())
 val_list = list(dict_genes.values())
 
-position = val_list.index('PIK3CA') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN SNV SE QUIERE PREDECIR
+position = val_list.index('TP53') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN SNV SE QUIERE PREDECIR
 id_gen = (key_list[position]) # Número
 
 """ Se hace un bucle sobre la columna de mutaciones del dataframe. Así, se busca en cada mutación de cada fila para ver
@@ -231,22 +231,22 @@ train_image_data = []
 
 for image in pre_train_image_data:
     train_image_data.append(image)
-    #rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
-    #train_image_data.append(rotate.augment_image(image))
+    rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
+    train_image_data.append(rotate.augment_image(image))
     gaussian_noise = iaa.AdditiveGaussianNoise(10, 20)
     train_image_data.append(gaussian_noise.augment_image(image))
-    #crop = iaa.Crop(percent=(0, 0.3))
-    #train_image_data.append(crop.augment_image(image))
-    #shear = iaa.Affine(shear=(0, 40), mode= 'edge')
-    #train_image_data.append(shear.augment_image(image))
+    crop = iaa.Crop(percent=(0, 0.3))
+    train_image_data.append(crop.augment_image(image))
+    shear = iaa.Affine(shear=(0, 40), mode= 'edge')
+    train_image_data.append(shear.augment_image(image))
     flip_hr = iaa.Fliplr(p=1.0)
     train_image_data.append(flip_hr.augment_image(image))
     flip_vr = iaa.Flipud(p=1.0)
     train_image_data.append(flip_vr.augment_image(image))
     contrast = iaa.GammaContrast(gamma=2.0)
     train_image_data.append(contrast.augment_image(image))
-    #scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
-    #train_image_data.append(scale_im.augment_image(image))
+    scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
+    train_image_data.append(scale_im.augment_image(image))
 
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
 se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
@@ -409,12 +409,6 @@ de cada iteración."""
 loss = neural_network.history['loss']
 val_loss = neural_network.history['val_loss']
 
-recall = neural_network.history['recall']
-val_recall = neural_network.history['val_recall']
-
-precision = neural_network.history['precision']
-val_precision = neural_network.history['val_precision']
-
 epochs = neural_network.epoch
 
 """ Una vez definidas las variables se dibujan las distintas gráficas. """
@@ -426,24 +420,6 @@ plt.ylabel('Loss')
 plt.xlabel('Epochs')
 plt.legend()
 plt.figure() # Crea o activa una figura
-
-""" Gráfica de la sensibilidad del entreno y la validación: """
-plt.plot(epochs, recall, 'r', label='Sensibilidad del entreno')
-plt.plot(epochs, val_recall, 'b--', label='Sensibilidad de la validación')
-plt.title('Sensibilidad del entreno y de la validación')
-plt.ylabel('Sensibilidad')
-plt.xlabel('Epochs')
-plt.legend()
-plt.figure()
-
-""" Gráfica de la precisión del entreno y la validación: """
-plt.plot(epochs, precision, 'r', label='Precisión del entreno')
-plt.plot(epochs, val_precision, 'b--', label='Precisión de la validación')
-plt.title('Precisión del entreno y de la validación')
-plt.ylabel('Precisión')
-plt.xlabel('Epochs')
-plt.legend()
-plt.figure()
 plt.show() # Se muestran todas las gráficas
 
 """ -------------------------------------------------------------------------------------------------------------------
