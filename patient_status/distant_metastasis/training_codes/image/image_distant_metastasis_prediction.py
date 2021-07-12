@@ -321,7 +321,7 @@ Para implementarlas, se importan los paquetes necesarios, se definen las variabl
 # @ravel: Aplana el vector a 1D
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
-y_pred_prob = model.predict([test_tabular_data, test_image_data]).ravel()
+y_pred_prob = model.predict(test_image_data).ravel()
 fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
 
