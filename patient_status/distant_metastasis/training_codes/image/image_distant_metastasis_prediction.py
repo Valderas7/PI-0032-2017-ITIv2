@@ -86,7 +86,7 @@ train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratif
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de imágenes con cáncer y sin cáncer: """
-image_dir = '/img_lotes'
+image_dir = '/home/avalderas/img_slides/img_lotes'
 #image_dir = 'C:\\Users\\valde\Desktop\Datos_repositorio\img_slides\img_lotes'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
@@ -316,23 +316,36 @@ plt.show() # Muestra la gráfica de la matriz de confusión
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
 documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
-tasa de falsos positivos, por lo que resume el comportamiento del clasificador para diferenciar clases.
-Para implementarla, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
+tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
+Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
 # @ravel: Aplana el vector a 1D
-from sklearn.metrics import roc_curve
-from sklearn.metrics import auc
+from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
-y_pred = y_pred.ravel()
-fpr, tpr, thresholds = roc_curve(y_true, y_pred)
-auc = auc(fpr, tpr)
+y_pred_prob = model.predict([test_tabular_data, test_image_data]).ravel()
+fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
+auc_roc = auc(fpr, tpr)
 
 plt.figure(1)
-plt.plot([0, 1], [0, 1], 'k--')
-plt.plot(fpr, tpr, marker = '.', label='area = {:.3f})'.format(auc))
+plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
+plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('ROC curve')
-plt.legend(loc='best')
+plt.title('ROC-AUC curve')
+plt.legend(loc = 'best')
+plt.show()
+
+""" Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
+del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
+precision, recall, threshold = precision_recall_curve(y_true, y_pred_prob)
+auc_pr = auc(recall, precision)
+
+plt.figure(2)
+plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
+plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('PR-AUC curve')
+plt.legend(loc = 'best')
 plt.show()
 
 #np.save('test_image', test_image_data)

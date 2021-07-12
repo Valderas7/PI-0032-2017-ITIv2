@@ -446,8 +446,10 @@ como también la columna de salida de ambos subconjuntos (las imágenes YA fuero
 hace falta transformarlas de nuevo). """
 train_tabular_data = np.asarray(train_tabular_data).astype('float32')
 train_labels = np.asarray(train_labels).astype('float32')
+
 valid_tabular_data = np.asarray(valid_tabular_data).astype('float32')
 valid_labels = np.asarray(valid_labels).astype('float32')
+
 test_tabular_data = np.asarray(test_tabular_data).astype('float32')
 test_labels = np.asarray(test_labels).astype('float32')
 
@@ -477,9 +479,9 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 
-""" Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
-checkpoint_path = 'data_model_overall_status_epoch{epoch:02d}.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
+""" Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
+checkpoint_path = 'data_model_survival_prediction_epoch{epoch:02d}.h5'
+mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
 smoter = imblearn.over_sampling.SMOTE(sampling_strategy='minority')
 train_tabular_data, train_labels = smoter.fit_resample(train_tabular_data, train_labels)
@@ -494,7 +496,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 80,
+                           epochs = 150,
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,

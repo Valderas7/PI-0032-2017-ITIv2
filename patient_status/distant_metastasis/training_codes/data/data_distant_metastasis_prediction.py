@@ -373,17 +373,12 @@ for index in range(1084):
     if index not in list_gen_cnv_amp[10] and index not in list_gen_cnv_del[10]:
         df_all_merge.loc[index, 'CNV_FANCA_NORMAL'] = 1
 
-""" En este caso, el número de muestras de imágenes y de datos deben ser iguales. Las imágenes de las que se disponen se 
-enmarcan según el sistema de estadificación TNM como N1A, N1, N2A, N2, N3A, N1MI, N1B, N3, NX, N3B, N1C o N3C según la
-categoría N (extensión de cáncer que se ha diseminado a los ganglios linfáticos) de dicho sistema de estadificación.
-Por tanto, en los datos tabulares tendremos que quedarnos solo con los casos donde los pacientes tengan esos valores
-de la categoría 'N' y habrá que usar, por tanto, una imagen para cada paciente, para que no haya errores al repartir
-los subconjuntos de datos. """
+""" En este caso, el se incluyen los pacientes con categoria 'N0 o 'NX', y por tanto, no se eliminan. Si que se eliminan
+aquellos pacientes a los que no se les puede determinar si tienen o no metastasis, porque sino el problema ya no seria
+de clasificacion binaria. """
 # 552 filas resultantes, como en cBioPortal:
 df_all_merge = df_all_merge[(df_all_merge["path_m_stage"]!='MX')]
-#(df_all_merge["path_n_stage"]!='N0') & (df_all_merge["path_n_stage"]!='NX') &
-                            #(df_all_merge["path_n_stage"]!='N0 (I-)') & (df_all_merge["path_n_stage"]!='N0 (I+)') &
-                            #(df_all_merge["path_n_stage"]!='N0 (MOL+)') &
+
 """ Al realizar un análisis de los datos de entrada se ha visto un único valor incorrecto en la columna
 'cancer_type_detailed'. Por ello se sustituye dicho valor por 'Breast Invasive Carcinoma (NOS)'. También se ha apreciado
 un único valor en 'tumor_type', por lo que también se realiza un cambio de valor en dicho valor atípico. Además, se 
@@ -481,9 +476,9 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 
-""" Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
+""" Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
 checkpoint_path = 'data_model_distant_metastasis_prediction_epoch{epoch:02d}.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
+mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
 smoter = imblearn.over_sampling.SMOTE(sampling_strategy='minority')
 train_tabular_data, train_labels = smoter.fit_resample(train_tabular_data, train_labels)
@@ -498,7 +493,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 50,
+                           epochs = 150,
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,
