@@ -23,7 +23,6 @@ from sklearn.metrics import confusion_matrix # Para realizar la matriz de confus
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN DATOS TABULARES ------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-
 """ - Datos de entrada: Age, cancer_type, cancer_type_detailed, dfs_months, dfs_status, dss_months, dss_status,
 ethnicity, neoadjuvant, os_months, os_status, path_m_stage. path_n_stage, path_t_stage, sex, stage, subtype.
     - Salida binaria: Presenta mutación o no en el gen 'X' (BRCA1 [ID: 672] en este caso). CNAs (CNV) y mutations (SNV). """
@@ -72,7 +71,6 @@ df_path_t_stage = pd.DataFrame.from_dict(path_t_stage.items()); df_path_t_stage.
 df_stage = pd.DataFrame.from_dict(stage.items()); df_stage.rename(columns = {0 : 'ID', 1 : 'stage'}, inplace = True)
 df_subtype = pd.DataFrame.from_dict(subtype.items()); df_subtype.rename(columns = {0 : 'ID', 1 : 'subtype'}, inplace = True)
 df_tumor_type = pd.DataFrame.from_dict(tumor_type.items()); df_tumor_type.rename(columns = {0 : 'ID', 1 : 'tumor_type'}, inplace = True)
-df_new_tumor = pd.DataFrame.from_dict(new_tumor.items()); df_new_tumor.rename(columns = {0 : 'ID', 1 : 'new_tumor'}, inplace = True)
 df_prior_diagnosis = pd.DataFrame.from_dict(prior_diagnosis.items()); df_prior_diagnosis.rename(columns = {0 : 'ID', 1 : 'prior_diagnosis'}, inplace = True)
 df_snv = pd.DataFrame.from_dict(snv.items()); df_snv.rename(columns = {0 : 'ID', 1 : 'SNV'}, inplace = True)
 df_cnv = pd.DataFrame.from_dict(cnv.items()); df_cnv.rename(columns = {0 : 'ID', 1 : 'CNV'}, inplace = True)
@@ -376,7 +374,6 @@ for index in range(1084):
 """ En este caso, el se incluyen los pacientes con categoria 'N0 o 'NX', y por tanto, no se eliminan. Si que se eliminan
 aquellos pacientes a los que no se les puede determinar si tienen o no metastasis, porque sino el problema ya no seria
 de clasificacion binaria. """
-# 552 filas resultantes, como en cBioPortal:
 df_all_merge = df_all_merge[(df_all_merge["path_m_stage"]!='MX')]
 
 """ Al realizar un análisis de los datos de entrada se ha visto un único valor incorrecto en la columna
@@ -493,7 +490,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 150,
+                           epochs = 50,
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,

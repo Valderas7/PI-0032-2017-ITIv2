@@ -406,8 +406,9 @@ ahora se realiza esta técnica antes de hacer la repartición de subconjuntos pa
 df_all_merge = pd.get_dummies(df_all_merge, columns=["cancer_type_detailed","path_m_stage","path_n_stage",
                                                      "path_t_stage", "stage", "subtype","tumor_type"])
 
-""" Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
-Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
+""" Se dividen los datos tabulares en conjuntos de entrenamiento, validación y test. """
+# @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
+# @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20,
                                                          stratify = df_all_merge['dfs_status'], random_state = 42)
 

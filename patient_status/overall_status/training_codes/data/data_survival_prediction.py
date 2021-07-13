@@ -23,7 +23,6 @@ from sklearn.metrics import confusion_matrix # Para realizar la matriz de confus
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN DATOS TABULARES ------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-
 """ - Datos de entrada: Age, cancer_type, cancer_type_detailed, dfs_months, dfs_status, dss_months, dss_status,
 ethnicity, neoadjuvant, os_months, os_status, path_m_stage. path_n_stage, path_t_stage, sex, stage, subtype.
     - Salida binaria: Presenta mutación o no en el gen 'X' (BRCA1 [ID: 672] en este caso). CNAs (CNV) y mutations (SNV). """
@@ -405,17 +404,18 @@ numéricos mediante la técnica del 'One Hot Encoding'. Más adelante se escalar
 ahora se realiza esta técnica antes de hacer la repartición de subconjuntos para que no haya problemas con las columnas. """
 #@ get_dummies: Aplica técnica de 'One Hot Encoding', creando columnas binarias para las columnas seleccionadas
 df_all_merge = pd.get_dummies(df_all_merge, columns=["cancer_type_detailed","path_m_stage","path_n_stage",
-                                                     "path_t_stage", "stage", "subtype","tumor_type"])
+                                                     "path_t_stage", "stage", "subtype", "tumor_type"])
 
-""" Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
-Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
+""" Se dividen los datos tabulares en conjuntos de entrenamiento, validación y test. """
+# @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
+# @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20,
                                                          stratify = df_all_merge['os_status'], random_state = 42)
 
 train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.20,
                                                          stratify = train_tabular_data['os_status'], random_state = 42)
 
-""" Ya e puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
+""" Ya se puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
 #@inplace = True para que devuelva el resultado en la misma variable
 train_tabular_data.drop(['ID'], axis=1, inplace= True)
 valid_tabular_data.drop(['ID'], axis=1, inplace= True)
@@ -496,7 +496,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 150,
+                           epochs = 90,
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,
