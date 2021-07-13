@@ -409,11 +409,11 @@ df_all_merge = pd.get_dummies(df_all_merge, columns=["cancer_type_detailed", "pa
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
 # @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20,
-                                                         stratify = df_all_merge['path_m_stage'], random_state = 42)
+                                                         stratify = df_all_merge['path_m_stage'], random_state = 7)
 
 train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.20,
                                                           stratify = train_tabular_data['path_m_stage'],
-                                                          random_state = 42)
+                                                          random_state = 7)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -641,7 +641,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = [train_tabular_data, train_image_data],  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 5,
+                           epochs = 4,
                            verbose = 1,
                            batch_size = 32,
                            class_weight= class_weight_dict,
