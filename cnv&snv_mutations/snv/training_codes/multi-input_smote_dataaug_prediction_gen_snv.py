@@ -345,7 +345,7 @@ for image in mutation_image_data:
     difference-= 1
     if difference <= 0:
         break
-print(len(mutation_image_data))
+
 """ Una vez hecho esto, se unen las listas de las imágenes que ya teniamos con las imagenes exclusivamente que
 tienen mutacion en el gen: """
 pre_train_image_data = pre_train_image_data + mutation_image_data

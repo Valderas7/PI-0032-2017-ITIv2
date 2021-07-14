@@ -78,11 +78,9 @@ df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas váli
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento, validación y test. """
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
 # @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['path_m_stage'],
-                                         random_state = 42)
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['path_m_stage'])
 
-train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['path_m_stage'],
-                                         random_state = 42)
+train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['path_m_stage'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------

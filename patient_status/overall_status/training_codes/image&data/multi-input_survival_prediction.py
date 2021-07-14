@@ -77,8 +77,8 @@ df_cnv = pd.DataFrame.from_dict(cnv.items()); df_cnv.rename(columns = {0 : 'ID',
 
 df_os_status = pd.DataFrame.from_dict(os_status.items()); df_os_status.rename(columns = {0 : 'ID', 1 : 'os_status'}, inplace = True)
 
-df_list = [df_age, df_cancer_type_detailed, df_dfs_status, df_neoadjuvant, df_path_m_stage, df_path_n_stage,
-           df_path_t_stage, df_stage, df_subtype, df_tumor_type, df_prior_diagnosis, df_os_status, df_snv, df_cnv]
+df_list = [df_age, df_dfs_status, df_neoadjuvant, df_path_m_stage, df_path_n_stage, df_path_t_stage, df_stage,
+           df_subtype, df_tumor_type, df_prior_diagnosis, df_os_status, df_snv, df_cnv]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
 esté descuadrado en la fila que no le corresponda. """
@@ -88,7 +88,7 @@ df_all_merge = reduce(lambda left,right: pd.merge(left,right,on=['ID'], how='lef
 crear una lista de claves y otra de los valores del diccionario de genes. Se extrae el índice de los genes en la lista 
 de valores y posteriormente se usan esos índices para buscar con qué claves (ID) se corresponden en la lista de claves. 
 Se almacenan todos los IDs de los genes en una lista. """
-snv_list = ['PIK3CA' , 'TP53', 'PTEN', 'MTOR', 'EGFR']
+snv_list = ['PIK3CA', 'TP53', 'PTEN', 'ERBB2', 'AKT1', 'MTOR', 'EGFR']
 id_snv_list = []
 
 cnv_list = ['MYC' , 'CCND1', 'CDKN1B', 'FGF19', 'ERBB2', 'FGF3', 'BRCA2' , 'BRCA1', 'KDR', 'CHEK1', 'FANCA']
@@ -111,7 +111,7 @@ for gen_cnv in cnv_list:
 en que filas encuentra el ID del gen que se quiere predecir. Se almacenan en una lista de listas los índices de las 
 filas donde se encuentran esos IDs de esos genes, de forma que se tiene una lista para cada gen. """
 # SNV:
-list_gen_snv = [[] for ID in range(5)]
+list_gen_snv = [[] for ID in range(7)]
 
 for index, id_snv in enumerate (id_snv_list): # Para cada ID del gen SNV de la lista...
     for index_row, row in enumerate (df_all_merge['SNV']): # Para cada fila dentro de la columna 'SNV'...
@@ -232,8 +232,8 @@ columnas que nos dirán si para el paciente en cuestión, éste tiene o no mutac
 seleccionados. """
 # SNV:
 df_all_merge.rename(columns={'SNV': 'SNV_PIK3CA'}, inplace= True)
-df_all_merge['SNV_PIK3CA'], df_all_merge['SNV_TP53'], df_all_merge['SNV_PTEN'], df_all_merge['SNV_MTOR'], \
-df_all_merge['SNV_EGFR'] = [0, 0, 0, 0, 0]
+df_all_merge['SNV_PIK3CA'], df_all_merge['SNV_TP53'], df_all_merge['SNV_PTEN'], df_all_merge['SNV_ERBB2'], \
+df_all_merge['SNV_AKT1'], df_all_merge['SNV_MTOR'], df_all_merge['SNV_EGFR'] = [0, 0, 0, 0, 0, 0, 0]
 
 # CNV:
 df_all_merge.rename(columns={'CNV': 'CNV_MYC_AMP'}, inplace= True)
@@ -262,9 +262,15 @@ for index in list_gen_snv[2]: # Para cada índice dentro de la sublista del gen.
     df_all_merge.loc[index, 'SNV_PTEN'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
 
 for index in list_gen_snv[3]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'SNV_MTOR'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
+    df_all_merge.loc[index, 'SNV_ERBB2'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
 
 for index in list_gen_snv[4]: # Para cada índice dentro de la sublista del gen...
+    df_all_merge.loc[index, 'SNV_AKT1'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
+
+for index in list_gen_snv[5]: # Para cada índice dentro de la sublista del gen...
+    df_all_merge.loc[index, 'SNV_MTOR'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
+
+for index in list_gen_snv[6]: # Para cada índice dentro de la sublista del gen...
     df_all_merge.loc[index, 'SNV_EGFR'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
 
 # CNV:
@@ -385,7 +391,6 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge
 'cancer_type_detailed'. Por ello se sustituye dicho valor por 'Breast Invasive Carcinoma (NOS)'. También se ha apreciado
 un único valor en 'tumor_type', por lo que también se realiza un cambio de valor en dicho valor atípico. Además, se 
 convierten las columnas categóricas binarias a valores de '0' y '1', para no aumentar el número de columnas: """
-df_all_merge.loc[df_all_merge.cancer_type_detailed == "Invasive Breast Carcinoma", "cancer_type_detailed"] = "Breast Invasive Carcinoma (NOS)"
 df_all_merge.loc[df_all_merge.tumor_type == "Infiltrating Carcinoma (NOS)", "tumor_type"] = "Mixed Histology (NOS)"
 df_all_merge.loc[df_all_merge.tumor_type == "Breast Invasive Carcinoma", "tumor_type"] = "Infiltrating Ductal Carcinoma"
 df_all_merge.loc[df_all_merge.neoadjuvant == "No", "neoadjuvant"] = 0; df_all_merge.loc[df_all_merge.neoadjuvant == "Yes", "neoadjuvant"] = 1
@@ -401,17 +406,17 @@ df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas váli
 numéricos mediante la técnica del 'One Hot Encoding'. Más adelante se escalarán las columnas numéricas continuas, pero
 ahora se realiza esta técnica antes de hacer la repartición de subconjuntos para que no haya problemas con las columnas. """
 #@ get_dummies: Aplica técnica de 'One Hot Encoding', creando columnas binarias para las columnas seleccionadas
-df_all_merge = pd.get_dummies(df_all_merge, columns=["cancer_type_detailed","path_m_stage","path_n_stage",
-                                                     "path_t_stage", "stage", "subtype", "tumor_type"])
+df_all_merge = pd.get_dummies(df_all_merge, columns=["path_m_stage","path_n_stage", "path_t_stage", "stage", "subtype",
+                                                     "tumor_type"])
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento, validación y test. """
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
 # @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20,
-                                                         stratify = df_all_merge['os_status'], random_state = 42)
+                                                         stratify = df_all_merge['os_status'])
 
 train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.20,
-                                                         stratify = train_tabular_data['os_status'], random_state = 42)
+                                                         stratify = train_tabular_data['os_status'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
