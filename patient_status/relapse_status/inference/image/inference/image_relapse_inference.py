@@ -20,7 +20,7 @@ alto = 315 # 630
 ancho = 740 # 1480
 canales = 3 # Imágenes a color (RGB) = 3
 
-model = load_model('/home/avalderas/img_slides/patient_status/relapse_status/inference/image/test_data&models/model_snv_image_tp53_epoch02.h5')
+model = load_model('/home/avalderas/img_slides/patient_status/relapse_status/inference/image/test_data&models/model_image_relapse_prediction_epoch03.h5')
 
 test_image_data = np.load('/home/avalderas/img_slides/patient_status/relapse_status/inference/image/test_data&models/test_image.npy')
 test_labels = np.load('/home/avalderas/img_slides/patient_status/relapse_status/inference/image/test_data&models/test_labels.npy')
@@ -67,7 +67,7 @@ plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('ROC-AUC curve')
+plt.title('AUC-ROC curve')
 plt.legend(loc = 'best')
 plt.show()
 
@@ -81,6 +81,6 @@ plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('PR-AUC curve')
+plt.title('AUC-PR curve')
 plt.legend(loc = 'best')
 plt.show()

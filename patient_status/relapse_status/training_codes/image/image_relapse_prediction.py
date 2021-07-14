@@ -265,7 +265,7 @@ neural_network = model.fit(x = train_image_data,  # Datos de entrada.
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,
-                           callbacks= mcp_save,
+                           #callbacks= mcp_save,
                            validation_data = (valid_image_data, valid_labels)) # Datos de validación.
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
@@ -340,7 +340,7 @@ plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('ROC-AUC curve')
+plt.title('AUC-ROC curve')
 plt.legend(loc = 'best')
 plt.show()
 
@@ -354,9 +354,9 @@ plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('PR-AUC curve')
+plt.title('AUC-PR curve')
 plt.legend(loc = 'best')
 plt.show()
 
-np.save('test_image', test_image_data)
-np.save('test_labels', test_labels)
+#np.save('test_image', test_image_data)
+#np.save('test_labels', test_labels)
