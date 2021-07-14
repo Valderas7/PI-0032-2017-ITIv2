@@ -407,11 +407,10 @@ df_all_merge = pd.get_dummies(df_all_merge, columns=["path_n_stage", "path_t_sta
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20,
-                                                         stratify = df_all_merge['path_m_stage'], random_state = 42)
+                                                         stratify = df_all_merge['path_m_stage'])
 
 train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.20,
-                                                          stratify = train_tabular_data['path_m_stage'],
-                                                          random_state = 42)
+                                                          stratify = train_tabular_data['path_m_stage'])
 
 """ Ya e puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
 #@inplace = True para que devuelva el resultado en la misma variable
