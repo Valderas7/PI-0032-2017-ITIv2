@@ -130,8 +130,8 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(50) # Eje Y: 630. Nº de filas
-ancho = int(50) # Eje X: 1480. Nº de columnas
+alto = int(315) # Eje Y: 630. Nº de filas
+ancho = int(740) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
 mitad_alto = int(alto/2)
@@ -265,7 +265,7 @@ neural_network = model.fit(x = train_image_data,  # Datos de entrada.
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,
-                           #callbacks= mcp_save,
+                           callbacks= mcp_save,
                            validation_data = (valid_image_data, valid_labels)) # Datos de validación.
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
@@ -358,5 +358,5 @@ plt.title('PR-AUC curve')
 plt.legend(loc = 'best')
 plt.show()
 
-#np.save('test_image', test_image_data)
-#np.save('test_labels', test_labels)
+np.save('test_image', test_image_data)
+np.save('test_labels', test_labels)

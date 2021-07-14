@@ -485,7 +485,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = 'data_model_survival_prediction_epoch{epoch:02d}.h5'
+checkpoint_path = 'data_model_survival_prediction.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
 smoter = imblearn.over_sampling.SMOTE(sampling_strategy='minority')
@@ -501,7 +501,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 100,
+                           epochs = 170,
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,
