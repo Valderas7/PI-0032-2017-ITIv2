@@ -265,7 +265,7 @@ neural_network = model.fit(x = train_image_data,  # Datos de entrada.
                            verbose = 1,
                            batch_size = 32,
                            class_weight = class_weight_dict,
-                           callbacks = mcp_save,
+                           #callbacks = mcp_save,
                            validation_data = (valid_image_data, valid_labels))
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
@@ -358,5 +358,5 @@ plt.title('AUC-PR curve')
 plt.legend(loc = 'best')
 plt.show()
 
-np.save('test_image', test_image_data)
-np.save('test_labels', test_labels)
+#np.save('test_image', test_image_data)
+#np.save('test_labels', test_labels)
