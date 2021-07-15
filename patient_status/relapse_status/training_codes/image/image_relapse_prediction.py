@@ -248,7 +248,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
-checkpoint_path = 'model_image_relapse_prediction_epoch{epoch:02d}.h5'
+checkpoint_path = '../../training_codes/image/model_image_relapse_prediction.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
@@ -261,7 +261,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_image_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 3,
+                           epochs = 1,
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,
