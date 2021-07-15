@@ -485,7 +485,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '../../inference/data/test_data&models/data_model_survival_prediction.h5'
+checkpoint_path = '../../training_codes/data/data_model_survival_prediction.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
 smoter = imblearn.over_sampling.SMOTE(sampling_strategy='minority')

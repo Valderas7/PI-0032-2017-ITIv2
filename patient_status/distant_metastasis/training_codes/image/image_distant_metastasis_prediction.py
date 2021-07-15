@@ -163,18 +163,18 @@ for image in pre_train_image_data:
     train_image_data.append(rotate.augment_image(image))
     gaussian_noise = iaa.AdditiveGaussianNoise(10, 20)
     train_image_data.append(gaussian_noise.augment_image(image))
-    crop = iaa.Crop(percent=(0, 0.3))
-    train_image_data.append(crop.augment_image(image))
-    shear = iaa.Affine(shear=(0, 40), mode= 'edge')
-    train_image_data.append(shear.augment_image(image))
+    #crop = iaa.Crop(percent=(0, 0.3))
+    #train_image_data.append(crop.augment_image(image))
+    #shear = iaa.Affine(shear=(0, 40), mode= 'edge')
+    #train_image_data.append(shear.augment_image(image))
     flip_hr = iaa.Fliplr(p=1.0)
     train_image_data.append(flip_hr.augment_image(image))
-    flip_vr = iaa.Flipud(p=1.0)
-    train_image_data.append(flip_vr.augment_image(image))
+    #flip_vr = iaa.Flipud(p=1.0)
+    #train_image_data.append(flip_vr.augment_image(image))
     contrast = iaa.GammaContrast(gamma=2.0)
     train_image_data.append(contrast.augment_image(image))
-    scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
-    train_image_data.append(scale_im.augment_image(image))
+    #scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
+    #train_image_data.append(scale_im.augment_image(image))
 
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
 se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
@@ -188,7 +188,7 @@ test_image_data = (np.array(test_image_data) / 255.0)
 --------------------------------------------------------------------------------------------------------------------"""
 """ Una vez se tienen hechos los recortes de imágenes, se procede a replicar las filas de ambos subconjuntos de datos
 para que el número de imágenes utilizadas y el número de filas del marco de datos sea el mismo: """
-train_data = pd.DataFrame(np.repeat(train_data.values, 9, axis=0), columns=train_data.columns)
+train_data = pd.DataFrame(np.repeat(train_data.values, 5, axis=0), columns=train_data.columns)
 
 """ Una vez ya se tienen las imágenes convertidas en arrays de numpy, se puede eliminar de los dos subconjuntos tanto la
 columna 'ID' como la columna 'path_img' que no son útiles para la red MLP: """
@@ -248,7 +248,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
-checkpoint_path = 'model_image_distant_metastasis_prediction_epoch{epoch:02d}.h5'
+checkpoint_path = 'model_image_distant_metastasis_prediction.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
@@ -261,7 +261,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_image_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 3,
+                           epochs = 50,
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,
@@ -340,7 +340,7 @@ plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('ROC-AUC curve')
+plt.title('AUC-ROC curve')
 plt.legend(loc = 'best')
 plt.show()
 
@@ -354,7 +354,7 @@ plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('PR-AUC curve')
+plt.title('AUC-PR curve')
 plt.legend(loc = 'best')
 plt.show()
 

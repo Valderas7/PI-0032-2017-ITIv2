@@ -129,8 +129,8 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(50) # Eje Y: 630. Nº de filas
-ancho = int(50) # Eje X: 1480. Nº de columnas
+alto = int(315) # Eje Y: 630. Nº de filas
+ancho = int(740) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
 mitad_alto = int(alto/2)
@@ -247,7 +247,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
-checkpoint_path = 'model_image_survival_prediction_epoch{epoch:02d}.h5'
+checkpoint_path = '../../training_codes/image/model_image_survival_prediction.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
@@ -339,7 +339,7 @@ plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('ROC-AUC curve')
+plt.title('AUC-ROC curve')
 plt.legend(loc = 'best')
 plt.show()
 
@@ -353,7 +353,7 @@ plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('PR-AUC curve')
+plt.title('AUC-PR curve')
 plt.legend(loc = 'best')
 plt.show()
 
