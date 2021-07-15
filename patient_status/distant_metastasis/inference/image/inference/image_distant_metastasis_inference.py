@@ -20,7 +20,7 @@ alto = 315 # 630
 ancho = 740 # 1480
 canales = 3 # Imágenes a color (RGB) = 3
 
-model = load_model('/home/avalderas/img_slides/patient_status/distant_metastasis/inference/image/test_data&models/model_snv_image_tp53_epoch02.h5')
+model = load_model('/home/avalderas/img_slides/patient_status/distant_metastasis/inference/image/test_data&models/model_image_distant_metastasis_prediction.h5')
 
 test_image_data = np.load('/home/avalderas/img_slides/patient_status/distant_metastasis/inference/image/test_data&models/test_image.npy')
 test_labels = np.load('/home/avalderas/img_slides/patient_status/distant_metastasis/inference/image/test_data&models/test_labels.npy')

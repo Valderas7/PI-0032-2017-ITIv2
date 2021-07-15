@@ -79,7 +79,7 @@ df_os_status = pd.DataFrame.from_dict(os_status.items()); df_os_status.rename(co
 df_path_m_stage = pd.DataFrame.from_dict(path_m_stage.items()); df_path_m_stage.rename(columns = {0 : 'ID', 1 : 'path_m_stage'}, inplace = True)
 
 df_list = [df_age, df_neoadjuvant, df_path_m_stage, df_path_n_stage, df_path_t_stage, df_stage, df_subtype,
-           df_tumor_type, df_prior_diagnosis, df_os_status, df_snv, df_cnv]
+           df_tumor_type, df_prior_diagnosis, df_snv, df_cnv]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
 esté descuadrado en la fila que no le corresponda. """
@@ -377,10 +377,11 @@ for index in range(1084):
     if index not in list_gen_cnv_amp[10] and index not in list_gen_cnv_del[10]:
         df_all_merge.loc[index, 'CNV_FANCA_NORMAL'] = 1
 
-""" En este caso, el se incluyen los pacientes con categoria 'N0 o 'NX', y por tanto, no se eliminan. Si que se eliminan
-aquellos pacientes a los que no se les puede determinar si tienen o no metastasis, porque sino el problema ya no seria
-de clasificacion binaria. """
-df_all_merge = df_all_merge[(df_all_merge["path_m_stage"]!='MX')]
+""" En este caso, se eliminan los pacientes con categoria 'N0 o 'NX', y tambien aquellos pacientes a los que no se les 
+puede determinar si tienen o no metastasis, porque sino el problema ya no seria de clasificacion binaria. """
+df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge["path_n_stage"]!='NX') &
+                            (df_all_merge["path_n_stage"]!='N0 (I-)') & (df_all_merge["path_n_stage"]!='N0 (I+)') &
+                            (df_all_merge["path_n_stage"]!='N0 (MOL+)') & (df_all_merge["path_m_stage"]!='MX')]
 
 """ Al realizar un análisis de los datos de entrada se ha visto un único valor incorrecto en la columna
 'cancer_type_detailed'. Por ello se sustituye dicho valor por 'Breast Invasive Carcinoma (NOS)'. También se ha apreciado
@@ -389,7 +390,6 @@ convierten las columnas categóricas binarias a valores de '0' y '1', para no au
 df_all_merge.loc[df_all_merge.tumor_type == "Infiltrating Carcinoma (NOS)", "tumor_type"] = "Mixed Histology (NOS)"
 df_all_merge.loc[df_all_merge.tumor_type == "Breast Invasive Carcinoma", "tumor_type"] = "Infiltrating Ductal Carcinoma"
 df_all_merge.loc[df_all_merge.neoadjuvant == "No", "neoadjuvant"] = 0; df_all_merge.loc[df_all_merge.neoadjuvant == "Yes", "neoadjuvant"] = 1
-df_all_merge.loc[df_all_merge.os_status == "0:LIVING", "os_status"] = 0; df_all_merge.loc[df_all_merge.os_status == "1:DECEASED", "os_status"] = 1
 df_all_merge.loc[df_all_merge.prior_diagnosis == "No", "prior_diagnosis"] = 0; df_all_merge.loc[df_all_merge.prior_diagnosis == "Yes", "prior_diagnosis"] = 1
 df_all_merge.loc[df_all_merge.path_m_stage == "CM0 (I+)", "path_m_stage"] = 'M0'
 df_all_merge.loc[df_all_merge.path_m_stage == "M0", "path_m_stage"] = 0; df_all_merge.loc[df_all_merge.path_m_stage == "M1", "path_m_stage"] = 1
@@ -477,10 +477,10 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '../../inference/data/test_data&models/data_model_distant_metastasis_prediction.h5'
+checkpoint_path = '../../training_codes/data/data_model_distant_metastasis_prediction.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
-smoter = imblearn.over_sampling.SMOTE(sampling_strategy='minority')
+smoter = imblearn.over_sampling.SMOTE(sampling_strategy = 'minority')
 train_tabular_data, train_labels = smoter.fit_resample(train_tabular_data, train_labels)
 
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
@@ -495,10 +495,10 @@ neural_network = model.fit(x = train_tabular_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
                            epochs = 150,
                            verbose = 1,
-                           batch_size= 32,
-                           class_weight= class_weight_dict,
+                           batch_size = 32,
+                           class_weight = class_weight_dict,
                            #callbacks= mcp_save,
-                           validation_data = (valid_tabular_data, valid_labels)) # Datos de validación.
+                           validation_data = (valid_tabular_data, valid_labels))
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

@@ -130,8 +130,8 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(50) # Eje Y: 630. Nº de filas
-ancho = int(50) # Eje X: 1480. Nº de columnas
+alto = int(315) # Eje Y: 630. Nº de filas
+ancho = int(740) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
 mitad_alto = int(alto/2)
@@ -159,8 +159,8 @@ train_image_data = []
 
 for image in pre_train_image_data:
     train_image_data.append(image)
-    rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
-    train_image_data.append(rotate.augment_image(image))
+    #rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
+    #train_image_data.append(rotate.augment_image(image))
     gaussian_noise = iaa.AdditiveGaussianNoise(10, 20)
     train_image_data.append(gaussian_noise.augment_image(image))
     #crop = iaa.Crop(percent=(0, 0.3))
@@ -169,8 +169,8 @@ for image in pre_train_image_data:
     #train_image_data.append(shear.augment_image(image))
     flip_hr = iaa.Fliplr(p=1.0)
     train_image_data.append(flip_hr.augment_image(image))
-    #flip_vr = iaa.Flipud(p=1.0)
-    #train_image_data.append(flip_vr.augment_image(image))
+    flip_vr = iaa.Flipud(p=1.0)
+    train_image_data.append(flip_vr.augment_image(image))
     contrast = iaa.GammaContrast(gamma=2.0)
     train_image_data.append(contrast.augment_image(image))
     #scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
@@ -248,7 +248,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
-checkpoint_path = 'model_image_distant_metastasis_prediction.h5'
+checkpoint_path = '../../training_codes/image/model_image_distant_metastasis_prediction.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
@@ -261,12 +261,12 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_image_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 50,
+                           epochs = 1,
                            verbose = 1,
-                           batch_size= 32,
-                           class_weight= class_weight_dict,
-                           #callbacks= mcp_save,
-                           validation_data = (valid_image_data, valid_labels)) # Datos de validación.
+                           batch_size = 32,
+                           class_weight = class_weight_dict,
+                           callbacks = mcp_save,
+                           validation_data = (valid_image_data, valid_labels))
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -358,5 +358,5 @@ plt.title('AUC-PR curve')
 plt.legend(loc = 'best')
 plt.show()
 
-#np.save('test_image', test_image_data)
-#np.save('test_labels', test_labels)
+np.save('test_image', test_image_data)
+np.save('test_labels', test_labels)
