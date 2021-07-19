@@ -62,7 +62,6 @@ with shelve.open(filename) as data:
 renombran las columnas para que todo quede más claro. Además, se crea una lista con todos los dataframes para
 posteriormente unirlos todos juntos. """
 df_age = pd.DataFrame.from_dict(age.items()); df_age.rename(columns = {0 : 'ID', 1 : 'Age'}, inplace = True)
-df_cancer_type_detailed = pd.DataFrame.from_dict(cancer_type_detailed.items()); df_cancer_type_detailed.rename(columns = {0 : 'ID', 1 : 'cancer_type_detailed'}, inplace = True)
 df_neoadjuvant = pd.DataFrame.from_dict(neoadjuvant.items()); df_neoadjuvant.rename(columns = {0 : 'ID', 1 : 'neoadjuvant'}, inplace = True)
 df_os_status = pd.DataFrame.from_dict(os_status.items()); df_os_status.rename(columns = {0 : 'ID', 1 : 'os_status'}, inplace = True)
 df_path_m_stage = pd.DataFrame.from_dict(path_m_stage.items()); df_path_m_stage.rename(columns = {0 : 'ID', 1 : 'path_m_stage'}, inplace = True)
@@ -465,8 +464,8 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(100) # Eje Y: 630. Nº de filas
-ancho = int(100) # Eje X: 1480. Nº de columnas
+alto = int(50) # Eje Y: 630. Nº de filas
+ancho = int(50) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
 mitad_alto = int(alto/2)
@@ -494,22 +493,22 @@ train_image_data = []
 
 for image in pre_train_image_data:
     train_image_data.append(image)
-    rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
-    train_image_data.append(rotate.augment_image(image))
+    #rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
+    #train_image_data.append(rotate.augment_image(image))
     gaussian_noise = iaa.AdditiveGaussianNoise(10, 20)
     train_image_data.append(gaussian_noise.augment_image(image))
-    crop = iaa.Crop(percent=(0, 0.3))
-    train_image_data.append(crop.augment_image(image))
-    shear = iaa.Affine(shear=(0, 40), mode= 'edge')
-    train_image_data.append(shear.augment_image(image))
+    #crop = iaa.Crop(percent=(0, 0.3))
+    #train_image_data.append(crop.augment_image(image))
+    #shear = iaa.Affine(shear=(0, 40), mode= 'edge')
+    #train_image_data.append(shear.augment_image(image))
     flip_hr = iaa.Fliplr(p=1.0)
     train_image_data.append(flip_hr.augment_image(image))
     flip_vr = iaa.Flipud(p=1.0)
     train_image_data.append(flip_vr.augment_image(image))
     contrast = iaa.GammaContrast(gamma=2.0)
     train_image_data.append(contrast.augment_image(image))
-    scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
-    train_image_data.append(scale_im.augment_image(image))
+    #scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
+    #train_image_data.append(scale_im.augment_image(image))
 
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
 se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
@@ -523,7 +522,7 @@ test_image_data = (np.array(test_image_data) / 255.0)
 --------------------------------------------------------------------------------------------------------------------"""
 """ Una vez se tienen hechos los recortes de imágenes, se procede a replicar las filas del subconjunto de entrenamiento,
 para que el número de imágenes utilizadas y el número de filas del marco de datos sea el mismo: """
-train_tabular_data = pd.DataFrame(np.repeat(train_tabular_data.values, 9, axis=0), columns = train_tabular_data.columns)
+train_tabular_data = pd.DataFrame(np.repeat(train_tabular_data.values, 5, axis=0), columns = train_tabular_data.columns)
 
 """ Una vez ya se tienen las imágenes convertidas en arrays de numpy, se puede eliminar de los dos subconjuntos tanto la
 columna 'ID' como la columna 'path_img' que no son útiles para la red MLP: """
@@ -626,7 +625,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
 
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.Adam(learning_rate = 0.001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.01),
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
@@ -643,7 +642,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = [train_tabular_data, train_image_data],  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 1,
+                           epochs = 50,
                            verbose = 1,
                            batch_size = 32,
                            class_weight= class_weight_dict,
@@ -722,7 +721,7 @@ plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('ROC-AUC curve')
+plt.title('AUC-PR curve')
 plt.legend(loc = 'best')
 plt.show()
 
@@ -736,7 +735,7 @@ plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('PR-AUC curve')
+plt.title('AUC-PR curve')
 plt.legend(loc = 'best')
 plt.show()
 
