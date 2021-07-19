@@ -87,34 +87,54 @@ df_list = [df_age, df_dfs_status, df_neoadjuvant, df_path_m_stage, df_path_n_sta
 esté descuadrado en la fila que no le corresponda. """
 df_all_merge = reduce(lambda left,right: pd.merge(left,right,on=['ID'], how='left'), df_list)
 
-""" Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para ello se crean dos variables para
-crear una lista de claves y otra de los valores del diccionario de genes. Se extrae el índice de los genes en la lista 
-de valores y posteriormente se usan esos índices para buscar con qué claves (ID) se corresponden en la lista de claves. 
-Se almacenan todos los IDs de los genes en una lista. """
-snv_list = ['PIK3CA' , 'TP53', 'PTEN', 'ERBB2', 'AKT1', 'MTOR', 'EGFR']
-id_snv_list = []
+""" Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para empezar se carga el archivo excel 
+donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y creamos dos listas. Una para
+los genes SNV y otra para los genes CNV."""
+mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genes_mutaciones/Panel_OCA.xlsx', usecols= 'B:C',
+                                 engine= 'openpyxl')
 
-cnv_list = ['MYC' , 'CCND1', 'CDKN1B', 'FGF19', 'ERBB2', 'FGF3', 'BRCA2' , 'BRCA1', 'KDR', 'CHEK1', 'FANCA']
+snv = mutations_target.loc[mutations_target['Scope'] != 'CNV', 'Gen']
+cnv = mutations_target.loc[mutations_target['Scope'] == 'CNV', 'Gen']
+
+# SNV:
+snv_list = []
+for gen_snv in snv:
+    if gen_snv not in snv_list:
+        snv_list.append(gen_snv)
+
+# CNV:
+cnv_list = []
+for gen_cnv in cnv:
+    if gen_cnv not in cnv_list:
+        cnv_list.append(gen_cnv)
+
+""" Ahora se recopilan en dos listas (una para SNV y otra para CNV) los distintos IDs de los genes a estudiar. """
+id_snv_list = []
 id_cnv_list = []
 
 key_list = list(dict_genes.keys())
 val_list = list(dict_genes.values())
 
+# SNV:
 for gen_snv in snv_list:
     position = val_list.index(gen_snv) # Número
     id_gen_snv = (key_list[position]) # Número
     id_snv_list.append(id_gen_snv) # Se añaden todos los IDs en la lista vacía
 
+# CNV:
 for gen_cnv in cnv_list:
+    if gen_cnv == 'RICTOR':
+        id_cnv_list.append(253260)
+        continue
     position = val_list.index(gen_cnv) # Número
     id_gen_cnv = (key_list[position]) # Número
     id_cnv_list.append(id_gen_cnv) # Se añaden todos los IDs en la lista vacía
 
-""" Se hace un bucle sobre la columna de mutaciones del dataframe. Así, se busca en cada mutación de cada fila para ver
-en que filas encuentra el ID del gen que se quiere predecir. Se almacenan en una lista de listas los índices de las 
-filas donde se encuentran esos IDs de esos genes, de forma que se tiene una lista para cada gen. """
+""" Ahora se hace un bucle sobre la columna de mutaciones SNV y CNV del dataframe. Así, se busca en cada mutación de 
+cada fila para ver en cuales de estas filas se encuentra el ID de los genes a estudiar. Se almacenan en una lista de 
+listas los índices de las filas donde se encuentran los IDs de esos genes, de forma que se tiene una lista para cada gen. """
 # SNV:
-list_gen_snv = [[] for ID in range(7)]
+list_gen_snv = [[] for ID in range(len(id_snv_list))]
 
 for index, id_snv in enumerate (id_snv_list): # Para cada ID del gen SNV de la lista...
     for index_row, row in enumerate (df_all_merge['SNV']): # Para cada fila dentro de la columna 'SNV'...
@@ -156,10 +176,14 @@ fanca_list_del = ['TCGA-A1-A0SG', 'TCGA-A2-A0D1', 'TCGA-A7-A0CD', 'TCGA-A7-A0CH'
                   'TCGA-BH-A18U', 'TCGA-BH-A1FB', 'TCGA-BH-A28O', 'TCGA-C8-A12T', 'TCGA-D8-A73X', 'TCGA-E2-A15J',
                   'TCGA-E9-A295', 'TCGA-EW-A1IY', 'TCGA-EW-A1PG', 'TCGA-GM-A5PV', 'TCGA-OL-A6VO', 'TCGA-S3-AA10']
 
+rictor_list_amp = ['TCGA-A2-A0D0', 'TCGA-A2-A25B', 'TCGA-A7-A13D', 'TCGA-A8-A09C', 'TCGA-AC-A2FE', 'TCGA-AR-A0TW',
+                  'TCGA-B6-A3ZX', 'TCGA-BH-A0BP', 'TCGA-BH-A1FU', 'TCGA-C8-A131', 'TCGA-D8-A27H', 'TCGA-E2-A574']
+rictor_list_del = ['TCGA-BH-A0B3', 'TCGA-GM-A3XL']
+
 """ Se recopila los índices de las distintas filas donde aparecen las mutaciones 'CNV' de los genes seleccionados (tanto 
 de amplificación como deleción), y se añaden a la lista de listas correspondiente (la de amplificación o la de deleción). """
-list_gen_cnv_amp = [[] for ID in range(11)]
-list_gen_cnv_del = [[] for ID in range(11)]
+list_gen_cnv_amp = [[] for ID in range(len(id_cnv_list))]
+list_gen_cnv_del = [[] for ID in range(len(id_cnv_list))]
 
 for index, id_cnv in enumerate (id_cnv_list): # Para cada ID del gen CNV de la lista...
     if id_cnv == 1027: # CDKN1B
@@ -222,39 +246,51 @@ for index, id_cnv in enumerate (id_cnv_list): # Para cada ID del gen CNV de la l
                 if patient_fanca_del == row_fanca_del:
                     list_gen_cnv_del[index].append(index_fanca_del)
 
+    elif id_cnv == 253260: # RICTOR
+        for patient_rictor_amp in rictor_list_amp:
+            for index_rictor_amp, row_rictor_amp in enumerate(df_all_merge['ID']):
+                if patient_rictor_amp == row_rictor_amp:
+                    list_gen_cnv_amp[index].append(index_rictor_amp)
+        for patient_rictor_del in rictor_list_del:
+            for index_rictor_del, row_rictor_del in enumerate(df_all_merge['ID']):
+                if patient_rictor_del == row_rictor_del:
+                    list_gen_cnv_del[index].append(index_rictor_del)
+
     else:
-        for index_row, row in enumerate (df_all_merge['CNV']): # Para cada fila dentro de la columna 'SNV'...
+        for index_row, row in enumerate (df_all_merge['CNV']): # Para cada fila dentro de la columna 'CNV'...
             for mutation in row: # Para cada mutación dentro de cada fila...
                 if mutation[1] == id_cnv and mutation[2] > 0:
                     list_gen_cnv_amp[index].append(index_row) # Se almacena el índice de la fila en la lista de listas
                 elif mutation[1] == id_cnv and mutation[2] < 0:
                     list_gen_cnv_del[index].append(index_row) # Se almacena el índice de la fila en la lista de listas
 
-""" Una vez se tienen almacenados los índices de las filas donde se producen esas mutaciones, hay que crear distintas
-columnas que nos dirán si para el paciente en cuestión, éste tiene o no mutación en un determinado gen de los 
-seleccionados. """
+""" Una vez se tienen almacenados los índices de las filas donde se producen las mutaciones SNV y CNV, hay que crear 
+distintas columnas para cada uno de los genes objetivo, para asi mostrar la informacion de uno en uno. De esta forma, 
+habra una columna distinta para cada gen SNV a estudiar; y tres columnas distintas para cada gen CNV a estudiar 
+(amplificacion, delecion y estado normal). Ademas, se recopilan las columnas creadas en dos listas (una para las 
+columnas de mutaciones SNV y otra para las columnas de mutaciones CNV). """
 # SNV:
-df_all_merge.rename(columns={'SNV': 'SNV_PIK3CA'}, inplace= True)
-df_all_merge['SNV_PIK3CA'], df_all_merge['SNV_TP53'], df_all_merge['SNV_PTEN'], df_all_merge['SNV_ERBB2'], \
-df_all_merge['SNV_AKT1'], df_all_merge['SNV_MTOR'], df_all_merge['SNV_EGFR'] = [0, 0, 0, 0, 0, 0, 0]
+df_all_merge.drop(['SNV'], axis=1, inplace= True)
+for gen_snv in snv_list:
+    df_all_merge['SNV_' + gen_snv] = 0
 
 # CNV:
-df_all_merge.rename(columns={'CNV': 'CNV_MYC_AMP'}, inplace= True)
-df_all_merge['CNV_MYC_AMP'], df_all_merge['CNV_MYC_NORMAL'], df_all_merge['CNV_MYC_DEL'], \
-df_all_merge['CNV_CCND1_AMP'],df_all_merge['CNV_CCND1_NORMAL'], df_all_merge['CNV_CCND1_DEL'], \
-df_all_merge['CNV_CDKN1B_AMP'], df_all_merge['CNV_CDKN1B_NORMAL'], df_all_merge['CNV_CDKN1B_DEL'], \
-df_all_merge['CNV_FGF19_AMP'], df_all_merge['CNV_FGF19_NORMAL'], df_all_merge['CNV_FGF19_DEL'], \
-df_all_merge['CNV_ERBB2_AMP'], df_all_merge['CNV_ERBB2_NORMAL'], df_all_merge['CNV_ERBB2_DEL'], \
-df_all_merge['CNV_FGF3_AMP'], df_all_merge['CNV_FGF3_NORMAL'], df_all_merge['CNV_FGF3_DEL'], \
-df_all_merge['CNV_BRCA2_AMP'], df_all_merge['CNV_BRCA2_NORMAL'], df_all_merge['CNV_BRCA2_DEL'], \
-df_all_merge['CNV_BRCA1_AMP'], df_all_merge['CNV_BRCA1_NORMAL'], df_all_merge['CNV_BRCA1_DEL'], \
-df_all_merge['CNV_KDR_AMP'], df_all_merge['CNV_KDR_NORMAL'], df_all_merge['CNV_KDR_DEL'], \
-df_all_merge['CNV_CHEK1_AMP'], df_all_merge['CNV_CHEK1_NORMAL'], df_all_merge['CNV_CHEK1_DEL'], \
-df_all_merge['CNV_FANCA_AMP'], df_all_merge['CNV_FANCA_NORMAL'], df_all_merge['CNV_FANCA_DEL'] = [0] * 33
+df_all_merge.drop(['CNV'], axis=1, inplace= True)
+for gen_cnv in cnv_list:
+    df_all_merge['CNV_' + gen_cnv + '_AMP'] = 0
+    df_all_merge['CNV_' + gen_cnv + '_NORMAL'] = 0
+    df_all_merge['CNV_' + gen_cnv + '_DEL'] = 0
+
+columns_list_snv = df_all_merge.columns.to_list()
+columns_list_cnv = df_all_merge.columns.to_list()
 
 """ Una vez han sido creadas las columnas, se añade un '1' en aquellas filas donde el paciente tiene mutación sobre el
 gen seleccionado. Se utiliza para ello los índices recogidos anteriormente en las respectivas listas de listas. """
 # SNV:
+for sublist_snv in range(len(list_gen_snv)):
+    for index_snv_sublist in sublist_snv:
+        df_all_merge.loc[index_snv_sublist, ] = 1
+
 for index in list_gen_snv[0]: # Para cada índice dentro de la sublista cero (que es la del gen PIK3CA)...
     df_all_merge.loc[index, 'SNV_PIK3CA'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
 
@@ -420,7 +456,7 @@ train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size
 train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.20,
                                                          stratify = train_tabular_data['dfs_status'])
 
-""" Ya e puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
+""" Ya se puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
 #@inplace = True para que devuelva el resultado en la misma variable
 train_tabular_data.drop(['ID'], axis=1, inplace= True)
 valid_tabular_data.drop(['ID'], axis=1, inplace= True)
