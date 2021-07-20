@@ -84,34 +84,54 @@ df_list = [df_age, df_neoadjuvant, df_path_m_stage, df_path_n_stage, df_path_t_s
 esté descuadrado en la fila que no le corresponda. """
 df_all_merge = reduce(lambda left,right: pd.merge(left,right,on=['ID'], how='left'), df_list)
 
-""" Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para ello se crean dos variables para
-crear una lista de claves y otra de los valores del diccionario de genes. Se extrae el índice de los genes en la lista 
-de valores y posteriormente se usan esos índices para buscar con qué claves (ID) se corresponden en la lista de claves. 
-Se almacenan todos los IDs de los genes en una lista. """
-snv_list = ['PIK3CA', 'TP53', 'PTEN', 'ERBB2', 'AKT1', 'MTOR', 'EGFR']
-id_snv_list = []
+""" Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para empezar se carga el archivo excel 
+donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y creamos dos listas. Una para
+los genes SNV y otra para los genes CNV."""
+mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genes_mutaciones/Panel_OCA.xlsx', usecols= 'B:C',
+                                 engine= 'openpyxl')
 
-cnv_list = ['MYC' , 'CCND1', 'CDKN1B', 'FGF19', 'ERBB2', 'FGF3', 'BRCA2' , 'BRCA1', 'KDR', 'CHEK1', 'FANCA']
+snv = mutations_target.loc[mutations_target['Scope'] != 'CNV', 'Gen']
+cnv = mutations_target.loc[mutations_target['Scope'] == 'CNV', 'Gen']
+
+# SNV:
+snv_list = []
+for gen_snv in snv:
+    if gen_snv not in snv_list:
+        snv_list.append(gen_snv)
+
+# CNV:
+cnv_list = []
+for gen_cnv in cnv:
+    if gen_cnv not in cnv_list:
+        cnv_list.append(gen_cnv)
+
+""" Ahora se recopilan en dos listas (una para SNV y otra para CNV) los distintos IDs de los genes a estudiar. """
+id_snv_list = []
 id_cnv_list = []
 
 key_list = list(dict_genes.keys())
 val_list = list(dict_genes.values())
 
+# SNV:
 for gen_snv in snv_list:
     position = val_list.index(gen_snv) # Número
     id_gen_snv = (key_list[position]) # Número
     id_snv_list.append(id_gen_snv) # Se añaden todos los IDs en la lista vacía
 
+# CNV:
 for gen_cnv in cnv_list:
+    if gen_cnv == 'RICTOR':
+        id_cnv_list.append(253260)
+        continue
     position = val_list.index(gen_cnv) # Número
     id_gen_cnv = (key_list[position]) # Número
     id_cnv_list.append(id_gen_cnv) # Se añaden todos los IDs en la lista vacía
 
-""" Se hace un bucle sobre la columna de mutaciones del dataframe. Así, se busca en cada mutación de cada fila para ver
-en que filas encuentra el ID del gen que se quiere predecir. Se almacenan en una lista de listas los índices de las 
-filas donde se encuentran esos IDs de esos genes, de forma que se tiene una lista para cada gen. """
+""" Ahora se hace un bucle sobre la columna de mutaciones SNV y CNV del dataframe. Así, se busca en cada mutación de 
+cada fila para ver en cuales de estas filas se encuentra el ID de los genes a estudiar. Se almacenan en una lista de 
+listas los índices de las filas donde se encuentran los IDs de esos genes, de forma que se tiene una lista para cada gen. """
 # SNV:
-list_gen_snv = [[] for ID in range(7)]
+list_gen_snv = [[] for ID in range(len(id_snv_list))]
 
 for index, id_snv in enumerate (id_snv_list): # Para cada ID del gen SNV de la lista...
     for index_row, row in enumerate (df_all_merge['SNV']): # Para cada fila dentro de la columna 'SNV'...
@@ -153,10 +173,14 @@ fanca_list_del = ['TCGA-A1-A0SG', 'TCGA-A2-A0D1', 'TCGA-A7-A0CD', 'TCGA-A7-A0CH'
                   'TCGA-BH-A18U', 'TCGA-BH-A1FB', 'TCGA-BH-A28O', 'TCGA-C8-A12T', 'TCGA-D8-A73X', 'TCGA-E2-A15J',
                   'TCGA-E9-A295', 'TCGA-EW-A1IY', 'TCGA-EW-A1PG', 'TCGA-GM-A5PV', 'TCGA-OL-A6VO', 'TCGA-S3-AA10']
 
+rictor_list_amp = ['TCGA-A2-A0D0', 'TCGA-A2-A25B', 'TCGA-A7-A13D', 'TCGA-A8-A09C', 'TCGA-AC-A2FE', 'TCGA-AR-A0TW',
+                  'TCGA-B6-A3ZX', 'TCGA-BH-A0BP', 'TCGA-BH-A1FU', 'TCGA-C8-A131', 'TCGA-D8-A27H', 'TCGA-E2-A574']
+rictor_list_del = ['TCGA-BH-A0B3', 'TCGA-GM-A3XL']
+
 """ Se recopila los índices de las distintas filas donde aparecen las mutaciones 'CNV' de los genes seleccionados (tanto 
 de amplificación como deleción), y se añaden a la lista de listas correspondiente (la de amplificación o la de deleción). """
-list_gen_cnv_amp = [[] for ID in range(11)]
-list_gen_cnv_del = [[] for ID in range(11)]
+list_gen_cnv_amp = [[] for ID in range(len(id_cnv_list))]
+list_gen_cnv_del = [[] for ID in range(len(id_cnv_list))]
 
 for index, id_cnv in enumerate (id_cnv_list): # Para cada ID del gen CNV de la lista...
     if id_cnv == 1027: # CDKN1B
@@ -219,162 +243,83 @@ for index, id_cnv in enumerate (id_cnv_list): # Para cada ID del gen CNV de la l
                 if patient_fanca_del == row_fanca_del:
                     list_gen_cnv_del[index].append(index_fanca_del)
 
+    elif id_cnv == 253260: # RICTOR
+        for patient_rictor_amp in rictor_list_amp:
+            for index_rictor_amp, row_rictor_amp in enumerate(df_all_merge['ID']):
+                if patient_rictor_amp == row_rictor_amp:
+                    list_gen_cnv_amp[index].append(index_rictor_amp)
+        for patient_rictor_del in rictor_list_del:
+            for index_rictor_del, row_rictor_del in enumerate(df_all_merge['ID']):
+                if patient_rictor_del == row_rictor_del:
+                    list_gen_cnv_del[index].append(index_rictor_del)
+
     else:
-        for index_row, row in enumerate (df_all_merge['CNV']): # Para cada fila dentro de la columna 'SNV'...
+        for index_row, row in enumerate (df_all_merge['CNV']): # Para cada fila dentro de la columna 'CNV'...
             for mutation in row: # Para cada mutación dentro de cada fila...
                 if mutation[1] == id_cnv and mutation[2] > 0:
                     list_gen_cnv_amp[index].append(index_row) # Se almacena el índice de la fila en la lista de listas
                 elif mutation[1] == id_cnv and mutation[2] < 0:
                     list_gen_cnv_del[index].append(index_row) # Se almacena el índice de la fila en la lista de listas
 
-""" Una vez se tienen almacenados los índices de las filas donde se producen esas mutaciones, hay que crear distintas
-columnas que nos dirán si para el paciente en cuestión, éste tiene o no mutación en un determinado gen de los 
-seleccionados. """
+""" Una vez se tienen almacenados los índices de las filas donde se producen las mutaciones SNV y CNV, hay que crear 
+distintas columnas para cada uno de los genes objetivo, para asi mostrar la informacion de uno en uno. De esta forma, 
+habra una columna distinta para cada gen SNV a estudiar; y tres columnas distintas para cada gen CNV a estudiar 
+(amplificacion, delecion y estado normal). Ademas, se recopilan las columnas creadas en listas (una para las 
+columnas de mutaciones SNV y otras tres para las columnas de mutaciones CNV). """
 # SNV:
-df_all_merge.rename(columns={'SNV': 'SNV_PIK3CA'}, inplace= True)
-df_all_merge['SNV_PIK3CA'], df_all_merge['SNV_TP53'], df_all_merge['SNV_PTEN'], df_all_merge['SNV_ERBB2'], \
-df_all_merge['SNV_AKT1'], df_all_merge['SNV_MTOR'], df_all_merge['SNV_EGFR'] = [0, 0, 0, 0, 0, 0, 0]
+columns_list_snv = []
+
+df_all_merge.drop(['SNV'], axis=1, inplace= True)
+for gen_snv in snv_list:
+    df_all_merge['SNV_' + gen_snv] = 0
+    columns_list_snv.append('SNV_' + gen_snv)
 
 # CNV:
-df_all_merge.rename(columns={'CNV': 'CNV_MYC_AMP'}, inplace= True)
-df_all_merge['CNV_MYC_AMP'], df_all_merge['CNV_MYC_NORMAL'], df_all_merge['CNV_MYC_DEL'], \
-df_all_merge['CNV_CCND1_AMP'],df_all_merge['CNV_CCND1_NORMAL'], df_all_merge['CNV_CCND1_DEL'], \
-df_all_merge['CNV_CDKN1B_AMP'], df_all_merge['CNV_CDKN1B_NORMAL'], df_all_merge['CNV_CDKN1B_DEL'], \
-df_all_merge['CNV_FGF19_AMP'], df_all_merge['CNV_FGF19_NORMAL'], df_all_merge['CNV_FGF19_DEL'], \
-df_all_merge['CNV_ERBB2_AMP'], df_all_merge['CNV_ERBB2_NORMAL'], df_all_merge['CNV_ERBB2_DEL'], \
-df_all_merge['CNV_FGF3_AMP'], df_all_merge['CNV_FGF3_NORMAL'], df_all_merge['CNV_FGF3_DEL'], \
-df_all_merge['CNV_BRCA2_AMP'], df_all_merge['CNV_BRCA2_NORMAL'], df_all_merge['CNV_BRCA2_DEL'], \
-df_all_merge['CNV_BRCA1_AMP'], df_all_merge['CNV_BRCA1_NORMAL'], df_all_merge['CNV_BRCA1_DEL'], \
-df_all_merge['CNV_KDR_AMP'], df_all_merge['CNV_KDR_NORMAL'], df_all_merge['CNV_KDR_DEL'], \
-df_all_merge['CNV_CHEK1_AMP'], df_all_merge['CNV_CHEK1_NORMAL'], df_all_merge['CNV_CHEK1_DEL'], \
-df_all_merge['CNV_FANCA_AMP'], df_all_merge['CNV_FANCA_NORMAL'], df_all_merge['CNV_FANCA_DEL'] = [0] * 33
+columns_list_cnv_amp = []
+columns_list_cnv_normal = []
+columns_list_cnv_del = []
+
+df_all_merge.drop(['CNV'], axis=1, inplace= True)
+for gen_cnv in cnv_list:
+    df_all_merge['CNV_' + gen_cnv + '_AMP'] = 0
+    df_all_merge['CNV_' + gen_cnv + '_NORMAL'] = 0
+    df_all_merge['CNV_' + gen_cnv + '_DEL'] = 0
+    columns_list_cnv_amp.append('CNV_' + gen_cnv + '_AMP')
+    columns_list_cnv_normal.append('CNV_' + gen_cnv + '_NORMAL')
+    columns_list_cnv_del.append('CNV_' + gen_cnv + '_DEL')
 
 """ Una vez han sido creadas las columnas, se añade un '1' en aquellas filas donde el paciente tiene mutación sobre el
-gen seleccionado. Se utiliza para ello los índices recogidos anteriormente en las respectivas listas de listas. """
+gen seleccionado. Se utiliza para ello los índices recogidos anteriormente en las respectivas listas de listas. De esta
+forma, iterando sobre la lista de columnas creadas y mediante los distintos indices de cada sublista, se consigue
+colocar un '1' en aquella filas donde el paciente tiene la mutacion especificada en el gen especificado. """
 # SNV:
-for index in list_gen_snv[0]: # Para cada índice dentro de la sublista cero (que es la del gen PIK3CA)...
-    df_all_merge.loc[index, 'SNV_PIK3CA'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_snv[1]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'SNV_TP53'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_snv[2]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'SNV_PTEN'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_snv[3]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'SNV_ERBB2'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_snv[4]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'SNV_AKT1'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_snv[5]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'SNV_MTOR'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_snv[6]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'SNV_EGFR'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
+i_snv = 0
+for column_snv in columns_list_snv:
+    for index_snv_sublist in list_gen_snv[i_snv]:
+        df_all_merge.loc[index_snv_sublist, column_snv] = 1
+    i_snv += 1
 
 # CNV:
-for index in list_gen_cnv_amp[0]: # Para cada índice dentro de la sublista cero (que es la del gen MYC)...
-    df_all_merge.loc[index, 'CNV_MYC_AMP'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
+i_cnv_amp = 0
+for column_cnv_amp in columns_list_cnv_amp:
+    for index_cnv_sublist_amp in list_gen_cnv_amp[i_cnv_amp]:
+        df_all_merge.loc[index_cnv_sublist_amp, column_cnv_amp] = 1
+    i_cnv_amp += 1
 
-for index in list_gen_cnv_amp[1]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_CCND1_AMP'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_amp[2]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_CDKN1B_AMP'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_amp[3]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_FGF19_AMP'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_amp[4]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_ERBB2_AMP'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_amp[5]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_FGF3_AMP'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_amp[6]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_BRCA2_AMP'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_amp[7]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_BRCA1_AMP'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_amp[8]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_KDR_AMP'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_amp[9]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_CHEK1_AMP'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_amp[10]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_FANCA_AMP'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_del[0]: # Para cada índice dentro de la sublista cero (que es la del gen MYC)...
-    df_all_merge.loc[index, 'CNV_MYC_DEL'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_del[1]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_CCND1_DEL'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_del[2]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_CDKN1B_DEL'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_del[3]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_FGF19_DEL'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_del[4]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_ERBB2_DEL'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_del[5]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_FGF3_DEL'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_del[6]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_BRCA2_DEL'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_del[7]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_BRCA1_DEL'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_del[8]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_KDR_DEL'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_del[9]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_CHEK1_DEL'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
-
-for index in list_gen_cnv_del[10]: # Para cada índice dentro de la sublista del gen...
-    df_all_merge.loc[index, 'CNV_FANCA_DEL'] = 1 # Se escribe un '1' en la fila que indica el índice de la sublista
+i_cnv_del = 0
+for column_cnv_del in columns_list_cnv_del:
+    for index_cnv_sublist_del in list_gen_cnv_del[i_cnv_del]:
+        df_all_merge.loc[index_cnv_sublist_del, column_cnv_del] = 1
+    i_cnv_del += 1
 
 """ Falta por rellenar la columna normal de todas las mutaciones CNV. Para ello se colocará un '1' en aquellas filas 
-donde no haya mutación CNV de amplificación o deleción para un determinado gen. """
-for index in range(1084):
-    if index not in list_gen_cnv_amp[0] and index not in list_gen_cnv_del[0]:
-        df_all_merge.loc[index, 'CNV_MYC_NORMAL'] = 1
-
-    if index not in list_gen_cnv_amp[1] and index not in list_gen_cnv_del[1]:
-        df_all_merge.loc[index, 'CNV_CCND1_NORMAL'] = 1
-
-    if index not in list_gen_cnv_amp[2] and index not in list_gen_cnv_del[2]:
-        df_all_merge.loc[index, 'CNV_CDKN1B_NORMAL'] = 1
-
-    if index not in list_gen_cnv_amp[3] and index not in list_gen_cnv_del[3]:
-        df_all_merge.loc[index, 'CNV_FGF19_NORMAL'] = 1
-
-    if index not in list_gen_cnv_amp[4] and index not in list_gen_cnv_del[4]:
-        df_all_merge.loc[index, 'CNV_ERBB2_NORMAL'] = 1
-
-    if index not in list_gen_cnv_amp[5] and index not in list_gen_cnv_del[5]:
-        df_all_merge.loc[index, 'CNV_FGF3_NORMAL'] = 1
-
-    if index not in list_gen_cnv_amp[6] and index not in list_gen_cnv_del[6]:
-        df_all_merge.loc[index, 'CNV_BRCA2_NORMAL'] = 1
-
-    if index not in list_gen_cnv_amp[7] and index not in list_gen_cnv_del[7]:
-        df_all_merge.loc[index, 'CNV_BRCA1_NORMAL'] = 1
-
-    if index not in list_gen_cnv_amp[8] and index not in list_gen_cnv_del[8]:
-        df_all_merge.loc[index, 'CNV_KDR_NORMAL'] = 1
-
-    if index not in list_gen_cnv_amp[9] and index not in list_gen_cnv_del[9]:
-        df_all_merge.loc[index, 'CNV_CHEK1_NORMAL'] = 1
-
-    if index not in list_gen_cnv_amp[10] and index not in list_gen_cnv_del[10]:
-        df_all_merge.loc[index, 'CNV_FANCA_NORMAL'] = 1
+donde no haya mutación CNV ni de amplificación ni de deleción para un gen en especifico. """
+i_cnv_normal = 0
+for column_cnv_normal in columns_list_cnv_normal:
+    for i_row in range(1084):
+        if i_row not in list_gen_cnv_amp[i_cnv_normal] and i_row not in list_gen_cnv_del[i_cnv_normal]:
+            df_all_merge.loc[i_row, column_cnv_normal] = 1
+    i_cnv_normal += 1
 
 """ En este caso, el número de muestras de imágenes y de datos deben ser iguales. Las imágenes de las que se disponen se 
 enmarcan según el sistema de estadificación TNM como N1A, N1, N2A, N2, N3A, N1MI, N1B, N3, NX, N3B, N1C o N3C según la
