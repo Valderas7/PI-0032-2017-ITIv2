@@ -129,8 +129,8 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(315) # Eje Y: 630. Nº de filas
-ancho = int(740) # Eje X: 1480. Nº de columnas
+alto = int(50) # Eje Y: 630. Nº de filas
+ancho = int(50) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
 mitad_alto = int(alto/2)
@@ -192,11 +192,14 @@ train_data = pd.DataFrame(np.repeat(train_data.values, 9, axis=0), columns=train
 """ Una vez ya se tienen las imágenes convertidas en arrays de numpy, se puede eliminar de los dos subconjuntos tanto la
 columna 'ID' como la columna 'path_img' que no son útiles para la red MLP: """
 #@inplace = True para que devuelva el resultado en la misma variable
-train_data.drop(['ID'], axis=1, inplace= True)
-train_data.drop(['img_path'], axis=1, inplace= True)
+train_data = train_data.drop(['ID'], axis=1)
+train_data = train_data.drop(['img_path'], axis=1)
 
-test_data.drop(['ID'], axis=1, inplace= True)
-test_data.drop(['img_path'], axis=1, inplace= True)
+valid_data = valid_data.drop(['ID'], axis=1)
+valid_data = valid_data.drop(['img_path'], axis=1)
+
+test_data = test_data.drop(['ID'], axis=1)
+test_data = test_data.drop(['img_path'], axis=1)
 
 """ Se extrae la columna 'os_status' del dataframe de todos los subconjuntos, ya que ésta es la salida del modelo que 
 se va a entrenar."""

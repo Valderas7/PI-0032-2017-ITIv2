@@ -474,14 +474,14 @@ train_tabular_data = pd.DataFrame(np.repeat(train_tabular_data.values, 9, axis=0
 """ Una vez ya se tienen las imágenes convertidas en arrays de numpy, se puede eliminar de los dos subconjuntos tanto la
 columna 'ID' como la columna 'path_img' que no son útiles para la red MLP: """
 #@inplace = True para que devuelva el resultado en la misma variable
-train_tabular_data.drop(['ID'], axis=1, inplace= True)
-train_tabular_data.drop(['img_path'], axis=1, inplace= True)
+train_tabular_data = train_tabular_data.drop(['ID'], axis=1)
+train_tabular_data = train_tabular_data.drop(['img_path'], axis=1)
 
-valid_tabular_data.drop(['ID'], axis=1, inplace= True)
-valid_tabular_data.drop(['img_path'], axis=1, inplace= True)
+valid_tabular_data = valid_tabular_data.drop(['ID'], axis=1)
+valid_tabular_data = valid_tabular_data.drop(['img_path'], axis=1)
 
-test_tabular_data.drop(['ID'], axis=1, inplace= True)
-test_tabular_data.drop(['img_path'], axis=1, inplace= True)
+test_tabular_data = test_tabular_data.drop(['ID'], axis=1)
+test_tabular_data = test_tabular_data.drop(['img_path'], axis=1)
 
 """ Se extrae la columna 'os_status' del dataframe de todos los subconjuntos, puesto que ésta es la salida del modelo 
 que se va a entrenar."""

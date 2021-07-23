@@ -367,9 +367,9 @@ train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, te
 
 """ Ya se puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
 #@inplace = True para que devuelva el resultado en la misma variable
-train_tabular_data.drop(['ID'], axis=1, inplace= True)
-valid_tabular_data.drop(['ID'], axis=1, inplace= True)
-test_tabular_data.drop(['ID'], axis=1, inplace= True)
+train_tabular_data = train_tabular_data.drop(['ID'], axis=1)
+valid_tabular_data = valid_tabular_data.drop(['ID'], axis=1)
+test_tabular_data = test_tabular_data.drop(['ID'], axis=1)
 
 """ Se extrae la columna 'os_status' del dataframe de ambos subconjuntos, puesto que ésta es la salida del modelo que se
 va a entrenar."""
@@ -446,7 +446,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 150,
+                           epochs = 60,
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,

@@ -6,9 +6,7 @@ import matplotlib.pyplot as plt
 import cv2 #OpenCV
 import glob
 from tensorflow.keras.callbacks import ModelCheckpoint
-import imageio
-import imgaug as ia
-import imgaug.augmenters as iaa
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.utils import class_weight
 import tensorflow as tf
 from tensorflow import keras
@@ -62,14 +60,29 @@ los subconjuntos de datos. """
 # 460 filas resultantes, como en cBioPortal:
 df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge["path_n_stage"]!='NX') &
                             (df_all_merge["path_n_stage"]!='N0 (I-)') & (df_all_merge["path_n_stage"]!='N0 (I+)') &
-                            (df_all_merge["path_n_stage"]!='N0 (MOL+)') & (df_all_merge["path_m_stage"]!='MX')]
+                            (df_all_merge["path_n_stage"]!='N0 (MOL+)') & (df_all_merge["path_m_stage"]!='MX') &
+                            (df_all_merge["path_m_stage"]!='CM0 (I+)')]
 
-""" Al realizar un análisis de los datos de entrada se ha visto un único valor incorrecto en la columna
-'cancer_type_detailed'. Por ello se sustituye dicho valor por 'Breast Invasive Carcinoma (NOS)'. También se ha apreciado
-un único valor en 'tumor_type', por lo que también se realiza un cambio de valor en dicho valor atípico. Además, se 
-convierten las columnas categóricas binarias a valores de '0' y '1', para no aumentar el número de columnas: """
-df_all_merge.loc[df_all_merge.path_m_stage == "CM0 (I+)", "path_m_stage"] = 'M0'
-df_all_merge.loc[df_all_merge.path_m_stage == "M0", "path_m_stage"] = 0; df_all_merge.loc[df_all_merge.path_m_stage == "M1", "path_m_stage"] = 1
+""" Además, se convierten las columnas categóricas binarias a valores de '0' y '1', para no aumentar el número de 
+columnas: """
+df_all_merge.loc[df_all_merge.path_m_stage == "M0", "path_m_stage"] = 0
+df_all_merge.loc[df_all_merge.path_m_stage == "M1", "path_m_stage"] = 1
+
+""" Se crea una nueva columna para indicar la metastasis a distancia. En esta columna se indicaran los pacientes que 
+tienen estadio M1 (metastasis inicial) + otros pacientes que desarrollan metastasis a lo largo de la enfermedad (para
+ello se hace uso del excel pacientes_tcga y su columna DB) """
+df_all_merge['distant_metastasis'] = 0
+df_all_merge.loc[df_all_merge.path_m_stage == 1, 'distant_metastasis'] = 1
+
+""" Estos pacientes desarrollan metastasis A LO LARGO de la enfermedad, tal y como se puede apreciar en el excel de los
+pacientes de TCGA. Por tanto, se incluyen como clase positiva dentro de la columna 'distant_metastasis'. """
+df_all_merge.loc[df_all_merge.ID == 'TCGA-A2-A3XS', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-AC-A2FM', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-AR-A2LH', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A0C1', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A18V', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-EW-A1P8', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'distant_metastasis'] = 1
 
 """ Ahora, antes de transformar las variables categóricas en numéricas, se eliminan las filas donde haya datos nulos
 para no ir arrastrándolos a lo largo del programa: """
@@ -78,9 +91,8 @@ df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas váli
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento, validación y test. """
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
 # @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['path_m_stage'])
-
-train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['path_m_stage'])
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['distant_metastasis'])
+train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['distant_metastasis'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -130,12 +142,9 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(315) # Eje Y: 630. Nº de filas
-ancho = int(740) # Eje X: 1480. Nº de columnas
+alto = int(50) # Eje Y: 630. Nº de filas
+ancho = int(50) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
-
-mitad_alto = int(alto/2)
-mitad_ancho = int(ancho/2)
 
 """ Se leen y se redimensionan posteriormente las imágenes de los subconjuntos a las dimensiones especificadas arriba
 y se añaden a una lista: """
@@ -155,55 +164,34 @@ for image_test in test_data['img_path']:
     test_image_data.append(cv2.resize(cv2.imread(image_test,cv2.IMREAD_COLOR),(ancho,alto),
                                           interpolation=cv2.INTER_CUBIC))
 
-train_image_data = []
-
-for image in pre_train_image_data:
-    train_image_data.append(image)
-    #rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
-    #train_image_data.append(rotate.augment_image(image))
-    gaussian_noise = iaa.AdditiveGaussianNoise(10, 20)
-    train_image_data.append(gaussian_noise.augment_image(image))
-    #crop = iaa.Crop(percent=(0, 0.3))
-    #train_image_data.append(crop.augment_image(image))
-    #shear = iaa.Affine(shear=(0, 40), mode= 'edge')
-    #train_image_data.append(shear.augment_image(image))
-    flip_hr = iaa.Fliplr(p=1.0)
-    train_image_data.append(flip_hr.augment_image(image))
-    flip_vr = iaa.Flipud(p=1.0)
-    train_image_data.append(flip_vr.augment_image(image))
-    contrast = iaa.GammaContrast(gamma=2.0)
-    train_image_data.append(contrast.augment_image(image))
-    #scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
-    #train_image_data.append(scale_im.augment_image(image))
-
+cv2.imshow('test', test_image_data[0])
+cv2.waitKey(0)
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
 se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
 array con forma (X, alto, ancho, canales). """
-train_image_data = (np.array(train_image_data) / 255.0)
-valid_image_data = (np.array(valid_image_data) / 255.0)
-test_image_data = (np.array(test_image_data) / 255.0)
+train_image_data = (np.array(pre_train_image_data).astype('float32'))
+valid_image_data = (np.array(valid_image_data).astype('float32'))
+test_image_data = (np.array(test_image_data).astype('float32'))
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-""" Una vez se tienen hechos los recortes de imágenes, se procede a replicar las filas de ambos subconjuntos de datos
-para que el número de imágenes utilizadas y el número de filas del marco de datos sea el mismo: """
-train_data = pd.DataFrame(np.repeat(train_data.values, 5, axis=0), columns=train_data.columns)
-
 """ Una vez ya se tienen las imágenes convertidas en arrays de numpy, se puede eliminar de los dos subconjuntos tanto la
 columna 'ID' como la columna 'path_img' que no son útiles para la red MLP: """
-#@inplace = True para que devuelva el resultado en la misma variable
-train_data.drop(['ID'], axis=1, inplace= True)
-train_data.drop(['img_path'], axis=1, inplace= True)
+train_data = train_data.drop(['ID'], axis=1)
+train_data = train_data.drop(['img_path'], axis=1)
 
-test_data.drop(['ID'], axis=1, inplace= True)
-test_data.drop(['img_path'], axis=1, inplace= True)
+valid_data = valid_data.drop(['ID'], axis=1)
+valid_data = valid_data.drop(['img_path'], axis=1)
 
-""" Se extrae la columna 'path_m_stage' del dataframe de todos los subconjuntos, ya que ésta es la salida del modelo que 
-se va a entrenar."""
-train_labels = train_data.pop('path_m_stage')
-valid_labels = valid_data.pop('path_m_stage')
-test_labels = test_data.pop('path_m_stage')
+test_data = test_data.drop(['ID'], axis=1)
+test_data = test_data.drop(['img_path'], axis=1)
+
+""" Se extrae la columna 'distant_metastasis' del dataframe de todos los subconjuntos, ya que ésta es la salida del 
+modelo que se va a entrenar."""
+train_labels = train_data.pop('distant_metastasis')
+valid_labels = valid_data.pop('distant_metastasis')
+test_labels = test_data.pop('distant_metastasis')
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada: """
 del df_all_merge, df_path_n_stage, df_list, train_data, valid_data, test_data
@@ -218,19 +206,40 @@ test_labels = np.asarray(test_labels).astype('float32')
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL (CNN) -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-""" Se define la red neuronal convolucional: """
-cnn_model = keras.applications.EfficientNetB7(weights='imagenet', input_shape=(alto, ancho, canales),
-                                              include_top=False)
-cnn_model.trainable = False
+""" Se define la red neuronal convolucional y se congela el modelo base de las capas de convolución, y se añade nuestro
+propio clasificador: """
+cnn_model = keras.applications.VGG19(weights='imagenet', input_shape=(alto, ancho, canales), include_top=False)
 
-inputs = keras.Input(shape=(alto, ancho, canales))
-x = cnn_model(inputs, training=False)
-x = layers.GlobalAveragePooling2D()(x)
-x = layers.Dropout(0.5)(x)
-x = layers.BatchNormalization()(x)
-x = layers.Dense(1, activation= 'sigmoid')(x)
-model = keras.models.Model(inputs = inputs, outputs = x)
+for layer in cnn_model.layers:
+    layer.trainable = False
+
+all_model = cnn_model.output
+all_model = layers.GlobalAveragePooling2D()(all_model)
+all_model = layers.Dense(1024, activation='relu')(all_model)
+all_model = layers.Dropout(0.2)(all_model)
+all_model = layers.Dense(512, activation='relu')(all_model)
+all_model = layers.Dropout(0.2)(all_model)
+all_model = layers.Dense(1, activation='sigmoid')(all_model)
+
+model = keras.models.Model(inputs = cnn_model.input, outputs = all_model)
 model.summary()
+
+""" Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
+Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
+la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
+trainAug = ImageDataGenerator(rotation_range=60, zoom_range=0.30, width_shift_range=0.4, height_shift_range=0.4,
+                              shear_range=0.30, horizontal_flip=True, fill_mode="nearest")
+valAug = ImageDataGenerator()
+
+mean = np.array([103.939, 116.779, 123.68], dtype="float32")
+trainAug.mean = mean
+valAug.mean = mean
+
+""" Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
+instancias posteriormente: """
+trainGen = trainAug.flow(x = train_image_data, y = train_labels, batch_size = 32)
+valGen = valAug.flow(x = valid_image_data, y = valid_labels, batch_size = 32, shuffle= False)
+testGen = valAug.flow(x = test_image_data, y = test_labels, batch_size = 32, shuffle= False)
 
 """ Hay que definir las métricas de la red y configurar los distintos hiperparámetros para entrenar la red. El modelo ya
 ha sido definido anteriormente, así que ahora hay que compilarlo. Para ello se define una función de loss y un 
@@ -244,7 +253,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
 
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.Adam(learning_rate = 0.001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.01),
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
@@ -259,20 +268,32 @@ class_weights = class_weight.compute_class_weight(class_weight = 'balanced', cla
 class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = train_image_data,  # Datos de entrada.
-                           y = train_labels,  # Datos objetivos.
-                           epochs = 1,
+neural_network = model.fit(x = trainGen,
+                           epochs = 3,
                            verbose = 1,
                            batch_size = 32,
                            class_weight = class_weight_dict,
                            #callbacks = mcp_save,
-                           validation_data = (valid_image_data, valid_labels))
+                           validation_data = valGen)
+
+for layer in cnn_model.layers[4:]:
+    layer.trainable = True
+
+model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
+              optimizer = keras.optimizers.SGD(learning_rate = 0.001, momentum = 0.9),
+              metrics = metrics)
+
+model.summary()
+
+model.fit(x = trainGen, epochs = 50, verbose = 1, batch_size = 32, class_weight = class_weight_dict,
+          #callbacks = mcp_save,
+          validation_data = valGen)
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_image_data, test_labels, verbose = 0)
+results = model.evaluate(testGen, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
       "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
       "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,

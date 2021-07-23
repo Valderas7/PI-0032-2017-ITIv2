@@ -78,7 +78,7 @@ df_os_status = pd.DataFrame.from_dict(os_status.items()); df_os_status.rename(co
 df_path_m_stage = pd.DataFrame.from_dict(path_m_stage.items()); df_path_m_stage.rename(columns = {0 : 'ID', 1 : 'path_m_stage'}, inplace = True)
 
 df_list = [df_age, df_neoadjuvant, df_path_m_stage, df_path_n_stage, df_path_t_stage, df_stage, df_subtype,
-           df_tumor_type, df_prior_diagnosis, df_os_status, df_snv, df_cnv]
+           df_tumor_type, df_prior_diagnosis, df_snv, df_cnv]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
 esté descuadrado en la fila que no le corresponda. """
@@ -330,7 +330,8 @@ los subconjuntos de datos. """
 # 460 filas resultantes, como en cBioPortal:
 df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge["path_n_stage"]!='NX') &
                             (df_all_merge["path_n_stage"]!='N0 (I-)') & (df_all_merge["path_n_stage"]!='N0 (I+)') &
-                            (df_all_merge["path_n_stage"]!='N0 (MOL+)') & (df_all_merge["path_m_stage"]!='MX')]
+                            (df_all_merge["path_n_stage"]!='N0 (MOL+)') & (df_all_merge["path_m_stage"]!='MX') &
+                            (df_all_merge["path_m_stage"]!='CM0 (I+)')]
 
 """ Al realizar un análisis de los datos de entrada se ha visto un único valor incorrecto en la columna
 'cancer_type_detailed'. Por ello se sustituye dicho valor por 'Breast Invasive Carcinoma (NOS)'. También se ha apreciado
@@ -339,10 +340,24 @@ convierten las columnas categóricas binarias a valores de '0' y '1', para no au
 df_all_merge.loc[df_all_merge.tumor_type == "Infiltrating Carcinoma (NOS)", "tumor_type"] = "Mixed Histology (NOS)"
 df_all_merge.loc[df_all_merge.tumor_type == "Breast Invasive Carcinoma", "tumor_type"] = "Infiltrating Ductal Carcinoma"
 df_all_merge.loc[df_all_merge.neoadjuvant == "No", "neoadjuvant"] = 0; df_all_merge.loc[df_all_merge.neoadjuvant == "Yes", "neoadjuvant"] = 1
-df_all_merge.loc[df_all_merge.os_status == "0:LIVING", "os_status"] = 0; df_all_merge.loc[df_all_merge.os_status == "1:DECEASED", "os_status"] = 1
 df_all_merge.loc[df_all_merge.prior_diagnosis == "No", "prior_diagnosis"] = 0; df_all_merge.loc[df_all_merge.prior_diagnosis == "Yes", "prior_diagnosis"] = 1
-df_all_merge.loc[df_all_merge.path_m_stage == "CM0 (I+)", "path_m_stage"] = 'M0'
 df_all_merge.loc[df_all_merge.path_m_stage == "M0", "path_m_stage"] = 0; df_all_merge.loc[df_all_merge.path_m_stage == "M1", "path_m_stage"] = 1
+
+""" Se crea una nueva columna para indicar la metastasis a distancia. En esta columna se indicaran los pacientes que 
+tienen estadio M1 (metastasis inicial) + otros pacientes que desarrollan metastasis a lo largo de la enfermedad (para
+ello se hace uso del excel pacientes_tcga y su columna DB) """
+df_all_merge['distant_metastasis'] = 0
+df_all_merge.loc[df_all_merge.path_m_stage == 1, 'distant_metastasis'] = 1
+
+""" Estos pacientes desarrollan metastasis A LO LARGO de la enfermedad, tal y como se puede apreciar en el excel de los
+pacientes de TCGA. Por tanto, se incluyen como clase positiva dentro de la columna 'distant_metastasis'. """
+df_all_merge.loc[df_all_merge.ID == 'TCGA-A2-A3XS', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-AC-A2FM', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-AR-A2LH', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A0C1', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A18V', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-EW-A1P8', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'distant_metastasis'] = 1
 
 """ Ahora, antes de transformar las variables categóricas en numéricas, se eliminan las filas donde haya datos nulos
 para no ir arrastrándolos a lo largo del programa: """
@@ -358,10 +373,10 @@ df_all_merge = pd.get_dummies(df_all_merge, columns=["path_n_stage", "path_t_sta
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
 # @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20,
-                                                         stratify = df_all_merge['path_m_stage'])
+                                                         stratify = df_all_merge['distant_metastasis'])
 
 train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.20,
-                                                          stratify = train_tabular_data['path_m_stage'])
+                                                          stratify = train_tabular_data['distant_metastasis'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -411,8 +426,8 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(100) # Eje Y: 630. Nº de filas
-ancho = int(100) # Eje X: 1480. Nº de columnas
+alto = int(50) # Eje Y: 630. Nº de filas
+ancho = int(50) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
 mitad_alto = int(alto/2)
@@ -474,20 +489,20 @@ train_tabular_data = pd.DataFrame(np.repeat(train_tabular_data.values, 9, axis=0
 """ Una vez ya se tienen las imágenes convertidas en arrays de numpy, se puede eliminar de los dos subconjuntos tanto la
 columna 'ID' como la columna 'path_img' que no son útiles para la red MLP: """
 #@inplace = True para que devuelva el resultado en la misma variable
-train_tabular_data.drop(['ID'], axis=1, inplace= True)
-train_tabular_data.drop(['img_path'], axis=1, inplace= True)
+train_tabular_data = train_tabular_data.drop(['ID'], axis=1)
+train_tabular_data = train_tabular_data.drop(['img_path'], axis=1)
 
-valid_tabular_data.drop(['ID'], axis=1, inplace= True)
-valid_tabular_data.drop(['img_path'], axis=1, inplace= True)
+valid_tabular_data = valid_tabular_data.drop(['ID'], axis=1)
+valid_tabular_data = valid_tabular_data.drop(['img_path'], axis=1)
 
-test_tabular_data.drop(['ID'], axis=1, inplace= True)
-test_tabular_data.drop(['img_path'], axis=1, inplace= True)
+test_tabular_data = test_tabular_data.drop(['ID'], axis=1)
+test_tabular_data = test_tabular_data.drop(['img_path'], axis=1)
 
-""" Se extrae la columna 'path_m_stage' del dataframe de todos los subconjuntos, puesto que ésta es la salida del modelo 
-que se va a entrenar."""
-train_labels = train_tabular_data.pop('path_m_stage')
-valid_labels = valid_tabular_data.pop('path_m_stage')
-test_labels = test_tabular_data.pop('path_m_stage')
+""" Se extrae la columna 'distant_metastasis' del dataframe de todos los subconjuntos, puesto que ésta es la salida del 
+modelo que se va a entrenar."""
+train_labels = train_tabular_data.pop('distant_metastasis')
+valid_labels = valid_tabular_data.pop('distant_metastasis')
+test_labels = test_tabular_data.pop('distant_metastasis')
 
 """ Ahora se procede a procesar las columnas continuas, que se escalarán para que estén en el rango de (0-1), es decir, 
 como la salida de la red. """
@@ -668,7 +683,7 @@ plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('ROC-AUC curve')
+plt.title('AUC-ROC curve')
 plt.legend(loc = 'best')
 plt.show()
 
@@ -682,7 +697,7 @@ plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('PR-AUC curve')
+plt.title('AUC-PR curve')
 plt.legend(loc = 'best')
 plt.show()
 

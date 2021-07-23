@@ -322,22 +322,37 @@ for column_cnv_normal in columns_list_cnv_normal:
             df_all_merge.loc[i_row, column_cnv_normal] = 1
     i_cnv_normal += 1
 
-""" En este caso, se eliminan los pacientes con categoria 'N0 o 'NX', y tambien aquellos pacientes a los que no se les 
-puede determinar si tienen o no metastasis, porque sino el problema ya no seria de clasificacion binaria. """
+""" En este caso, se eliminan los pacientes con categoria 'N0 o 'NX', aquellos pacientes a los que no se les puede 
+determinar si tienen o no metastasis. """
 df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge["path_n_stage"]!='NX') &
                             (df_all_merge["path_n_stage"]!='N0 (I-)') & (df_all_merge["path_n_stage"]!='N0 (I+)') &
-                            (df_all_merge["path_n_stage"]!='N0 (MOL+)') & (df_all_merge["path_m_stage"]!='MX')]
+                            (df_all_merge["path_n_stage"]!='N0 (MOL+)') & (df_all_merge["path_m_stage"]!='MX') &
+                            (df_all_merge["path_m_stage"]!='CM0 (I+)')]
 
-""" Al realizar un análisis de los datos de entrada se ha visto un único valor incorrecto en la columna
-'cancer_type_detailed'. Por ello se sustituye dicho valor por 'Breast Invasive Carcinoma (NOS)'. También se ha apreciado
-un único valor en 'tumor_type', por lo que también se realiza un cambio de valor en dicho valor atípico. Además, se 
-convierten las columnas categóricas binarias a valores de '0' y '1', para no aumentar el número de columnas: """
+""" También se ha apreciado un único valor en 'tumor_type', por lo que también se realiza un cambio de valor en dicho 
+valor atípico. Se convierten las columnas categóricas binarias a valores de '0' y '1', para no aumentar el número de 
+columnas: """
 df_all_merge.loc[df_all_merge.tumor_type == "Infiltrating Carcinoma (NOS)", "tumor_type"] = "Mixed Histology (NOS)"
 df_all_merge.loc[df_all_merge.tumor_type == "Breast Invasive Carcinoma", "tumor_type"] = "Infiltrating Ductal Carcinoma"
 df_all_merge.loc[df_all_merge.neoadjuvant == "No", "neoadjuvant"] = 0; df_all_merge.loc[df_all_merge.neoadjuvant == "Yes", "neoadjuvant"] = 1
 df_all_merge.loc[df_all_merge.prior_diagnosis == "No", "prior_diagnosis"] = 0; df_all_merge.loc[df_all_merge.prior_diagnosis == "Yes", "prior_diagnosis"] = 1
-df_all_merge.loc[df_all_merge.path_m_stage == "CM0 (I+)", "path_m_stage"] = 'M0'
 df_all_merge.loc[df_all_merge.path_m_stage == "M0", "path_m_stage"] = 0; df_all_merge.loc[df_all_merge.path_m_stage == "M1", "path_m_stage"] = 1
+
+""" Se crea una nueva columna para indicar la metastasis a distancia. En esta columna se indicaran los pacientes que 
+tienen estadio M1 (metastasis inicial) + otros pacientes que desarrollan metastasis a lo largo de la enfermedad (para
+ello se hace uso del excel pacientes_tcga y su columna DB) """
+df_all_merge['distant_metastasis'] = 0
+df_all_merge.loc[df_all_merge.path_m_stage == 1, 'distant_metastasis'] = 1
+
+""" Estos pacientes desarrollan metastasis A LO LARGO de la enfermedad, tal y como se puede apreciar en el excel de los
+pacientes de TCGA. Por tanto, se incluyen como clase positiva dentro de la columna 'distant_metastasis'. """
+df_all_merge.loc[df_all_merge.ID == 'TCGA-A2-A3XS', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-AC-A2FM', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-AR-A2LH', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A0C1', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A18V', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-EW-A1P8', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'distant_metastasis'] = 1
 
 """ Ahora, antes de transformar las variables categóricas en numéricas, se eliminan las filas donde haya datos nulos
 para no ir arrastrándolos a lo largo del programa: """
@@ -347,27 +362,26 @@ df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas váli
 numéricos mediante la técnica del 'One Hot Encoding'. Más adelante se escalarán las columnas numéricas continuas, pero
 ahora se realiza esta técnica antes de hacer la repartición de subconjuntos para que no haya problemas con las columnas. """
 #@ get_dummies: Aplica técnica de 'One Hot Encoding', creando columnas binarias para las columnas seleccionadas
-df_all_merge = pd.get_dummies(df_all_merge, columns=["path_n_stage", "path_t_stage", "stage", "subtype","tumor_type"])
+df_all_merge = pd.get_dummies(df_all_merge, columns=["path_n_stage", "path_t_stage", "stage", "subtype", "tumor_type"])
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20,
-                                                         stratify = df_all_merge['path_m_stage'])
+                                                         stratify = df_all_merge['distant_metastasis'])
 
-train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.20,
-                                                          stratify = train_tabular_data['path_m_stage'])
+train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.15,
+                                                          stratify = train_tabular_data['distant_metastasis'])
 
-""" Ya e puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
-#@inplace = True para que devuelva el resultado en la misma variable
-train_tabular_data.drop(['ID'], axis=1, inplace= True)
-valid_tabular_data.drop(['ID'], axis=1, inplace= True)
-test_tabular_data.drop(['ID'], axis=1, inplace= True)
+""" Ya se puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
+train_tabular_data = train_tabular_data.drop(['ID'], axis=1)
+valid_tabular_data = valid_tabular_data.drop(['ID'], axis=1)
+test_tabular_data = test_tabular_data.drop(['ID'], axis=1)
 
-""" Se extrae la columna 'path_m_stage' del dataframe de ambos subconjuntos, puesto que ésta es la salida del modelo que se
-va a entrenar."""
-train_labels = train_tabular_data.pop('path_m_stage')
-valid_labels = valid_tabular_data.pop('path_m_stage')
-test_labels = test_tabular_data.pop('path_m_stage')
+""" Se extrae la columna 'distant_metastasis' del dataframe de ambos subconjuntos, puesto que ésta es la salida del 
+modelo que se va a entrenar."""
+train_labels = train_tabular_data.pop('distant_metastasis')
+valid_labels = valid_tabular_data.pop('distant_metastasis')
+test_labels = test_tabular_data.pop('distant_metastasis')
 
 """ Ahora se procede a procesar las columnas continuas, que se escalarán para que estén en el rango de (0-1), es decir, 
 como la salida de la red. """
@@ -425,7 +439,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
 checkpoint_path = '../../training_codes/data/data_model_distant_metastasis_prediction.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
-smoter = imblearn.over_sampling.SMOTE(sampling_strategy = 'minority')
+smoter = imblearn.over_sampling.SMOTE(sampling_strategy = 'minority', k_neighbors= 3)
 train_tabular_data, train_labels = smoter.fit_resample(train_tabular_data, train_labels)
 
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
@@ -438,7 +452,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 150,
+                           epochs = 20,
                            verbose = 1,
                            batch_size = 32,
                            class_weight = class_weight_dict,
