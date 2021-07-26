@@ -345,6 +345,22 @@ df_all_merge.loc[df_all_merge.dfs_status == "0:DiseaseFree", "dfs_status"] = 0; 
 df_all_merge.loc[df_all_merge.prior_diagnosis == "No", "prior_diagnosis"] = 0; df_all_merge.loc[df_all_merge.prior_diagnosis == "Yes", "prior_diagnosis"] = 1
 df_all_merge.loc[df_all_merge.os_status == "0:LIVING", "os_status"] = 0; df_all_merge.loc[df_all_merge.os_status == "1:DECEASED", "os_status"] = 1
 
+""" Se crea una nueva columna para indicar la metastasis a distancia. En esta columna se indicaran los pacientes que 
+tienen estadio M1 (metastasis inicial) + otros pacientes que desarrollan metastasis a lo largo de la enfermedad (para
+ello se hace uso del excel pacientes_tcga y su columna DB) """
+df_all_merge['distant_metastasis'] = 0
+df_all_merge.loc[df_all_merge.path_m_stage == 'M1', 'distant_metastasis'] = 1
+
+""" Estos pacientes desarrollan metastasis A LO LARGO de la enfermedad, tal y como se puede apreciar en el excel de los
+pacientes de TCGA. Por tanto, se incluyen como clase positiva dentro de la columna 'distant_metastasis'. """
+df_all_merge.loc[df_all_merge.ID == 'TCGA-A2-A3XS', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-AC-A2FM', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-AR-A2LH', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A0C1', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A18V', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-EW-A1P8', 'distant_metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'distant_metastasis'] = 1
+
 """ Ahora, antes de transformar las variables categóricas en numéricas, se eliminan las filas donde haya datos nulos
 para no ir arrastrándolos a lo largo del programa: """
 df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
@@ -362,7 +378,7 @@ df_all_merge = pd.get_dummies(df_all_merge, columns=["path_m_stage","path_n_stag
 train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20,
                                                          stratify = df_all_merge['os_status'])
 
-train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.20,
+train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.15,
                                                          stratify = train_tabular_data['os_status'])
 
 """ Ya se puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
@@ -408,9 +424,9 @@ test_labels = np.asarray(test_labels).astype('float32')
 --------------------------------------------------------------------------------------------------------------------"""
 model = keras.Sequential()
 model.add(layers.Dense(train_tabular_data.shape[1], activation='relu', input_shape=(train_tabular_data.shape[1],)))
-model.add(layers.Dropout(0.3))
-model.add(layers.Dense(46, activation = "relu"))
 model.add(layers.Dropout(0.5))
+model.add(layers.Dense(32, activation = "relu"))
+model.add(layers.Dropout(0.3))
 model.add(layers.Dense(1, activation = "sigmoid"))
 model.summary()
 
@@ -446,7 +462,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 60,
+                           epochs = 100,
                            verbose = 1,
                            batch_size= 32,
                            class_weight= class_weight_dict,
@@ -459,8 +475,10 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_tabular_data, test_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
-      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,
+      "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
+      "Exactitud del conjunto de prueba: {:.2f} %\n" 
+      "El AUC-ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
+                                                               results[3]/(results[3]+results[2]), results[7] * 100,
                                                                results[8]))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 

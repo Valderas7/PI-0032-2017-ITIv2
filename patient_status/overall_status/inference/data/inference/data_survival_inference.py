@@ -28,10 +28,12 @@ test_labels = np.load('/home/avalderas/img_slides/patient_status/overall_status/
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_tabular_data,test_labels, verbose = 0)
+results = model.evaluate(test_tabular_data, test_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
-      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,
+      "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
+      "Exactitud del conjunto de prueba: {:.2f} %\n" 
+      "El AUC-ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
+                                                               results[3]/(results[3]+results[2]), results[7] * 100,
                                                                results[8]))
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la

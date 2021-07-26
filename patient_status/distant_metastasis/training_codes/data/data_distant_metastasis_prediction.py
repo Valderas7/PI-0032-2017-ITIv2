@@ -78,7 +78,7 @@ df_os_status = pd.DataFrame.from_dict(os_status.items()); df_os_status.rename(co
 
 df_path_m_stage = pd.DataFrame.from_dict(path_m_stage.items()); df_path_m_stage.rename(columns = {0 : 'ID', 1 : 'path_m_stage'}, inplace = True)
 
-df_list = [df_age, df_neoadjuvant, df_path_m_stage, df_path_n_stage, df_path_t_stage, df_stage, df_subtype,
+df_list = [df_age, df_neoadjuvant, df_path_m_stage, df_path_n_stage, df_path_t_stage, df_subtype,
            df_tumor_type, df_prior_diagnosis, df_snv, df_cnv]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
@@ -362,14 +362,14 @@ df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas váli
 numéricos mediante la técnica del 'One Hot Encoding'. Más adelante se escalarán las columnas numéricas continuas, pero
 ahora se realiza esta técnica antes de hacer la repartición de subconjuntos para que no haya problemas con las columnas. """
 #@ get_dummies: Aplica técnica de 'One Hot Encoding', creando columnas binarias para las columnas seleccionadas
-df_all_merge = pd.get_dummies(df_all_merge, columns=["path_n_stage", "path_t_stage", "stage", "subtype", "tumor_type"])
+df_all_merge = pd.get_dummies(df_all_merge, columns=["path_n_stage", "path_t_stage", "subtype", "tumor_type"])
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20,
                                                          stratify = df_all_merge['distant_metastasis'])
 
-train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.15,
+train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.10,
                                                           stratify = train_tabular_data['distant_metastasis'])
 
 """ Ya se puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
@@ -414,9 +414,9 @@ test_labels = np.asarray(test_labels).astype('float32')
 --------------------------------------------------------------------------------------------------------------------"""
 model = keras.Sequential()
 model.add(layers.Dense(train_tabular_data.shape[1], activation='relu', input_shape=(train_tabular_data.shape[1],)))
-model.add(layers.Dropout(0.3))
-model.add(layers.Dense(46, activation = "relu"))
 model.add(layers.Dropout(0.5))
+model.add(layers.Dense(32, activation = "relu"))
+model.add(layers.Dropout(0.3))
 model.add(layers.Dense(1, activation = "sigmoid"))
 model.summary()
 
@@ -439,7 +439,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
 checkpoint_path = '../../training_codes/data/data_model_distant_metastasis_prediction.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
-smoter = imblearn.over_sampling.SMOTE(sampling_strategy = 'minority', k_neighbors= 3)
+smoter = imblearn.over_sampling.SMOTE(sampling_strategy = 'minority')
 train_tabular_data, train_labels = smoter.fit_resample(train_tabular_data, train_labels)
 
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
@@ -452,7 +452,7 @@ class_weight_dict = dict(enumerate(class_weights))
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,  # Datos de entrada.
                            y = train_labels,  # Datos objetivos.
-                           epochs = 20,
+                           epochs = 100,
                            verbose = 1,
                            batch_size = 32,
                            class_weight = class_weight_dict,
@@ -465,8 +465,10 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_tabular_data, test_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
-      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,
+      "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
+      "Exactitud del conjunto de prueba: {:.2f} %\n" 
+      "El AUC-ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
+                                                               results[3]/(results[3]+results[2]), results[7] * 100,
                                                                results[8]))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 

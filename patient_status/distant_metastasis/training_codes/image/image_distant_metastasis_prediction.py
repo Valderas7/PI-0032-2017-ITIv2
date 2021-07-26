@@ -7,6 +7,7 @@ import cv2 #OpenCV
 import glob
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
 from sklearn.utils import class_weight
 import tensorflow as tf
 from tensorflow import keras
@@ -142,8 +143,8 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(50) # Eje Y: 630. Nº de filas
-ancho = int(50) # Eje X: 1480. Nº de columnas
+alto = int(100) # Eje Y: 630. Nº de filas
+ancho = int(100) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
 """ Se leen y se redimensionan posteriormente las imágenes de los subconjuntos a las dimensiones especificadas arriba
@@ -164,8 +165,6 @@ for image_test in test_data['img_path']:
     test_image_data.append(cv2.resize(cv2.imread(image_test,cv2.IMREAD_COLOR),(ancho,alto),
                                           interpolation=cv2.INTER_CUBIC))
 
-cv2.imshow('test', test_image_data[0])
-cv2.waitKey(0)
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
 se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
 array con forma (X, alto, ancho, canales). """
@@ -208,32 +207,30 @@ test_labels = np.asarray(test_labels).astype('float32')
 --------------------------------------------------------------------------------------------------------------------"""
 """ Se define la red neuronal convolucional y se congela el modelo base de las capas de convolución, y se añade nuestro
 propio clasificador: """
-cnn_model = keras.applications.VGG19(weights='imagenet', input_shape=(alto, ancho, canales), include_top=False)
-
-for layer in cnn_model.layers:
-    layer.trainable = False
-
-all_model = cnn_model.output
-all_model = layers.GlobalAveragePooling2D()(all_model)
-all_model = layers.Dense(1024, activation='relu')(all_model)
-all_model = layers.Dropout(0.2)(all_model)
-all_model = layers.Dense(512, activation='relu')(all_model)
-all_model = layers.Dropout(0.2)(all_model)
-all_model = layers.Dense(1, activation='sigmoid')(all_model)
-
-model = keras.models.Model(inputs = cnn_model.input, outputs = all_model)
+model = Sequential()
+model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(alto,ancho,canales), padding= 'same'))
+model.add(layers.Conv2D(32, (3, 3), activation='relu', padding= 'same'))
+model.add(layers.Conv2D(32, (3, 3), activation='relu', padding= 'same'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu', padding= 'same'))
+model.add(layers.Conv2D(64, (3, 3), activation='relu', padding= 'same'))
+model.add(layers.Conv2D(64, (3, 3), activation='relu', padding= 'same'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(128, (3, 3), activation='relu', padding= 'same'))
+model.add(layers.Conv2D(128, (3, 3), activation='relu', padding= 'same'))
+model.add(layers.Conv2D(128, (3, 3), activation='relu', padding= 'same'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Flatten()),
+model.add(layers.Dense(256, activation='relu')),
+model.add(layers.Dense(1, activation='sigmoid'))
 model.summary()
 
 """ Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
 Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
 la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
-trainAug = ImageDataGenerator(rotation_range=60, zoom_range=0.30, width_shift_range=0.4, height_shift_range=0.4,
-                              shear_range=0.30, horizontal_flip=True, fill_mode="nearest")
-valAug = ImageDataGenerator()
-
-mean = np.array([103.939, 116.779, 123.68], dtype="float32")
-trainAug.mean = mean
-valAug.mean = mean
+trainAug = ImageDataGenerator(rescale = 1.0/255, rotation_range=90, zoom_range=0.70, width_shift_range=0.8, height_shift_range=0.8,
+                              shear_range=0.90, horizontal_flip=True, fill_mode="nearest")
+valAug = ImageDataGenerator(rescale = 1.0/255)
 
 """ Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
 instancias posteriormente: """
@@ -253,7 +250,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
 
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.Adam(learning_rate = 0.01),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
@@ -269,25 +266,12 @@ class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = trainGen,
-                           epochs = 3,
+                           epochs = 100,
                            verbose = 1,
                            batch_size = 32,
                            class_weight = class_weight_dict,
                            #callbacks = mcp_save,
                            validation_data = valGen)
-
-for layer in cnn_model.layers[4:]:
-    layer.trainable = True
-
-model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.SGD(learning_rate = 0.001, momentum = 0.9),
-              metrics = metrics)
-
-model.summary()
-
-model.fit(x = trainGen, epochs = 50, verbose = 1, batch_size = 32, class_weight = class_weight_dict,
-          #callbacks = mcp_save,
-          validation_data = valGen)
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
