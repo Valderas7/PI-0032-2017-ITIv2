@@ -1,6 +1,7 @@
 import shelve # datos persistentes
 import pandas as pd
 import numpy as np
+import staintools
 import seaborn as sns # Para realizar gráficas sobre datos
 import matplotlib.pyplot as plt
 import cv2 #OpenCV
@@ -92,8 +93,10 @@ df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas váli
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento, validación y test. """
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
 # @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['distant_metastasis'])
-train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['distant_metastasis'])
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['distant_metastasis'],
+                                         random_state= 42)
+train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['distant_metastasis'],
+                                          random_state= 42)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -103,7 +106,7 @@ image_dir = '/home/avalderas/img_slides/img_lotes'
 #image_dir = 'C:\\Users\\valde\Desktop\Datos_repositorio\img_slides\img_lotes'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
-cancer_dir = glob.glob(image_dir + "/img_lote*_cancer/*") # 1702 imágenes con cáncer en total
+cancer_dir = glob.glob(image_dir + "/img_lote*_cancer/*")
 
 """ Se crea una serie sobre el directorio de las imágenes con cáncer que crea un array de 1-D (columna) en el que en 
 cada fila hay una ruta para cada una de las imágenes con cáncer. Posteriormente, se extrae el 'ID' de cada ruta de cada
@@ -143,27 +146,58 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(100) # Eje Y: 630. Nº de filas
-ancho = int(100) # Eje X: 1480. Nº de columnas
+alto = int(630) # Eje Y: 630. Nº de filas
+ancho = int(1480) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
-""" Se leen y se redimensionan posteriormente las imágenes de los subconjuntos a las dimensiones especificadas arriba
-y se añaden a una lista: """
+""" Se establece la primera imagen como la imagen objetivo respecto a la que normalizar el color, se estandariza también
+el brillo para mejorar el cálculo y depués de normalizar el color, se redimensionan las imágenes, añadiéndolas
+posteriormente a su respectiva lista del subconjunto de datos"""
 pre_train_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de entrenamiento
 valid_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de validación
 test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
 
 for image_train in train_data['img_path']:
-    pre_train_image_data.append(cv2.resize(cv2.imread(image_train, cv2.IMREAD_COLOR), (ancho, alto),
-                                           interpolation=cv2.INTER_CUBIC))
+    if image_train[0]:
+        target_train = staintools.read_image(image_train)
+        target_train = staintools.LuminosityStandardizer.standardize(target_train)
+        normalizer = staintools.StainNormalizer(method='vahadane')
+        normalizer.fit(target_train)
+
+    img_train = staintools.read_image(image_train)
+    #cv2.imshow('image', img_train)
+    #cv2.waitKey(0)
+
+    normal_image_train = staintools.LuminosityStandardizer.standardize(img_train)
+    normal_image_train = normalizer.transform(normal_image_train)
+
+    img_train_norm_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
+    #cv2.imshow('image_norm', img_train_norm_resize)
+    #cv2.waitKey(0)
 
 for image_valid in valid_data['img_path']:
-    valid_image_data.append(cv2.resize(cv2.imread(image_valid,cv2.IMREAD_COLOR),(ancho,alto),
-                                          interpolation=cv2.INTER_CUBIC))
+    if image_valid[0]:
+        target_valid = staintools.read_image(image_valid)
+        target_valid = staintools.LuminosityStandardizer.standardize(target_valid)
+        normalizer = staintools.StainNormalizer(method='vahadane')
+        normalizer.fit(target_valid)
+
+    img_valid = staintools.read_image(image_valid)
+    normal_image_valid = staintools.LuminosityStandardizer.standardize(img_valid)
+    normal_image_valid = normalizer.transform(normal_image_valid)
+    img_valid_norm_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
 
 for image_test in test_data['img_path']:
-    test_image_data.append(cv2.resize(cv2.imread(image_test,cv2.IMREAD_COLOR),(ancho,alto),
-                                          interpolation=cv2.INTER_CUBIC))
+    if image_test[0]:
+        target_test = staintools.read_image(image_test)
+        target_test = staintools.LuminosityStandardizer.standardize(target_test)
+        normalizer = staintools.StainNormalizer(method='vahadane')
+        normalizer.fit(target_test)
+
+    img_test = staintools.read_image(image_test)
+    normal_image_test = staintools.LuminosityStandardizer.standardize(img_test)
+    normal_image_test = normalizer.transform(normal_image_test)
+    img_test_norm_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
 
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
 se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
@@ -207,22 +241,17 @@ test_labels = np.asarray(test_labels).astype('float32')
 --------------------------------------------------------------------------------------------------------------------"""
 """ Se define la red neuronal convolucional y se congela el modelo base de las capas de convolución, y se añade nuestro
 propio clasificador: """
-model = Sequential()
-model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(alto,ancho,canales), padding= 'same'))
-model.add(layers.Conv2D(32, (3, 3), activation='relu', padding= 'same'))
-model.add(layers.Conv2D(32, (3, 3), activation='relu', padding= 'same'))
-model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Conv2D(64, (3, 3), activation='relu', padding= 'same'))
-model.add(layers.Conv2D(64, (3, 3), activation='relu', padding= 'same'))
-model.add(layers.Conv2D(64, (3, 3), activation='relu', padding= 'same'))
-model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Conv2D(128, (3, 3), activation='relu', padding= 'same'))
-model.add(layers.Conv2D(128, (3, 3), activation='relu', padding= 'same'))
-model.add(layers.Conv2D(128, (3, 3), activation='relu', padding= 'same'))
-model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Flatten()),
-model.add(layers.Dense(256, activation='relu')),
-model.add(layers.Dense(1, activation='sigmoid'))
+cnn_model = keras.applications.ResNet50V2(weights='imagenet', input_shape=(alto, ancho, canales),
+                                              include_top=False)
+cnn_model.trainable = False
+
+inputs = keras.Input(shape=(alto, ancho, canales))
+all_model = cnn_model(inputs, training=False)
+all_model = layers.GlobalAveragePooling2D()(all_model)
+all_model = layers.Dropout(0.5)(all_model)
+all_model = layers.BatchNormalization()(all_model)
+all_model = layers.Dense(1, activation= 'sigmoid')(all_model)
+model = keras.models.Model(inputs = inputs, outputs = all_model)
 model.summary()
 
 """ Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
@@ -266,12 +295,25 @@ class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = trainGen,
-                           epochs = 100,
+                           epochs = 5,
                            verbose = 1,
                            batch_size = 32,
                            class_weight = class_weight_dict,
                            #callbacks = mcp_save,
                            validation_data = valGen)
+
+for layer_train in cnn_model.layers[0:]:
+    layer_train.trainable = True
+
+model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
+              optimizer = keras.optimizers.Adam(learning_rate = 0.001),
+              metrics = metrics)
+
+model.summary()
+
+""" Una vez definido y compilado el modelo, es hora de entrenarlo. """
+model.fit(x = trainGen, epochs = 100, verbose = 1, batch_size = 32, class_weight = class_weight_dict,
+          validation_data = valGen)
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -279,8 +321,10 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(testGen, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
-      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,
+      "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
+      "Exactitud del conjunto de prueba: {:.2f} %\n" 
+      "El AUC-ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
+                                                               results[3]/(results[3]+results[2]), results[7] * 100,
                                                                results[8]))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
