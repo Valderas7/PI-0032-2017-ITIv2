@@ -5,14 +5,13 @@ import seaborn as sns # Para realizar gráficas sobre datos
 import matplotlib.pyplot as plt
 import cv2 #OpenCV
 import glob
+import staintools
 from tensorflow.keras.callbacks import ModelCheckpoint
-import imageio
-import imgaug as ia
-import imgaug.augmenters as iaa
 from sklearn.utils import class_weight
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import layers, models
 from tensorflow.keras.layers import Input # Para instanciar tensores de Keras
 from functools import reduce # 'reduce' aplica una función pasada como argumento para todos los miembros de una lista.
 from sklearn.model_selection import train_test_split # Se importa la librería para dividir los datos en entreno y test.
@@ -129,66 +128,80 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(50) # Eje Y: 630. Nº de filas
-ancho = int(50) # Eje X: 1480. Nº de columnas
+alto = int(630) # Eje Y: 630. Nº de filas
+ancho = int(1480) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
-mitad_alto = int(alto/2)
-mitad_ancho = int(ancho/2)
-
-""" Se leen y se redimensionan posteriormente las imágenes de los subconjuntos a las dimensiones especificadas arriba
-y se añaden a una lista: """
+""" Se establece la primera imagen como la imagen objetivo respecto a la que normalizar el color, se estandariza también
+el brillo para mejorar el cálculo y depués de normalizar el color, se redimensionan las imágenes, añadiéndolas
+posteriormente a su respectiva lista del subconjunto de datos"""
+# @StainNormalizer: Instancia para normalizar el color de la imagen mediante el metodo de normalizacion especificado
 pre_train_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de entrenamiento
 valid_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de validación
 test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
 
-for image_train in train_data['img_path']:
-    pre_train_image_data.append(cv2.resize(cv2.imread(image_train, cv2.IMREAD_COLOR), (ancho, alto),
-                                           interpolation=cv2.INTER_CUBIC))
+# Filtro de detección de bordes (enfocar)
+kernel = np.array([[0.0, -1.0, 0.0],
+                   [-1.0, 5.0, -1.0],
+                   [0.0, -1.0, 0.0]])
+# kernel = kernel/(np.sum(kernel) if np.sum(kernel)!=0 else 1)
+
+normalizer = staintools.StainNormalizer(method='vahadane')
+
+for index_normal_train, image_train in enumerate(train_data['img_path']):
+    if index_normal_train == 0:
+        target = staintools.read_image(image_train)
+        target = staintools.LuminosityStandardizer.standardize(target)
+        normalizer.fit(target)
+
+    img_train = staintools.read_image(image_train)
+    #cv2.imshow('image', img_train)
+    #cv2.waitKey(0)
+    normal_image_train = staintools.LuminosityStandardizer.standardize(img_train)
+    normal_image_train = normalizer.transform(normal_image_train)
+
+    img_train_norm_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
+    #cv2.imshow('image_norm', img_train_norm_resize)
+    #cv2.waitKey(0)
+    img_train_norm_resize = cv2.filter2D(img_train_norm_resize, -1, kernel)
+    #cv2.imshow('image_filtered', img_train_norm_resize)
+    #cv2.waitKey(0)
+    img_train_norm_resize = cv2.cvtColor(img_train_norm_resize, cv2.COLOR_RGB2HSV_FULL)
+    #cv2.imshow('image_HSV', img_train_norm_resize)
+    #cv2.waitKey(0)
+    pre_train_image_data.append(img_train_norm_resize)
+    print(index_normal_train)
 
 for image_valid in valid_data['img_path']:
-    valid_image_data.append(cv2.resize(cv2.imread(image_valid,cv2.IMREAD_COLOR),(ancho,alto),
-                                          interpolation=cv2.INTER_CUBIC))
+    img_valid = staintools.read_image(image_valid)
+    normal_image_valid = staintools.LuminosityStandardizer.standardize(img_valid)
+    normal_image_valid = normalizer.transform(normal_image_valid)
+    img_valid_norm_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
+    img_valid_norm_resize = cv2.filter2D(img_valid_norm_resize, -1, kernel)
+    img_valid_norm_resize = cv2.cvtColor(img_valid_norm_resize, cv2.COLOR_RGB2HSV_FULL)
+
+    valid_image_data.append(img_valid_norm_resize)
 
 for image_test in test_data['img_path']:
-    test_image_data.append(cv2.resize(cv2.imread(image_test,cv2.IMREAD_COLOR),(ancho,alto),
-                                          interpolation=cv2.INTER_CUBIC))
+    img_test = staintools.read_image(image_test)
+    normal_image_test = staintools.LuminosityStandardizer.standardize(img_test)
+    normal_image_test = normalizer.transform(normal_image_test)
+    img_test_norm_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
+    img_test_norm_resize = cv2.filter2D(img_test_norm_resize, -1, kernel)
+    img_test_norm_resize = cv2.cvtColor(img_test_norm_resize, cv2.COLOR_RGB2HSV_FULL)
 
-train_image_data = []
-
-for image in pre_train_image_data:
-    train_image_data.append(image)
-    rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
-    train_image_data.append(rotate.augment_image(image))
-    gaussian_noise = iaa.AdditiveGaussianNoise(10, 20)
-    train_image_data.append(gaussian_noise.augment_image(image))
-    crop = iaa.Crop(percent=(0, 0.3))
-    train_image_data.append(crop.augment_image(image))
-    shear = iaa.Affine(shear=(0, 40), mode= 'edge')
-    train_image_data.append(shear.augment_image(image))
-    flip_hr = iaa.Fliplr(p=1.0)
-    train_image_data.append(flip_hr.augment_image(image))
-    flip_vr = iaa.Flipud(p=1.0)
-    train_image_data.append(flip_vr.augment_image(image))
-    contrast = iaa.GammaContrast(gamma=2.0)
-    train_image_data.append(contrast.augment_image(image))
-    scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
-    train_image_data.append(scale_im.augment_image(image))
+    test_image_data.append(img_test_norm_resize)
 
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
 se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
 array con forma (X, alto, ancho, canales). """
-train_image_data = (np.array(train_image_data) / 255.0)
-valid_image_data = (np.array(valid_image_data) / 255.0)
+train_image_data = np.array(pre_train_image_data)
+valid_image_data = np.array(valid_image_data)
 test_image_data = (np.array(test_image_data) / 255.0)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-""" Una vez se tienen hechos los recortes de imágenes, se procede a replicar las filas de ambos subconjuntos de datos
-para que el número de imágenes utilizadas y el número de filas del marco de datos sea el mismo: """
-train_data = pd.DataFrame(np.repeat(train_data.values, 9, axis=0), columns=train_data.columns)
-
 """ Una vez ya se tienen las imágenes convertidas en arrays de numpy, se puede eliminar de los dos subconjuntos tanto la
 columna 'ID' como la columna 'path_img' que no son útiles para la red MLP: """
 #@inplace = True para que devuelva el resultado en la misma variable
@@ -221,18 +234,65 @@ test_labels = np.asarray(test_labels).astype('float32')
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL (CNN) -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Se define la red neuronal convolucional: """
-cnn_model = keras.applications.EfficientNetB7(weights='imagenet', input_shape=(alto, ancho, canales),
-                                              include_top=False)
-cnn_model.trainable = False
+def unet(input_size = (alto, ancho, canales)):
+    inputs = Input(input_size)
+    conv1 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
+    conv1 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
+    pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)
+    conv2 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool1)
+    conv2 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv2)
+    pool2 = layers.MaxPooling2D(pool_size=(2, 2))(conv2)
+    conv3 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool2)
+    conv3 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv3)
+    pool3 = layers.MaxPooling2D(pool_size=(2, 2))(conv3)
+    conv4 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool3)
+    conv4 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv4)
+    drop4 = layers.Dropout(0.5)(conv4)
+    pool4 = layers.MaxPooling2D(pool_size=(2, 2))(drop4)
 
-inputs = keras.Input(shape=(alto, ancho, canales))
-x = cnn_model(inputs, training=False)
-x = layers.GlobalAveragePooling2D()(x)
-x = layers.Dropout(0.5)(x)
-x = layers.BatchNormalization()(x)
-x = layers.Dense(1, activation= 'sigmoid')(x)
-model = keras.models.Model(inputs = inputs, outputs = x)
+    conv5 = layers.Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool4)
+    conv5 = layers.Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv5)
+    drop5 = layers.Dropout(0.5)(conv5)
+
+    up6 = layers.Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(layers.UpSampling2D(size = (2,2))(drop5))
+    merge6 = layers.concatenate([drop4,up6], axis = 3)
+    conv6 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge6)
+    conv6 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv6)
+
+    up7 = layers.Conv2D(256, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(layers.UpSampling2D(size = (2,2))(conv6))
+    merge7 = layers.concatenate([conv3,up7], axis = 3)
+    conv7 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge7)
+    conv7 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv7)
+
+    up8 = layers.Conv2D(128, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(layers.UpSampling2D(size = (2,2))(conv7))
+    merge8 = layers.concatenate([conv2,up8], axis = 3)
+    conv8 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge8)
+    conv8 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv8)
+
+    up9 = layers.Conv2D(64, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(layers.UpSampling2D(size = (2,2))(conv8))
+    merge9 = layers.concatenate([conv1,up9], axis = 3)
+    conv9 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge9)
+    conv9 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
+    conv9 = layers.Conv2D(2, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
+    conv10 = layers.Conv2D(1, 1, activation = 'sigmoid')(conv9)
+
+    unet_model = models.Model(input = inputs, output = conv10)
+    return unet_model
+
+model = unet()
 model.summary()
+
+""" Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
+Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
+la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
+trainAug = ImageDataGenerator(rescale = 1.0/255, horizontal_flip=True, vertical_flip= True)
+valAug = ImageDataGenerator(rescale = 1.0/255)
+
+""" Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
+instancias posteriormente: """
+trainGen = trainAug.flow(x = train_image_data, y = train_labels, batch_size = 32)
+valGen = valAug.flow(x = valid_image_data, y = valid_labels, batch_size = 32, shuffle= False)
+#testGen = valAug.flow(x = test_image_data, y = test_labels, batch_size = 32, shuffle= False)
 
 """ Hay que definir las métricas de la red y configurar los distintos hiperparámetros para entrenar la red. El modelo ya
 ha sido definido anteriormente, así que ahora hay que compilarlo. Para ello se define una función de loss y un 
@@ -261,14 +321,21 @@ class_weights = class_weight.compute_class_weight(class_weight = 'balanced', cla
 class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = train_image_data,  # Datos de entrada.
-                           y = train_labels,  # Datos objetivos.
-                           epochs = 50,
-                           verbose = 1,
-                           batch_size= 32,
-                           class_weight= class_weight_dict,
-                           #callbacks= mcp_save,
-                           validation_data = (valid_image_data, valid_labels)) # Datos de validación.
+model.fit(x = trainGen, epochs = 5, verbose = 1, batch_size = 32, class_weight = class_weight_dict,
+          validation_data = valGen)
+
+""" Transfer learning """
+cnn_model.trainable = True
+
+model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+              metrics = metrics)
+
+model.summary()
+
+""" Una vez definido y compilado el modelo, es hora de entrenarlo. """
+neural_network = model.fit(x = trainGen, epochs = 100, verbose = 1, batch_size = 32, class_weight = class_weight_dict,
+                           validation_data = valGen)
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -276,8 +343,10 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_image_data, test_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
-      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,
+      "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
+      "Exactitud del conjunto de prueba: {:.2f} %\n" 
+      "El AUC-ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
+                                                               results[3]/(results[3]+results[2]), results[7] * 100,
                                                                results[8]))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
