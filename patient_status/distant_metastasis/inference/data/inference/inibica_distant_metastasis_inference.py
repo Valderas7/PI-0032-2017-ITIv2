@@ -258,7 +258,7 @@ data_inibica = data_inibica[['Paciente', 'Edad', 'Tratamiento_neoadyuvante',
 #data_inibica.to_excel('inference_inibica_metastasis.xlsx')
 
 """ Se carga el Excel de nuevo ya que anteriormente se ha guardado """
-data_inibica = pd.read_excel('/home/avalderas/img_slides/patient_status/inference_inibica_metastasis.xlsx', engine='openpyxl')
+data_inibica = pd.read_excel('/home/avalderas/img_slides/patient_status/distant_metastasis/inference/data/test_data&models/inference_inibica_metastasis.xlsx', engine='openpyxl')
 
 """ Ahora habria que eliminar la columna de pacientes y guardar la columna de
 metastasis a distancia como variable de salida. """
