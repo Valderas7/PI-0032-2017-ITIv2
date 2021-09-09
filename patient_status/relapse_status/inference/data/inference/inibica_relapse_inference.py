@@ -185,36 +185,36 @@ data_inibica.loc[(data_inibica['STAGE'] == 'IIIB'), 'STAGE_IIIB'] = 1
 data_inibica.loc[(data_inibica['STAGE'] == 'IIIC'), 'STAGE_IIIC'] = 1
 
 """ Se elimina la columna 'STAGE', ya que ya no nos sirve, al igual que las demas columnas que no se utilizan para 
-la prediccion de metastasis. """
-data_inibica = data_inibica.drop(['STAGE'], axis = 1)
+la prediccion de recaidas. """
+data_inibica = data_inibica.drop(['STAGE', 'Estado_supervivencia'], axis = 1)
 
 """ Se ordenan las columnas de igual manera en el que fueron colocadas durante el proceso de entrenamiento. """
-data_inibica = data_inibica[['Paciente', 'Edad', 'Recidivas', 'Tratamiento_neoadyuvante', 'Diagnóstico_previo',
-                             'SNV_AKT1', 'SNV_AKT2', 'SNV_AKT3', 'SNV_ALK', 'SNV_AR', 'SNV_ARAF', 'SNV_AXL', 'SNV_BRAF',
-                             'SNV_BTK', 'SNV_CBL', 'SNV_CCND1', 'SNV_CDK4', 'SNV_CDK6', 'SNV_CHEK2', 'SNV_CSF1R',
-                             'SNV_CTNNB1', 'SNV_DDR2', 'SNV_EGFR', 'SNV_ERBB2', 'SNV_ERBB3', 'SNV_ERBB4', 'SNV_ERCC2',
-                             'SNV_ESR1', 'SNV_EZH2', 'SNV_FGFR1', 'SNV_FGFR2', 'SNV_FGFR3', 'SNV_FGFR4', 'SNV_FLT3',
-                             'SNV_FOXL2', 'SNV_GATA2', 'SNV_GNA11', 'SNV_GNAQ', 'SNV_GNAS', 'SNV_H3F3A', 'SNV_HIST1H3B',
-                             'SNV_HNF1A', 'SNV_HRAS', 'SNV_IDH1', 'SNV_IDH2', 'SNV_JAK1', 'SNV_JAK2', 'SNV_JAK3',
-                             'SNV_KDR', 'SNV_KIT', 'SNV_KNSTRN', 'SNV_KRAS', 'SNV_MAGOH', 'SNV_MAP2K1', 'SNV_MAP2K2',
-                             'SNV_MAP2K4', 'SNV_MAPK1', 'SNV_MAX', 'SNV_MDM4', 'SNV_MED12', 'SNV_MET', 'SNV_MTOR',
-                             'SNV_MYC', 'SNV_MYCN', 'SNV_MYD88', 'SNV_NFE2L2', 'SNV_NRAS', 'SNV_NTRK1', 'SNV_NTRK2',
-                             'SNV_NTRK3', 'SNV_PDGFRA', 'SNV_PDGFRB', 'SNV_PIK3CA', 'SNV_PIK3CB', 'SNV_PPP2R1A',
-                             'SNV_PTPN11', 'SNV_RAC1', 'SNV_RAF1', 'SNV_RET', 'SNV_RHEB', 'SNV_RHOA', 'SNV_ROS1',
-                             'SNV_SF3B1', 'SNV_SMAD4', 'SNV_SMO', 'SNV_SPOP', 'SNV_SRC', 'SNV_STAT3', 'SNV_TERT',
-                             'SNV_TOP1', 'SNV_U2AF1', 'SNV_XPO1', 'SNV_BRCA1', 'SNV_BRCA2', 'SNV_CDKN2A', 'SNV_ERG',
-                             'SNV_ETV1', 'SNV_ETV4', 'SNV_ETV5', 'SNV_FGR', 'SNV_MYB', 'SNV_MYBL1', 'SNV_NF1',
-                             'SNV_NOTCH1', 'SNV_NOTCH4', 'SNV_NRG1', 'SNV_NUTM1', 'SNV_PPARG', 'SNV_PRKACA',
-                             'SNV_PRKACB', 'SNV_PTEN', 'SNV_RAD51B', 'SNV_RB1', 'SNV_RELA', 'SNV_RSPO2', 'SNV_RSPO3',
-                             'SNV_ARID1A', 'SNV_ATM', 'SNV_ATR', 'SNV_ATRX', 'SNV_BAP1', 'SNV_CDK12', 'SNV_CDKN1B',
-                             'SNV_CDKN2B', 'SNV_CHEK1', 'SNV_CREBBP', 'SNV_FANCA', 'SNV_FANCD2', 'SNV_FANCI',
-                             'SNV_FBXW7', 'SNV_MLH1', 'SNV_MRE11', 'SNV_MSH2', 'SNV_MSH6', 'SNV_NBN', 'SNV_NF2',
-                             'SNV_NOTCH2', 'SNV_NOTCH3', 'SNV_PALB2', 'SNV_PIK3R1', 'SNV_PMS2', 'SNV_POLE', 'SNV_PTCH1',
-                             'SNV_RAD50', 'SNV_RAD51', 'SNV_RAD51C', 'SNV_RAD51D', 'SNV_RNF43', 'SNV_SETD2', 'SNV_SLX4',
-                             'SNV_SMARCA4', 'SNV_SMARCB1', 'SNV_STK11', 'SNV_TP53', 'SNV_TSC1', 'SNV_TSC2',
-                             'CNV_AKT1_AMP', 'CNV_AKT1_NORMAL', 'CNV_AKT1_DEL', 'CNV_AKT2_AMP', 'CNV_AKT2_NORMAL',
-                             'CNV_AKT2_DEL', 'CNV_AKT3_AMP', 'CNV_AKT3_NORMAL', 'CNV_AKT3_DEL', 'CNV_ALK_AMP',
-                             'CNV_ALK_NORMAL', 'CNV_ALK_DEL', 'CNV_AR_AMP', 'CNV_AR_NORMAL', 'CNV_AR_DEL', 'CNV_AXL_AMP',
+data_inibica = data_inibica[['Paciente', 'Edad', 'Tratamiento_neoadyuvante', 'Diagnóstico_previo', 'SNV_AKT1',
+                             'SNV_AKT2', 'SNV_AKT3', 'SNV_ALK', 'SNV_AR', 'SNV_ARAF', 'SNV_AXL', 'SNV_BRAF', 'SNV_BTK',
+                             'SNV_CBL', 'SNV_CCND1', 'SNV_CDK4', 'SNV_CDK6', 'SNV_CHEK2', 'SNV_CSF1R', 'SNV_CTNNB1',
+                             'SNV_DDR2', 'SNV_EGFR', 'SNV_ERBB2', 'SNV_ERBB3', 'SNV_ERBB4', 'SNV_ERCC2', 'SNV_ESR1',
+                             'SNV_EZH2', 'SNV_FGFR1', 'SNV_FGFR2', 'SNV_FGFR3', 'SNV_FGFR4', 'SNV_FLT3', 'SNV_FOXL2',
+                             'SNV_GATA2', 'SNV_GNA11', 'SNV_GNAQ', 'SNV_GNAS', 'SNV_H3F3A', 'SNV_HIST1H3B', 'SNV_HNF1A',
+                             'SNV_HRAS', 'SNV_IDH1', 'SNV_IDH2', 'SNV_JAK1', 'SNV_JAK2', 'SNV_JAK3', 'SNV_KDR',
+                             'SNV_KIT', 'SNV_KNSTRN', 'SNV_KRAS', 'SNV_MAGOH', 'SNV_MAP2K1', 'SNV_MAP2K2', 'SNV_MAP2K4',
+                             'SNV_MAPK1', 'SNV_MAX', 'SNV_MDM4', 'SNV_MED12', 'SNV_MET', 'SNV_MTOR', 'SNV_MYC',
+                             'SNV_MYCN', 'SNV_MYD88', 'SNV_NFE2L2', 'SNV_NRAS', 'SNV_NTRK1', 'SNV_NTRK2', 'SNV_NTRK3',
+                             'SNV_PDGFRA', 'SNV_PDGFRB', 'SNV_PIK3CA', 'SNV_PIK3CB', 'SNV_PPP2R1A', 'SNV_PTPN11',
+                             'SNV_RAC1', 'SNV_RAF1', 'SNV_RET', 'SNV_RHEB', 'SNV_RHOA', 'SNV_ROS1', 'SNV_SF3B1',
+                             'SNV_SMAD4', 'SNV_SMO', 'SNV_SPOP', 'SNV_SRC', 'SNV_STAT3', 'SNV_TERT', 'SNV_TOP1',
+                             'SNV_U2AF1', 'SNV_XPO1', 'SNV_BRCA1', 'SNV_BRCA2', 'SNV_CDKN2A', 'SNV_ERG', 'SNV_ETV1',
+                             'SNV_ETV4', 'SNV_ETV5', 'SNV_FGR', 'SNV_MYB', 'SNV_MYBL1', 'SNV_NF1', 'SNV_NOTCH1',
+                             'SNV_NOTCH4', 'SNV_NRG1', 'SNV_NUTM1', 'SNV_PPARG', 'SNV_PRKACA', 'SNV_PRKACB',
+                             'SNV_PTEN', 'SNV_RAD51B', 'SNV_RB1', 'SNV_RELA', 'SNV_RSPO2', 'SNV_RSPO3', 'SNV_ARID1A',
+                             'SNV_ATM', 'SNV_ATR', 'SNV_ATRX', 'SNV_BAP1', 'SNV_CDK12', 'SNV_CDKN1B', 'SNV_CDKN2B',
+                             'SNV_CHEK1', 'SNV_CREBBP', 'SNV_FANCA', 'SNV_FANCD2', 'SNV_FANCI', 'SNV_FBXW7', 'SNV_MLH1',
+                             'SNV_MRE11', 'SNV_MSH2', 'SNV_MSH6', 'SNV_NBN', 'SNV_NF2', 'SNV_NOTCH2', 'SNV_NOTCH3',
+                             'SNV_PALB2', 'SNV_PIK3R1', 'SNV_PMS2', 'SNV_POLE', 'SNV_PTCH1', 'SNV_RAD50', 'SNV_RAD51',
+                             'SNV_RAD51C', 'SNV_RAD51D', 'SNV_RNF43', 'SNV_SETD2', 'SNV_SLX4', 'SNV_SMARCA4',
+                             'SNV_SMARCB1', 'SNV_STK11', 'SNV_TP53', 'SNV_TSC1', 'SNV_TSC2', 'CNV_AKT1_AMP',
+                             'CNV_AKT1_NORMAL', 'CNV_AKT1_DEL', 'CNV_AKT2_AMP', 'CNV_AKT2_NORMAL', 'CNV_AKT2_DEL',
+                             'CNV_AKT3_AMP', 'CNV_AKT3_NORMAL', 'CNV_AKT3_DEL', 'CNV_ALK_AMP', 'CNV_ALK_NORMAL',
+                             'CNV_ALK_DEL', 'CNV_AR_AMP', 'CNV_AR_NORMAL', 'CNV_AR_DEL', 'CNV_AXL_AMP',
                              'CNV_AXL_NORMAL', 'CNV_AXL_DEL', 'CNV_BRAF_AMP', 'CNV_BRAF_NORMAL', 'CNV_BRAF_DEL',
                              'CNV_CCND1_AMP', 'CNV_CCND1_NORMAL', 'CNV_CCND1_DEL', 'CNV_CCND2_AMP', 'CNV_CCND2_NORMAL',
                              'CNV_CCND2_DEL', 'CNV_CCND3_AMP', 'CNV_CCND3_NORMAL', 'CNV_CCND3_DEL', 'CNV_CCNE1_AMP',
@@ -233,39 +233,39 @@ data_inibica = data_inibica[['Paciente', 'Edad', 'Recidivas', 'Tratamiento_neoad
                              'CNV_MYC_NORMAL', 'CNV_MYC_DEL', 'CNV_MYCL_AMP', 'CNV_MYCL_NORMAL', 'CNV_MYCL_DEL',
                              'CNV_MYCN_AMP', 'CNV_MYCN_NORMAL', 'CNV_MYCN_DEL', 'CNV_NTRK1_AMP', 'CNV_NTRK1_NORMAL',
                              'CNV_NTRK1_DEL', 'CNV_NTRK2_AMP', 'CNV_NTRK2_NORMAL', 'CNV_NTRK2_DEL', 'CNV_NTRK3_AMP',
-                             'CNV_NTRK3_NORMAL', 'CNV_NTRK3_DEL','CNV_PDGFRA_AMP', 'CNV_PDGFRA_NORMAL', 'CNV_PDGFRA_DEL',
-                             'CNV_PDGFRB_AMP', 'CNV_PDGFRB_NORMAL', 'CNV_PDGFRB_DEL', 'CNV_PIK3CA_AMP',
-                             'CNV_PIK3CA_NORMAL', 'CNV_PIK3CA_DEL', 'CNV_PIK3CB_AMP', 'CNV_PIK3CB_NORMAL',
-                             'CNV_PIK3CB_DEL', 'CNV_PPARG_AMP', 'CNV_PPARG_NORMAL', 'CNV_PPARG_DEL', 'CNV_RICTOR_AMP',
-                             'CNV_RICTOR_NORMAL', 'CNV_RICTOR_DEL', 'CNV_TERT_AMP', 'CNV_TERT_NORMAL', 'CNV_TERT_DEL',
-                             'Metástasis_distancia', 'pM_CM0', 'pM_M0', 'pM_M1', 'pM_MX', 'pN_N1', 'pN_N1A', 'pN_N1B',
-                             'pN_N1C', 'pN_N1MI', 'pN_N2', 'pN_N2A', 'pN_N3', 'pN_N3A', 'pN_N3B', 'pT_T1', 'pT_T1B',
-                             'pT_T1C', 'pT_T2', 'pT_T2B', 'pT_T3', 'pT_T4', 'pT_T4B', 'pT_T4D', 'STAGE_IB', 'STAGE_II',
-                             'STAGE_IIA', 'STAGE_IIB', 'STAGE_III', 'STAGE_IIIA', 'STAGE_IIIB', 'STAGE_IIIC', 'STAGE_X',
-                             'IHQ_Basal', 'IHQ_Her2', 'IHQ_Luminal_A', 'IHQ_Luminal_B', 'IHQ_Normal', 'Tumor_IDC',
-                             'Tumor_ILC', 'Tumor_Metaplastic', 'Tumor_Mixed', 'Tumor_Mucinous', 'Tumor_Other',
-                             'Estado_supervivencia']]
+                             'CNV_NTRK3_NORMAL', 'CNV_NTRK3_DEL','CNV_PDGFRA_AMP', 'CNV_PDGFRA_NORMAL',
+                             'CNV_PDGFRA_DEL', 'CNV_PDGFRB_AMP', 'CNV_PDGFRB_NORMAL', 'CNV_PDGFRB_DEL',
+                             'CNV_PIK3CA_AMP', 'CNV_PIK3CA_NORMAL', 'CNV_PIK3CA_DEL', 'CNV_PIK3CB_AMP',
+                             'CNV_PIK3CB_NORMAL', 'CNV_PIK3CB_DEL', 'CNV_PPARG_AMP', 'CNV_PPARG_NORMAL',
+                             'CNV_PPARG_DEL', 'CNV_RICTOR_AMP', 'CNV_RICTOR_NORMAL', 'CNV_RICTOR_DEL', 'CNV_TERT_AMP',
+                             'CNV_TERT_NORMAL', 'CNV_TERT_DEL', 'Metástasis_distancia', 'pM_CM0', 'pM_M0', 'pM_M1',
+                             'pM_MX', 'pN_N1', 'pN_N1A', 'pN_N1B', 'pN_N1C', 'pN_N1MI', 'pN_N2', 'pN_N2A', 'pN_N3',
+                             'pN_N3A', 'pN_N3B', 'pT_T1', 'pT_T1B', 'pT_T1C', 'pT_T2', 'pT_T2B', 'pT_T3', 'pT_T4',
+                             'pT_T4B', 'pT_T4D', 'STAGE_IB', 'STAGE_II', 'STAGE_IIA', 'STAGE_IIB', 'STAGE_III',
+                             'STAGE_IIIA', 'STAGE_IIIB', 'STAGE_IIIC', 'STAGE_X', 'IHQ_Basal', 'IHQ_Her2',
+                             'IHQ_Luminal_A', 'IHQ_Luminal_B', 'IHQ_Normal', 'Tumor_IDC', 'Tumor_ILC',
+                             'Tumor_Metaplastic', 'Tumor_Mixed', 'Tumor_Mucinous', 'Tumor_Other', 'Recidivas']]
 
-#data_inibica.to_excel('inference_inibica_survival.xlsx')
+#data_inibica.to_excel('inference_inibica_relapse.xlsx')
 
 """ Se carga el Excel de nuevo ya que anteriormente se ha guardado """
-data_inibica = pd.read_excel('/home/avalderas/img_slides/patient_status/overall_status/inference/data/test_data&models/inference_inibica_survival.xlsx', engine='openpyxl')
+data_inibica = pd.read_excel('/home/avalderas/img_slides/patient_status/relapse_status/inference/data/test_data&models/inference_inibica_relapse.xlsx', engine='openpyxl')
 
-""" Ahora habria que eliminar la columna de pacientes y guardar la columna de supervivencia como variable de salida. """
+""" Ahora habria que eliminar la columna de pacientes y guardar la columna de recidivas como variable de salida. """
 data_inibica = data_inibica.drop(['Paciente'], axis = 1)
-inibica_labels = data_inibica.pop('Estado_supervivencia')
+inibica_labels = data_inibica.pop('Recidivas')
 
 """ Se transforman ambos dataframes en formato numpy para que se les pueda aplicar la inferencia del modelo de la red 
 neuronal """
 test_data_inibica = np.asarray(data_inibica).astype('float32')
 inibica_labels = np.asarray(inibica_labels)
 
-survival_model = load_model('/home/avalderas/img_slides/patient_status/overall_status/inference/data/test_data&models/data_model_survival_prediction.h5')
+relapse_model = load_model('/home/avalderas/img_slides/patient_status/relapse_status/inference/data/test_data&models/data_model_relapse_prediction.h5')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento """
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = survival_model.evaluate(test_data_inibica, inibica_labels, verbose = 0)
+results = relapse_model.evaluate(test_data_inibica, inibica_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n"
       "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
       "Exactitud del conjunto de prueba: {:.2f} %\n"
@@ -276,7 +276,7 @@ print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de p
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
 y_true = inibica_labels # Etiquetas verdaderas de 'test'
-y_pred = np.round(survival_model.predict(test_data_inibica)) # Predicción de etiquetas de 'test'
+y_pred = np.round(relapse_model.predict(test_data_inibica)) # Predicción de etiquetas de 'test'
 
 matrix = confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
 
@@ -296,7 +296,7 @@ Para implementarlas, se importan los paquetes necesarios, se definen las variabl
 # @ravel: Aplana el vector a 1D
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
-y_pred_prob = survival_model.predict(test_data_inibica).ravel()
+y_pred_prob = relapse_model.predict(test_data_inibica).ravel()
 fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
 
