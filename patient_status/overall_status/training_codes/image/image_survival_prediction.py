@@ -11,8 +11,8 @@ from sklearn.utils import class_weight
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras import layers, models
-from tensorflow.keras.layers import Input # Para instanciar tensores de Keras
+from tensorflow.keras import models
+from tensorflow.keras.layers import *
 from functools import reduce # 'reduce' aplica una función pasada como argumento para todos los miembros de una lista.
 from sklearn.model_selection import train_test_split # Se importa la librería para dividir los datos en entreno y test.
 from sklearn.preprocessing import MinMaxScaler # Para escalar valores
@@ -77,7 +77,6 @@ df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas váli
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
 # @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['os_status'])
-
 train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['os_status'])
 
 """ -------------------------------------------------------------------------------------------------------------------
@@ -128,8 +127,8 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(630) # Eje Y: 630. Nº de filas
-ancho = int(1480) # Eje X: 1480. Nº de columnas
+alto = int(128) # Eje Y: 630. Nº de filas
+ancho = int(128) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
 """ Se establece la primera imagen como la imagen objetivo respecto a la que normalizar el color, se estandariza también
@@ -144,7 +143,6 @@ test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto d
 kernel = np.array([[0.0, -1.0, 0.0],
                    [-1.0, 5.0, -1.0],
                    [0.0, -1.0, 0.0]])
-# kernel = kernel/(np.sum(kernel) if np.sum(kernel)!=0 else 1)
 
 normalizer = staintools.StainNormalizer(method='vahadane')
 
@@ -234,52 +232,17 @@ test_labels = np.asarray(test_labels).astype('float32')
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL (CNN) -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Se define la red neuronal convolucional: """
-def unet(input_size = (alto, ancho, canales)):
-    inputs = Input(input_size)
-    conv1 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
-    conv1 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
-    pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)
-    conv2 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool1)
-    conv2 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv2)
-    pool2 = layers.MaxPooling2D(pool_size=(2, 2))(conv2)
-    conv3 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool2)
-    conv3 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv3)
-    pool3 = layers.MaxPooling2D(pool_size=(2, 2))(conv3)
-    conv4 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool3)
-    conv4 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv4)
-    drop4 = layers.Dropout(0.5)(conv4)
-    pool4 = layers.MaxPooling2D(pool_size=(2, 2))(drop4)
+cnn_model = keras.applications.ResNet50V2(weights='imagenet', input_shape=(alto, ancho, canales),
+                                              include_top=False)
+cnn_model.trainable = False
 
-    conv5 = layers.Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool4)
-    conv5 = layers.Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv5)
-    drop5 = layers.Dropout(0.5)(conv5)
-
-    up6 = layers.Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(layers.UpSampling2D(size = (2,2))(drop5))
-    merge6 = layers.concatenate([drop4,up6], axis = 3)
-    conv6 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge6)
-    conv6 = layers.Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv6)
-
-    up7 = layers.Conv2D(256, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(layers.UpSampling2D(size = (2,2))(conv6))
-    merge7 = layers.concatenate([conv3,up7], axis = 3)
-    conv7 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge7)
-    conv7 = layers.Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv7)
-
-    up8 = layers.Conv2D(128, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(layers.UpSampling2D(size = (2,2))(conv7))
-    merge8 = layers.concatenate([conv2,up8], axis = 3)
-    conv8 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge8)
-    conv8 = layers.Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv8)
-
-    up9 = layers.Conv2D(64, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(layers.UpSampling2D(size = (2,2))(conv8))
-    merge9 = layers.concatenate([conv1,up9], axis = 3)
-    conv9 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge9)
-    conv9 = layers.Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
-    conv9 = layers.Conv2D(2, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
-    conv10 = layers.Conv2D(1, 1, activation = 'sigmoid')(conv9)
-
-    unet_model = models.Model(input = inputs, output = conv10)
-    return unet_model
-
-model = unet()
+inputs = keras.Input(shape=(alto, ancho, canales))
+x = cnn_model(inputs, training=False)
+x = layers.GlobalAveragePooling2D()(x)
+x = layers.Dropout(0.5)(x)
+x = layers.BatchNormalization()(x)
+x = layers.Dense(1, activation= 'sigmoid')(x)
+model = keras.models.Model(inputs = inputs, outputs = x)
 model.summary()
 
 """ Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
