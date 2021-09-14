@@ -5,18 +5,18 @@ import seaborn as sns # Para realizar gráficas sobre datos
 import matplotlib.pyplot as plt
 import cv2 #OpenCV
 import glob
+import staintools
+from sklearn.preprocessing import MultiLabelBinarizer
 from tensorflow.keras.callbacks import ModelCheckpoint
-import imageio
-import imgaug as ia
-import imgaug.augmenters as iaa
 from sklearn.utils import class_weight
 from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras.layers import Input # Para instanciar tensores de Keras
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import *
+from tensorflow.keras.layers import *
 from functools import reduce # 'reduce' aplica una función pasada como argumento para todos los miembros de una lista.
 from sklearn.model_selection import train_test_split # Se importa la librería para dividir los datos en entreno y test.
 from sklearn.preprocessing import MinMaxScaler # Para escalar valores
-from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
+from sklearn.metrics import multilabel_confusion_matrix, confusion_matrix # Para realizar la matriz de confusión
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN DATOS TABULARES ------------------------------------------------------
@@ -55,33 +55,62 @@ df_list = [df_path_n_stage, df_snv]
 esté descuadrado en la fila que no le corresponda. """
 df_all_merge = reduce(lambda left,right: pd.merge(left,right,on=['ID'], how='left'), df_list)
 
-""" Ahora se va a encontrar cual es el ID del gen que se quiere predecir. Para ello se crean dos variables para
-crear una lista de claves y otra de los valores del diccionario de genes. Se extrae el índice del gen en la lista de
-valores y posteriormente se usa ese índice para buscar con qué clave (ID) se corresponde en la lista de claves. """
+""" Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para empezar se carga el archivo excel 
+donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y creamos dos listas. Una para
+los genes SNV y otra para los genes CNV."""
+mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genes_mutaciones/Panel_OCA.xlsx', usecols= 'B:C',
+                                 engine= 'openpyxl')
+
+snv = mutations_target.loc[mutations_target['Scope'] != 'CNV', 'Gen']
+
+snv_list = []
+for gen_snv in snv:
+    if gen_snv not in snv_list:
+        snv_list.append(gen_snv)
+
+""" Ahora se recopilan en una lista los distintos IDs de los genes a estudiar. """
+id_snv_list = []
+
 key_list = list(dict_genes.keys())
 val_list = list(dict_genes.values())
 
-position = val_list.index('TP53') # Número AQUÍ ESPECIFICAMOS EL GEN CUYA MUTACIÓN SNV SE QUIERE PREDECIR
-id_gen = (key_list[position]) # Número
+for gen_snv in snv_list:
+    position = val_list.index(gen_snv) # Número
+    id_gen_snv = (key_list[position]) # Número
+    id_snv_list.append(id_gen_snv) # Se añaden todos los IDs en la lista vacía
 
-""" Se hace un bucle sobre la columna de mutaciones del dataframe. Así, se busca en cada mutación de cada fila para ver
-en que filas se puede encontrar el ID del gen que se quiere predecir. Se almacenan en una lista los índices de las filas
-donde se encuentra ese ID. """
-list_gen = []
+""" Ahora se hace un bucle sobre la columna de mutaciones SNV del dataframe. Así, se busca en cada mutación de 
+cada fila para ver en cuales de estas filas se encuentra el ID de los genes a estudiar. Se almacenan en una lista de 
+listas los índices de las filas donde se encuentran los IDs de esos genes, de forma que se tiene una lista para cada gen. """
+list_gen_snv = [[] for ID in range(len(id_snv_list))]
 
-for index, row in enumerate (df_all_merge['SNV']): # Para cada fila...
-    for mutation in row: # Para cada mutación de cada fila...
-        if mutation[1] == id_gen:
-            list_gen.append(index)
+for index, id_snv in enumerate (id_snv_list): # Para cada ID del gen SNV de la lista...
+    for index_row, row in enumerate (df_all_merge['SNV']): # Para cada fila dentro de la columna 'SNV'...
+        for mutation in row: # Para cada mutación dentro de cada fila...
+            if mutation[1] == id_snv: # Si el ID de la mutación es el mismo que el ID de la lista de genes...
+                list_gen_snv[index].append(index_row) # Se almacena el índice de la fila en la lista de listas
 
-""" Una vez se tienen almacenados los índices de las filas donde se produce esa mutación, como la salida de la red será
-binaria, se transforman todos los valores de la columna 'mutations' a '0' (no hay mutación del gen específico). Y una 
-vez hecho esto, ya se añaden los '1' (sí hay mutación del gen específico) en las filas cuyos índices estén almacenados 
-en la lista 'list_gen'. """
-df_all_merge['SNV'] = 0
+""" Una vez se tienen almacenados los índices de las filas donde se producen las mutaciones SNV y CNV, hay que crear 
+distintas columnas para cada uno de los genes objetivo, para asi mostrar la informacion de uno en uno. De esta forma, 
+habra una columna distinta para cada gen SNV a estudiar; y tres columnas distintas para cada gen CNV a estudiar 
+(amplificacion, delecion y estado normal). Ademas, se recopilan las columnas creadas en listas (una para las 
+columnas de mutaciones SNV y otras tres para las columnas de mutaciones CNV). """
+columns_list_snv = []
 
-for index in list_gen:
-    df_all_merge.loc[index, 'SNV'] = 1
+df_all_merge.drop(['SNV'], axis=1, inplace= True)
+for gen_snv in snv_list:
+    df_all_merge['SNV_' + gen_snv] = 0
+    columns_list_snv.append('SNV_' + gen_snv)
+
+""" Una vez han sido creadas las columnas, se añade un '1' en aquellas filas donde el paciente tiene mutación sobre el
+gen seleccionado. Se utiliza para ello los índices recogidos anteriormente en las respectivas listas de listas. De esta
+forma, iterando sobre la lista de columnas creadas y mediante los distintos indices de cada sublista, se consigue
+colocar un '1' en aquella filas donde el paciente tiene la mutacion especificada en el gen especificado. """
+i_snv = 0
+for column_snv in columns_list_snv:
+    for index_snv_sublist in list_gen_snv[i_snv]:
+        df_all_merge.loc[index_snv_sublist, column_snv] = 1
+    i_snv += 1
 
 """ En este caso, el número de muestras de imágenes y de datos deben ser iguales. Las imágenes de las que se disponen se 
 enmarcan según el sistema de estadificación TNM como N1A, N1, N2A, N2, N3A, N1MI, N1B, N3, NX, N3B, N1C o N3C según la
@@ -96,8 +125,9 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['SNV'],
-                                         random_state = 42)
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, random_state = 42)
+train_data, valid_data = train_test_split(train_data, test_size = 0.20, random_state = 42)
+
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
@@ -118,11 +148,13 @@ series_img = pd.Series(cancer_dir)
 series_img.index = series_img.str.extract(fr"({'|'.join(df_all_merge['ID'])})", expand=False)
 
 train_data = train_data.join(series_img.rename('img_path'), on='ID')
+valid_data = valid_data.join(series_img.rename('img_path'), on='ID')
 test_data = test_data.join(series_img.rename('img_path'), on='ID')
 
 """ Hay valores nulos, por lo que se ha optado por eliminar esas filas para que se pueda entrenar posteriormente la
 red neuronal. Aparte de eso, se ordena el dataframe según los valores de la columna 'ID': """
 train_data.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
+valid_data.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
 test_data.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
 """ Una vez se tienen todas las imágenes y quitados los valores nulos, tambiés es necesario de aquellas imágenes que son
@@ -135,66 +167,50 @@ remove_img_list = ['TCGA-A2-A0EW', 'TCGA-E2-A153', 'TCGA-E2-A15A', 'TCGA-E2-A15E
 
 for id_img in remove_img_list:
     index_train = train_data.loc[df_all_merge['ID'] == id_img].index
+    index_valid = valid_data.loc[df_all_merge['ID'] == id_img].index
     index_test = test_data.loc[df_all_merge['ID'] == id_img].index
     train_data.drop(index_train, inplace=True)
+    valid_data.drop(index_valid, inplace=True)
     test_data.drop(index_test, inplace=True)
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
 # IMPORTANTE: La anchura no puede ser más alta que la altura.
-alto = 315 # 630
-ancho = 740 # 1480
+alto = 100 # 630
+ancho = 100 # 1480
 canales = 3 # Imágenes a color (RGB) = 3
 
 """ Se leen y se redimensionan posteriormente las imágenes a las dimensiones especificadas arriba: """
-pre_train_image_data = [] # Lista con las imágenes redimensionadas
+train_image_data = [] # Lista con las imágenes redimensionadas
+valid_image_data = []
 test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
 
 for imagen_train in train_data['img_path']:
-    pre_train_image_data.append(cv2.resize(cv2.imread(imagen_train, cv2.IMREAD_COLOR), (ancho, alto),
+    train_image_data.append(cv2.resize(cv2.imread(imagen_train, cv2.IMREAD_COLOR), (ancho, alto),
+                                           interpolation=cv2.INTER_CUBIC))
+
+for imagen_valid in valid_data['img_path']:
+    valid_image_data.append(cv2.resize(cv2.imread(imagen_valid, cv2.IMREAD_COLOR), (ancho, alto),
                                            interpolation=cv2.INTER_CUBIC))
 
 for imagen_test in test_data['img_path']:
     test_image_data.append(cv2.resize(cv2.imread(imagen_test, cv2.IMREAD_COLOR), (ancho, alto),
                                            interpolation=cv2.INTER_CUBIC))
 
-train_image_data = []
-
-for image in pre_train_image_data:
-    train_image_data.append(image)
-    rotate = iaa.Affine(rotate=(-20, 20), mode= 'edge')
-    train_image_data.append(rotate.augment_image(image))
-    gaussian_noise = iaa.AdditiveGaussianNoise(10, 20)
-    train_image_data.append(gaussian_noise.augment_image(image))
-    crop = iaa.Crop(percent=(0, 0.3))
-    train_image_data.append(crop.augment_image(image))
-    shear = iaa.Affine(shear=(0, 40), mode= 'edge')
-    train_image_data.append(shear.augment_image(image))
-    flip_hr = iaa.Fliplr(p=1.0)
-    train_image_data.append(flip_hr.augment_image(image))
-    flip_vr = iaa.Flipud(p=1.0)
-    train_image_data.append(flip_vr.augment_image(image))
-    contrast = iaa.GammaContrast(gamma=2.0)
-    train_image_data.append(contrast.augment_image(image))
-    scale_im = iaa.Affine(scale={"x": (1.5, 1.0), "y": (1.5, 1.0)})
-    train_image_data.append(scale_im.augment_image(image))
-
 """ Se convierten las imágenes a un array de numpy para manipularlas con más comodidad y se divide el array entre 255
 para escalar los píxeles entre el intervalo (0-1). Como resultado, habrá un array con forma (471, alto, ancho, canales). """
 train_image_data = (np.array(train_image_data) / 255.0)
-test_image_data = (np.array(test_image_data) / 255.0)
+valid_image_data = (np.array(valid_image_data) / 255.0)
+test_image_data = (np.array(test_image_data))
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-""" Una vez se tienen hechos los recortes de imágenes, se procede a replicar las filas de ambos subconjuntos de datos
-para que el número de imágenes utilizadas y el número de filas del marco de datos sea el mismo: """
-train_data = pd.DataFrame(np.repeat(train_data.values, 9, axis=0), columns=train_data.columns)
-
 """ Una vez ya se tienen las imágenes convertidas en arrays y en el orden establecido por cada paciente, se puede
 extraer del dataframe la columna 'SNV', que será la salida de la red:"""
-train_labels = train_data.pop('SNV')
-test_labels = test_data.pop('SNV')
+train_labels = train_data.iloc[:,2:-1]
+valid_labels = valid_data.iloc[:,2:-1]
+test_labels = test_data.iloc[:,2:-1]; test_columns = test_labels.columns.values
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada: """
 del df_all_merge, df_path_n_stage, df_list
@@ -202,6 +218,7 @@ del df_all_merge, df_path_n_stage, df_list
 """ Para poder entrenar la red hace falta transformar las tablas en arrays. Para ello se utiliza 'numpy'. Las imágenes 
 YA están convertidas en 'arrays' numpy """
 train_labels = np.asarray(train_labels).astype('float32')
+valid_labels = np.asarray(valid_labels).astype('float32')
 test_labels = np.asarray(test_labels).astype('float32')
 
 """ -------------------------------------------------------------------------------------------------------------------
@@ -209,19 +226,31 @@ test_labels = np.asarray(test_labels).astype('float32')
 --------------------------------------------------------------------------------------------------------------------"""
 """ En esta ocasión, se crea un modelo secuencial para la red neuronal convolucional que será la encargada de procesar
 todas las imágenes: """
-model = keras.applications.EfficientNetB7(weights='imagenet', input_shape=(alto, ancho, canales),
-                                              include_top=False)
-model.trainable = False
-
 inputs = keras.Input(shape=(alto, ancho, canales))
-x = model(inputs, training=False)
-x = layers.GlobalAveragePooling2D()(x)
-x = layers.Dropout(0.5)(x)
-x = layers.BatchNormalization()(x)
-x = layers.Dense(16)(x)
-x = layers.Dense(1, activation= 'sigmoid')(x)
-model = keras.models.Model(inputs = inputs, outputs = x)
+cnn_model = keras.applications.EfficientNetB7(weights='imagenet', input_shape=(alto, ancho, canales),
+                                              include_top=False)
+cnn_model.trainable = False
+
+all_model = cnn_model(inputs, training=False)
+all_model = layers.GlobalAveragePooling2D()(all_model)
+all_model = layers.Dropout(0.5)(all_model)
+all_model = layers.BatchNormalization()(all_model)
+all_model = layers.Dense(256)(all_model)
+all_model = layers.Dense(train_labels.shape[1], activation= 'sigmoid')(all_model)
+model = keras.models.Model(inputs = inputs, outputs = all_model)
 model.summary()
+
+""" Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
+Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
+la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
+trainAug = ImageDataGenerator(rescale = 1.0/255, horizontal_flip=True, vertical_flip= True)
+valAug = ImageDataGenerator(rescale = 1.0/255)
+
+""" Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
+instancias posteriormente: """
+trainGen = trainAug.flow(x = train_image_data, y = train_labels, batch_size = 32)
+valGen = valAug.flow(x = valid_image_data, y = valid_labels, batch_size = 32, shuffle= False)
+#testGen = valAug.flow(x = test_image_data, y = test_labels, batch_size = 32, shuffle= False)
 
 """ Hay que definir las métricas de la red y configurar los distintos hiperparámetros para entrenar la red. El modelo ya
 ha sido definido anteriormente, así que ahora hay que compilarlo. Para ello se define una función de loss y un 
@@ -235,7 +264,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
 
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.Adam(learning_rate = 0.001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
@@ -243,19 +272,11 @@ checkpoint_path = 'model_snv_image_tp53_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Se calculan los pesos de las dos clases del problema: """
-class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels),
-                                                  y = train_labels)
-class_weight_dict = dict(enumerate(class_weights))
+#class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels), y = train_labels)
+#class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido el modelo, se entrena: """
-neural_network = model.fit(x = train_image_data,  # Datos de entrada.
-                           y = train_labels,  # Datos de salida.
-                           class_weight = class_weight_dict,
-                           epochs = 2,
-                           verbose = 1,
-                           batch_size= 32,
-                           #callbacks= mcp_save,
-                           validation_split = 0.2) # Datos de validación.
+model.fit(x = trainGen, epochs = 1, verbose = 1, batch_size = 32, validation_data = valGen)
 
 """ Una vez el modelo ya ha sido entrenado, se puede descongelar el modelo base de la red EfficientNetB7 y reeentrenar
 todo el modelo de principio a fin con una tasa de aprendizaje muy baja ('fine tuning'). Este es un último paso opcional
@@ -264,50 +285,46 @@ con las capas congeladas, ya que sino, podría destruir todo lo realizado anteri
 Para ello, primero se descongela el modelo base. Destacar que aunque el modelo base ahora pasa a ser entrenable, todavía
 se ejecuta en modo inferencia, ya que se pasó el argumento @training = False anteriormente, al contruir el modelo."""
 cnn_model.trainable = True
-model.summary()
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta (y se utiliza un 'learning rate' muy pequeño): """
-model.compile(optimizer = keras.optimizers.Adam (learning_rate = 1e-5),
+model.compile(optimizer = keras.optimizers.Adam (learning_rate = 1e-6),
               loss = 'binary_crossentropy',
               metrics = metrics)
+model.summary()
 
 """ Se entrena el modelo de principio a fin: """
-model.fit(x = train_image_data,  # Datos de entrada.
-          y = train_labels,
-          epochs = 3,
-          batch_size= 32,
-          verbose= 1,
-          class_weight= class_weight_dict,
-          validation_split = 0.2,
-          callbacks = mcp_save)
+""" Una vez definido y compilado el modelo, es hora de entrenarlo. """
+neural_network = model.fit(x = trainGen, epochs = 0, verbose = 1, batch_size = 32, validation_data = valGen)
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_image_data,test_labels, verbose = 0)
+results = model.evaluate(test_image_data, test_labels, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
-      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6], results[7] * 100,
+      "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
+      "Exactitud del conjunto de prueba: {:.2f} %\n" 
+      "El AUC-ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
+                                                               results[3]/(results[3]+results[2]), results[7] * 100,
                                                                results[8]))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
 posteriormentes para dibujar la gráfica de la 'loss'."""
-loss = neural_network.history['loss']
-val_loss = neural_network.history['val_loss']
+#loss = neural_network.history['loss']
+#val_loss = neural_network.history['val_loss']
 
-epochs = neural_network.epoch
+#epochs = neural_network.epoch
 
 """ Una vez definidas las variables se dibujan las distintas gráficas. """
 """ Gráfica de la 'loss' del entreno y la validación: """
-plt.plot(epochs, loss, 'r', label='Loss del entreno')
-plt.plot(epochs, val_loss, 'b--', label='Loss de la validación')
-plt.title('Loss del entreno y de la validación')
-plt.ylabel('Loss')
-plt.xlabel('Epochs')
-plt.legend()
-plt.figure() # Crea o activa una figura
+#plt.plot(epochs, loss, 'r', label='Loss del entreno')
+#plt.plot(epochs, val_loss, 'b--', label='Loss de la validación')
+#plt.title('Loss del entreno y de la validación')
+#plt.ylabel('Loss')
+#plt.xlabel('Epochs')
+#plt.legend()
+#plt.figure() # Crea o activa una figura
 
 """ -------------------------------------------------------------------------------------------------------------------
 ------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
@@ -317,47 +334,81 @@ conjunto de datos de test que se definió anteriormente al repartir los datos. "
 # @suppress=True: Muestra los números con representación de coma fija
 # @predict: Genera predicciones para nuevas entradas
 print("\nGenera predicciones para 10 muestras")
-print("Etiquetas: ", test_labels[:10])
+print("Clase de las salidas: ", test_labels[:1]); print("\n")
 np.set_printoptions(precision=3, suppress=True)
-print("Predicciones:\n", np.round(model.predict(test_image_data[:10])))
+print("Predicciones:\n", model.predict(test_image_data[:1])); print("\n")
+proba = model.predict(test_image_data[:1])
+idxs = np.argsort(proba)[::-1][:2]
+print(idxs)
+quit()
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
-# @zip: Une las tuplas del nombre de los grupos con la de la cantidad de casos por grupo
 y_true = test_labels # Etiquetas verdaderas de 'test'
 y_pred = np.round(model.predict(test_image_data)) # Predicción de etiquetas de 'test'
 
-matrix = confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
+matrix = multilabel_confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
 
 group_names = ['True Neg','False Pos','False Neg','True Pos'] # Nombres de los grupos
-group_counts = ['{0:0.0f}'.format(value) for value in matrix.flatten()] # Cantidad de casos por grupo
 
-labels = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names,group_counts)]
-labels = np.asarray(labels).reshape(2,2)
-sns.heatmap(matrix, annot=labels, fmt='', cmap='Blues')
-plt.show()
+""" Los nombres de las distintas clases (columnas) se pasan a una lista"""
+classes = test_columns.tolist()
+
+conf_mat_dict = {}
+
+""" Para cada clase, se recogen las clases verdaderas de salida y las clases predichas, para calcular la matriz de 
+confusion """
+for label_col in range(len(classes)):
+    y_true_label = y_true[:, label_col]
+    y_pred_label = y_pred[:, label_col]
+    conf_mat_dict[classes[label_col]] = confusion_matrix(y_pred=y_pred_label, y_true=y_true_label)
+
+for label, matrix in conf_mat_dict.items():
+    print("Matriz de confusion para el gen {}:".format(label))
+    print(matrix)
+    if matrix.shape == (2,2):
+        """ @zip: Une las tuplas del nombre de los grupos con la de la cantidad de casos por grupo """
+        group_counts = ['{0:0.0f}'.format(value) for value in matrix.flatten()]  # Cantidad de casos por grupo
+        true_neg_pos_neg = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names, group_counts)]
+        true_neg_pos_neg = np.asarray(true_neg_pos_neg).reshape(2, 2)
+        sns.heatmap(matrix, annot=true_neg_pos_neg, fmt='', cmap='Blues')
+        plt.title(label)
+        plt.show()
+        print("\n")
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
 documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
-tasa de falsos positivos, por lo que resume el comportamiento del clasificador para diferenciar clases.
-Para implementarla, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
+tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
+Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
 # @ravel: Aplana el vector a 1D
-from sklearn.metrics import roc_curve
-from sklearn.metrics import auc
+from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
-y_pred = y_pred.ravel()
-fpr, tpr, thresholds = roc_curve(y_true, y_pred)
-auc = auc(fpr, tpr)
+y_pred_prob = model.predict(test_image_data).ravel()
+fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
+auc_roc = auc(fpr, tpr)
 
 plt.figure(1)
-plt.plot([0, 1], [0, 1], 'k--')
-plt.plot(fpr, tpr, label='area = {:.3f})'.format(auc))
+plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
+plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('ROC curve')
-plt.legend(loc='best')
+plt.title('AUC-ROC curve')
+plt.legend(loc = 'best')
 plt.show()
 
-""" Para guardar los arrays del conjunto de test para utilizarlos con un modelo recien cargado"""
-np.save('test_image', test_image_data)
-np.save('test_labels', test_labels)
+""" Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
+del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
+precision, recall, threshold = precision_recall_curve(y_true, y_pred_prob)
+auc_pr = auc(recall, precision)
+
+plt.figure(2)
+plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
+plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('AUC-PR curve')
+plt.legend(loc = 'best')
+plt.show()
+
+#np.save('test_image', test_image_data)
+#np.save('test_labels', test_labels)
