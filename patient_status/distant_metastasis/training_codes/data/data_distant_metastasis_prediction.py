@@ -88,7 +88,7 @@ df_all_merge = reduce(lambda left,right: pd.merge(left,right,on=['ID'], how='lef
 """ Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para empezar se carga el archivo excel 
 donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y creamos dos listas. Una para
 los genes SNV y otra para los genes CNV."""
-mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genes_mutaciones/Panel_OCA.xlsx', usecols= 'B:C',
+mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genes_panelOCA/Panel_OCA.xlsx', usecols= 'B:C',
                                  engine= 'openpyxl')
 
 snv = mutations_target.loc[mutations_target['Scope'] != 'CNV', 'Gen']

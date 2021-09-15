@@ -58,7 +58,7 @@ df_all_merge = reduce(lambda left,right: pd.merge(left,right,on=['ID'], how='lef
 """ Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para empezar se carga el archivo excel 
 donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y creamos dos listas. Una para
 los genes SNV y otra para los genes CNV."""
-mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genes_mutaciones/Panel_OCA.xlsx', usecols= 'B:C',
+mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genes_panelOCA/Panel_OCA.xlsx', usecols= 'B:C',
                                  engine= 'openpyxl')
 
 snv = mutations_target.loc[mutations_target['Scope'] != 'CNV', 'Gen']
@@ -132,7 +132,7 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.20, random_s
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de imágenes con cáncer y sin cáncer: """
-image_dir = '/home/avalderas/img_slides/img_lotes'
+image_dir = '/img_lotes'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
 cancer_dir = glob.glob(image_dir + "/img_lote*_cancer/*") # 1702 imágenes con cáncer en total
@@ -280,7 +280,7 @@ mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 #class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = trainGen, epochs = 3, verbose = 1, batch_size = 32, validation_data = valGen)
+model.fit(x = trainGen, epochs = 1, verbose = 1, batch_size = 32, validation_data = valGen)
 
 """ Una vez el modelo ya ha sido entrenado, se puede descongelar el modelo base de la red EfficientNetB7 y reeentrenar
 todo el modelo de principio a fin con una tasa de aprendizaje muy baja ('fine tuning'). Este es un último paso opcional
