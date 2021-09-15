@@ -212,6 +212,9 @@ train_labels = train_data.iloc[:,2:-1]
 valid_labels = valid_data.iloc[:,2:-1]
 test_labels = test_data.iloc[:,2:-1]; test_columns = test_labels.columns.values
 
+""" Los nombres de las distintas clases (columnas) se pasan a una lista para usarlos en un futuro """
+classes = test_columns.tolist()
+
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada: """
 del df_all_merge, df_path_n_stage, df_list
 
@@ -268,15 +271,16 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
-checkpoint_path = 'model_snv_image_tp53_epoch{epoch:02d}.h5'
+checkpoint_path = 'model_snv_image_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
-""" Se calculan los pesos de las dos clases del problema: """
-#class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels), y = train_labels)
+#class_weights = class_weight.compute_class_weight(class_weight = 'balanced',
+                                                  #classes = np.unique(train_labels),
+                                                  #y = train_labels)
 #class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = trainGen, epochs = 1, verbose = 1, batch_size = 32, validation_data = valGen)
+model.fit(x = trainGen, epochs = 3, verbose = 1, batch_size = 32, validation_data = valGen)
 
 """ Una vez el modelo ya ha sido entrenado, se puede descongelar el modelo base de la red EfficientNetB7 y reeentrenar
 todo el modelo de principio a fin con una tasa de aprendizaje muy baja ('fine tuning'). Este es un último paso opcional
@@ -337,22 +341,22 @@ print("\nGenera predicciones para 10 muestras")
 print("Clase de las salidas: ", test_labels[:1]); print("\n")
 np.set_printoptions(precision=3, suppress=True)
 print("Predicciones:\n", model.predict(test_image_data[:1])); print("\n")
-proba = model.predict(test_image_data[:1])
-idxs = np.argsort(proba)[::-1][:2]
-print(idxs)
-quit()
+proba = model.predict(test_image_data[:1])[0] # Muestra las predicciones pero en una sola dimension
+idxs = np.argsort(proba)[::-1][:1] # Muestra los dos indices mas altos de las predicciones
+
+for (i, j) in enumerate(idxs):
+    label = "La mutacion SNV más probable de esta imagen es del gen {}: {:.2f}%".format(classes[j][4:], proba[j] * 100)
+    print(label)
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
 y_true = test_labels # Etiquetas verdaderas de 'test'
 y_pred = np.round(model.predict(test_image_data)) # Predicción de etiquetas de 'test'
+y_pred_prob = model.predict(test_image_data).ravel()
 
 matrix = multilabel_confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
 
 group_names = ['True Neg','False Pos','False Neg','True Pos'] # Nombres de los grupos
-
-""" Los nombres de las distintas clases (columnas) se pasan a una lista"""
-classes = test_columns.tolist()
 
 conf_mat_dict = {}
 
@@ -377,11 +381,68 @@ for label, matrix in conf_mat_dict.items():
         print("\n")
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
-documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
-tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
-Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
+documento grafico del rendimiento del clasificador multietiqueta. Esta curva representa la tasa de verdaderos positivos 
+y la tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
+En el caso de un clasificador multietiqueta, para implementarlas, se puede dibujar una curva ROC por clase, o tambien se 
+puede dibujar una curva ROC considerando cada elemento de la matriz de confusion de cada clase como una prediccion 
+binaria (micro-average). Otra evaluacion seria la llamada macro-averaging, que le da igual valor a la clasificacion de 
+cada clase. """
 # @ravel: Aplana el vector a 1D
+# Se calcula el AUC-ROC para cada clase
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
+from scipy import interp
+
+fpr = dict()
+tpr = dict()
+roc_auc = dict()
+
+for i in range(len(test_columns)):
+    fpr[i], tpr[i], _ = roc_curve(y_true[:, i], y_pred[:, i])
+    roc_auc[i] = auc(fpr[i], tpr[i])
+
+# Se calcula el AUC-ROC micro-average
+fpr["micro"], tpr["micro"], _ = roc_curve(y_true.ravel(), y_pred_prob)
+roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+# Primero se agrupan todos los falsos positivos
+all_fpr = np.unique(np.concatenate([fpr[i] for i in range(len(test_columns))]))
+
+# Se interpolan todas las curvas ROC en este punto
+mean_tpr = np.zeros_like(all_fpr)
+for i in range(len(test_columns)):
+    mean_tpr += interp(all_fpr, fpr[i], tpr[i])
+
+# Finally average it and compute AUC
+mean_tpr /= len(test_columns)
+
+fpr["macro"] = all_fpr
+tpr["macro"] = mean_tpr
+roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+# Se dibujan todas las curvas ROC
+plt.figure()
+plt.plot(fpr["micro"], tpr["micro"],
+         label='micro-average ROC curve (area = {0:0.2f})'
+               ''.format(roc_auc["micro"]),
+         color='deeppink', linestyle=':', linewidth=4)
+
+plt.plot(fpr["macro"], tpr["macro"],
+         label='macro-average ROC curve (area = {0:0.2f})'
+               ''.format(roc_auc["macro"]),
+         color='navy', linestyle=':', linewidth=4)
+
+plt.plot([0, 1], [0, 1], 'k--', lw = 2)
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('AUC-ROC')
+plt.legend(loc="best")
+plt.show()
+
+
+
+"""from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
 y_pred_prob = model.predict(test_image_data).ravel()
 fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
@@ -394,7 +455,7 @@ plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
 plt.title('AUC-ROC curve')
 plt.legend(loc = 'best')
-plt.show()
+plt.show()"""
 
 """ Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
 del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
