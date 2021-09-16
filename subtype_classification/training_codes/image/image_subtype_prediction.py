@@ -1,6 +1,7 @@
 import shelve # datos persistentes
 import pandas as pd
 import numpy as np
+import itertools
 import staintools
 import seaborn as sns # Para realizar gráficas sobre datos
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ import glob
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
+from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils import class_weight
 import tensorflow as tf
 from tensorflow import keras
@@ -71,10 +73,8 @@ df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas váli
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento, validación y test. """
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
 # @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['subtype'],
-                                         random_state= 42)
-train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['subtype'],
-                                          random_state= 42)
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['subtype'])
+train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['subtype'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -155,10 +155,6 @@ train_image_data = (np.array(train_image_data).astype('float32'))
 valid_image_data = (np.array(valid_image_data).astype('float32'))
 test_image_data = ((np.array(test_image_data) / 255.0).astype('float32'))
 
-pd.set_option('display.max_columns', None)
-print(train_data)
-quit()
-
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
@@ -173,21 +169,20 @@ valid_data = valid_data.drop(['img_path'], axis=1)
 test_data = test_data.drop(['ID'], axis=1)
 test_data = test_data.drop(['img_path'], axis=1)
 
-""" Se extrae la columna 'distant_metastasis' del dataframe de todos los subconjuntos, ya que ésta es la salida del 
-modelo que se va a entrenar."""
-train_labels = train_data.pop('distant_metastasis')
-valid_labels = valid_data.pop('distant_metastasis')
-test_labels = test_data.pop('distant_metastasis')
+""" Se extrae la columna 'subtype' del dataframe de todos los subconjuntos, ya que ésta es la salida del modelo que se 
+va a entrenar. """
+train_labels = train_data['subtype']
+valid_labels = valid_data['subtype']
+test_labels = test_data['subtype']
+
+""" Se binarizan los cinco subtipos de la columna 'subtype' para que de esta forma los datos sean válidos para la red. """
+lb = LabelBinarizer()
+train_labels = lb.fit_transform(train_labels)
+valid_labels = lb.transform(valid_labels)
+test_labels = lb.transform(test_labels)
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada: """
-del df_all_merge, df_path_n_stage, df_list, train_data, valid_data, test_data
-
-""" Para poder entrenar la red hace falta transformar los dataframes de entrenamiento y test en arrays de numpy, así 
-como también la columna de salida de ambos subconjuntos (las imágenes YA fueron convertidas anteriormente, por lo que no
-hace falta transformarlas de nuevo). """
-train_labels = np.asarray(train_labels).astype('float32')
-valid_labels = np.asarray(valid_labels).astype('float32')
-test_labels = np.asarray(test_labels).astype('float32')
+del df_all_merge, df_path_n_stage, df_list, train_data
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL (CNN) -----------------------------------------------
@@ -203,14 +198,15 @@ x = cnn_model(inputs, training=False)
 x = layers.GlobalAveragePooling2D()(x)
 x = layers.Dropout(0.5)(x)
 x = layers.BatchNormalization()(x)
-x = layers.Dense(1, activation= 'sigmoid')(x)
+x = layers.Dense(len(lb.classes_), activation= 'softmax')(x)
 model = keras.models.Model(inputs = inputs, outputs = x)
 model.summary()
 
 """ Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
 Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
 la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
-trainAug = ImageDataGenerator(rescale = 1.0/255, horizontal_flip = True, vertical_flip = True)
+trainAug = ImageDataGenerator(rescale = 1.0/255, horizontal_flip = True, vertical_flip = True, zoom_range= 0.2,
+                              shear_range= 0.2)
 valAug = ImageDataGenerator(rescale = 1.0/255)
 
 """ Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
@@ -230,7 +226,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.Precision(name='precision'), # TP / (TP + FP)
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
 
-model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
+model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
               optimizer = keras.optimizers.Adam(learning_rate = 0.001),
               metrics = metrics)
 
@@ -241,25 +237,27 @@ mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
 de datos que se tratan en este problema es muy imbalanceado. """
 from sklearn.utils import class_weight
-class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels),
-                                                  y = train_labels)
-class_weight_dict = dict(enumerate(class_weights))
+#class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels),
+                                                  #y = train_labels)
+#class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-model.fit(x = trainGen, epochs = 10, verbose = 1, batch_size = 32, class_weight = class_weight_dict,
+model.fit(x = trainGen, epochs = 10, verbose = 1, batch_size = 32,
+          #class_weight = class_weight_dict,
           validation_data = valGen)
 
 """ Transfer learning """
 cnn_model.trainable = True
 
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 
 model.summary()
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = trainGen, epochs = 200, verbose = 1, batch_size = 32, class_weight = class_weight_dict,
+neural_network = model.fit(x = trainGen, epochs = 50, verbose = 1, batch_size = 32,
+                           #class_weight = class_weight_dict,
                            validation_data = valGen)
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
@@ -300,25 +298,56 @@ conjunto de datos de test que se definió anteriormente al repartir los datos. "
 # @suppress=True: Muestra los números con representación de coma fija
 # @predict: Genera predicciones para nuevas entradas
 print("\nGenera predicciones para 10 muestras")
-print("Clase de las salidas: ", test_labels[:10])
+print("Clase de las salidas:\n\r", test_labels[:10])
+print("\n")
 np.set_printoptions(precision=3, suppress=True)
 print("Predicciones:\n", np.round(model.predict(test_image_data[:10])))
+print("\n")
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
-y_true = test_labels # Etiquetas verdaderas de 'test'
-y_pred = np.round(model.predict(test_image_data)) # Predicción de etiquetas de 'test'
+y_true = []
+for label_test in test_labels:
+    y_true.append(np.argmax(label_test))
+
+y_true = np.array(y_true)
+y_pred = np.argmax(model.predict(test_image_data), axis = 1)
 
 matrix = confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
+print(y_true, y_pred)
+matrix_classes = lb.classes_
 
-group_names = ['True Neg','False Pos','False Neg','True Pos'] # Nombres de los grupos
-group_counts = ['{0:0.0f}'.format(value) for value in matrix.flatten()] # Cantidad de casos por grupo
+""" Función para mostrar por pantalla la matriz de confusión multiclase con todas las clases de subtipos moleculares """
+def plot_confusion_matrix(cm, classes, normalize=False, title='Matriz de confusión', cmap = plt.cm.Reds):
+    """ Imprime y dibuja la matriz de confusión. Se puede normalizar escribiendo el parámetro `normalize=True`. """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
 
-""" @zip: Une las tuplas del nombre de los grupos con la de la cantidad de casos por grupo """
-labels = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names,group_counts)]
-labels = np.asarray(labels).reshape(2,2)
-sns.heatmap(matrix, annot=labels, fmt='', cmap='Blues')
-plt.show() # Muestra la gráfica de la matriz de confusión
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        cm = cm.round(2)
+        #print("Normalized confusion matrix")
+    else:
+        cm=cm
+        #print('Confusion matrix, without normalization')
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, cm[i, j], horizontalalignment="center", color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('Clase verdadera')
+    plt.xlabel('Clase predecida')
+
+np.set_printoptions(precision=2)
+
+fig1 = plt.figure(figsize=(7,6))
+plot_confusion_matrix(matrix, classes = matrix_classes, title='Matriz de confusión multiclase')
+plt.show()
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
 documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
