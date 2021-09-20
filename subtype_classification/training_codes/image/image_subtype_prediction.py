@@ -236,28 +236,29 @@ mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
 de datos que se tratan en este problema es muy imbalanceado. """
-from sklearn.utils import class_weight
-#class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels),
-                                                  #y = train_labels)
-#class_weight_dict = dict(enumerate(class_weights))
+from sklearn.utils.class_weight import compute_class_weight
+
+y_integers = np.argmax(train_labels, axis=1)
+class_weights = compute_class_weight(class_weight = 'balanced', classes = np.unique(y_integers), y = y_integers)
+d_class_weights = dict(enumerate(class_weights)) # {0: 1.4780, 1: 2.055238, 2: 0.40186, 3: 0.85... etc}
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-model.fit(x = trainGen, epochs = 10, verbose = 1, batch_size = 32,
-          #class_weight = class_weight_dict,
+model.fit(x = trainGen, epochs = 1, verbose = 1, batch_size = 32,
+          class_weight = d_class_weights,
           validation_data = valGen)
 
 """ Transfer learning """
 cnn_model.trainable = True
 
-model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
+model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
               optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 
 model.summary()
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = trainGen, epochs = 50, verbose = 1, batch_size = 32,
-                           #class_weight = class_weight_dict,
+neural_network = model.fit(x = trainGen, epochs = 1, verbose = 1, batch_size = 32,
+                           class_weight = d_class_weights,
                            validation_data = valGen)
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
@@ -314,7 +315,6 @@ y_true = np.array(y_true)
 y_pred = np.argmax(model.predict(test_image_data), axis = 1)
 
 matrix = confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
-print(y_true, y_pred)
 matrix_classes = lb.classes_
 
 """ Función para mostrar por pantalla la matriz de confusión multiclase con todas las clases de subtipos moleculares """
@@ -336,12 +336,12 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Matriz de confusi
         #print('Confusion matrix, without normalization')
 
     thresh = cm.max() / 2.
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, cm[i, j], horizontalalignment="center", color="white" if cm[i, j] > thresh else "black")
+    for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, il, cm[il, j], horizontalalignment="center", color="white" if cm[il, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('Clase verdadera')
-    plt.xlabel('Clase predecida')
+    plt.xlabel('Predicción')
 
 np.set_printoptions(precision=2)
 
@@ -354,18 +354,66 @@ documento grafico del rendimiento del clasificador binario. Esta curva represent
 tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
 Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
 # @ravel: Aplana el vector a 1D
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, roc_auc_score
+from scipy import interp
 
-y_pred_prob = model.predict(test_image_data).ravel()
-fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
-auc_roc = auc(fpr, tpr)
+""" Para empezar, se calculan las puntuaciones macro-promedio (se calcula la puntuación para cada una de las clases y 
+después se hace una media de todas ellas) y micro-promedio (se calcula la puntuación de forma general, sin dividir las 
+puntuaciones entre las distintas clases) de las diferentes áreas bajo la curva ROC """
+y_pred_prob = model.predict(test_image_data)
 
-plt.figure(1)
+macro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
+                                  average="macro")
+micro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
+                                     average="micro")
+
+print("Puntuaciones AUC-ROC:\n{:.6f} (macro)\n{:.6f} (micro)".format(macro_roc_auc_ovr, micro_roc_auc_ovr))
+
+""" Una vez calculadas las dos puntuaciones, se dibujan estas dos curvas que resumen el comportamiento de todas las
+clases del problema. Esto es mejor que dibujar una curva para cada una de las clases que hay en el problema. """
+fpr = dict()
+tpr = dict()
+auc_roc = dict()
+
+""" Se calcula la tasa de falsos positivos y de verdaderos negativos para cada una de las clases, buscando en cada una
+de las 'n' (del número de clases) columnas del problema y se calcula con ello el AUC-ROC micro-promedio """
+for i in range(len(lb.classes_)):
+    fpr[i], tpr[i], _ = roc_curve(test_labels[:, i], y_pred_prob[:, i])
+    auc_roc[i] = auc(fpr[i], tpr[i])
+
+fpr["micro"], tpr["micro"], _ = roc_curve(test_labels.ravel(), y_pred_prob.ravel())
+auc_roc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+""" A continuación se calcula el AUC-ROC macro-promedio. Para ello se recopilan los ratios de falsos positivos y se 
+calculan las medias de falsos positivos y de verdaderos positivos """
+all_fpr = np.unique(np.concatenate([fpr[i] for i in range(len(lb.classes_))]))
+
+mean_tpr = np.zeros_like(all_fpr)
+for i in range(len(lb.classes_)):
+    mean_tpr += interp(all_fpr, fpr[i], tpr[i])
+
+mean_tpr /= len(lb.classes_)
+
+fpr["macro"] = all_fpr
+tpr["macro"] = mean_tpr
+auc_roc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+""" Finalmente se dibujan las dos curvas AUC-ROC micro-promedio y macro-promedio """
+plt.figure()
+plt.plot(fpr["micro"], tpr["micro"],
+         label = 'Micro-average AUC-ROC curve (AUC = {0:0.2f})'
+               ''.format(auc_roc["micro"]),
+         color = 'deeppink', linestyle = '--', linewidth = 4)
+
+plt.plot(fpr["macro"], tpr["macro"],
+         label='Macro-average AUC-ROC curve (AUC = {0:0.2f})'
+               ''.format(auc_roc["macro"]),
+         color='navy', linestyle='--', linewidth=4)
+
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve')
+plt.title('AUC-ROC curve (micro and macro)')
 plt.legend(loc = 'best')
 plt.show()
 
