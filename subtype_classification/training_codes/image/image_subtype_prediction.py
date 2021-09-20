@@ -354,7 +354,7 @@ documento grafico del rendimiento del clasificador binario. Esta curva represent
 tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
 Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
 # @ravel: Aplana el vector a 1D
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, roc_auc_score
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, roc_auc_score, average_precision_score
 from scipy import interp
 
 """ Para empezar, se calculan las puntuaciones macro-promedio (se calcula la puntuación para cada una de las clases y 
@@ -366,8 +366,11 @@ macro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
                                   average="macro")
 micro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
                                      average="micro")
+macro_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="macro")
+micro_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="micro")
 
-print("Puntuaciones AUC-ROC:\n{:.6f} (macro)\n{:.6f} (micro)".format(macro_roc_auc_ovr, micro_roc_auc_ovr))
+print("Puntuaciones AUC-ROC:\n{:.2f} (macro)\n{:.2f} (micro)\n".format(macro_roc_auc_ovr, micro_roc_auc_ovr))
+print("Puntuaciones AUC-PR:\n{:.2f} (macro)\n{:.2f} (micro)".format(macro_pr_auc_ovr, micro_pr_auc_ovr))
 
 """ Una vez calculadas las dos puntuaciones, se dibujan estas dos curvas que resumen el comportamiento de todas las
 clases del problema. Esto es mejor que dibujar una curva para cada una de las clases que hay en el problema. """
@@ -401,14 +404,12 @@ auc_roc["macro"] = auc(fpr["macro"], tpr["macro"])
 """ Finalmente se dibujan las dos curvas AUC-ROC micro-promedio y macro-promedio """
 plt.figure()
 plt.plot(fpr["micro"], tpr["micro"],
-         label = 'Micro-average AUC-ROC curve (AUC = {0:0.2f})'
-               ''.format(auc_roc["micro"]),
-         color = 'deeppink', linestyle = '--', linewidth = 4)
+         label = 'Micro-average AUC-ROC curve (AUC = {0:.2f})'.format(auc_roc["micro"]),
+         color = 'blue', linewidth = 2)
 
 plt.plot(fpr["macro"], tpr["macro"],
-         label='Macro-average AUC-ROC curve (AUC = {0:0.2f})'
-               ''.format(auc_roc["macro"]),
-         color='navy', linestyle='--', linewidth=4)
+         label='Macro-average AUC-ROC curve (AUC = {0:.2f})'.format(auc_roc["macro"]),
+         color = 'red', linewidth = 2)
 
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.xlabel('False positive rate')
@@ -419,15 +420,47 @@ plt.show()
 
 """ Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
 del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
-precision, recall, threshold = precision_recall_curve(y_true, y_pred_prob)
-auc_pr = auc(recall, precision)
+precision = dict()
+recall = dict()
+auc_pr = dict()
 
-plt.figure(2)
-plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
-plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
+""" Se calcula precisión y la sensibilidad para cada una de las clases, buscando en cada una de las 'n' (del número de 
+clases) columnas del problema y se calcula con ello el AUC-PR micro-promedio """
+for i in range(len(lb.classes_)):
+    precision[i], recall[i], _ = precision_recall_curve(test_labels[:, i], y_pred_prob[:, i])
+    auc_pr[i] = auc(recall[i], precision[i])
+
+precision["micro"], recall["micro"], _ = precision_recall_curve(test_labels.ravel(), y_pred_prob.ravel())
+auc_pr["micro"] = auc(recall["micro"], precision["micro"])
+
+""" A continuación se calcula el AUC-PR macro-promedio. Para ello se recopilan los ratios de precisión y se 
+calculan las medias de precisión y sensibilidad """
+all_recall = np.unique(np.concatenate([recall[i] for i in range(len(lb.classes_))]))
+
+mean_precision = np.zeros_like(all_recall)
+for i in range(len(lb.classes_)):
+    mean_precision += interp(all_recall, recall[i], precision[i])
+
+mean_precision /= len(lb.classes_)
+
+recall["macro"] = all_recall
+precision["macro"] = mean_precision
+auc_pr["macro"] = auc(recall["macro"], precision["macro"])
+
+""" Finalmente se dibujan las dos curvas AUC-PR micro-promedio y macro-promedio """
+plt.figure()
+plt.plot(recall["micro"], precision["micro"],
+         label = 'Micro-average AUC-PR curve (AUC = {0:.2f})'.format(auc_pr["micro"]),
+         color = 'blue', linewidth = 2)
+
+plt.plot(recall["macro"], precision["macro"],
+         label='Macro-average AUC-PR curve (AUC = {0:.2f})'.format(auc_pr["macro"]),
+         color = 'red', linewidth = 2)
+
+plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('AUC-PR curve')
+plt.title('AUC-PR curve (micro and macro)')
 plt.legend(loc = 'best')
 plt.show()
 
