@@ -243,7 +243,7 @@ class_weights = compute_class_weight(class_weight = 'balanced', classes = np.uni
 d_class_weights = dict(enumerate(class_weights)) # {0: 1.4780, 1: 2.055238, 2: 0.40186, 3: 0.85... etc}
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-model.fit(x = trainGen, epochs = 1, verbose = 1, batch_size = 32,
+model.fit(x = trainGen, epochs = 10, verbose = 1, batch_size = 32,
           class_weight = d_class_weights,
           validation_data = valGen)
 
@@ -257,7 +257,7 @@ model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele u
 model.summary()
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = trainGen, epochs = 1, verbose = 1, batch_size = 32,
+neural_network = model.fit(x = trainGen, epochs = 100, verbose = 1, batch_size = 32,
                            class_weight = d_class_weights,
                            validation_data = valGen)
 
@@ -357,9 +357,12 @@ Para implementarlas, se importan los paquetes necesarios, se definen las variabl
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, roc_auc_score, average_precision_score
 from scipy import interp
 
-""" Para empezar, se calculan las puntuaciones micro-promedio (se calcula la puntuación de forma general, sin dividir 
-las puntuaciones entre las distintas clases) y promedio ponderado (se calcula la puntuación de cada una de las clases,
-ponderando cada puntuación según el número de muestras que haya en el conjunto de datos para cada clase) de la curva ROC """
+""" Para empezar, se calculan dos puntuaciones de la curva ROC. En primer lugar se calcula la puntuación micro-promedio 
+(se calcula la puntuación de forma igualitaria, contando el total de todos los falsos positivos y verdaderos negativos), 
+que es la mejor puntuación para ver el rendimiento de forma igualitaria del clasificador. Seguidamente, se calcula la 
+puntuación promedia ponderada (se calcula la puntuación de cada una de las clases por separado, ponderando cada una de 
+ellas según el número de veces que aparezca en el conjunto de datos), que es la mejor puntuación en caso de conjuntos de
+datos no balanceados como el que se está analizando. """
 y_pred_prob = model.predict(test_image_data)
 
 micro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
@@ -369,11 +372,13 @@ weighted_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr"
 micro_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="micro")
 weighted_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="weighted")
 
-print("Puntuaciones AUC-ROC:\n{:.2f} (micro-promedio)\n{:.2f} (ponderado)\n".format(micro_roc_auc_ovr, weighted_roc_auc_ovr))
-print("Puntuaciones AUC-PR:\n{:.2f} (micro-promedio)\n{:.2f} (ponderado)".format(micro_pr_auc_ovr, weighted_pr_auc_ovr))
+print("Puntuaciones AUC-ROC:\n{:.2f} (micro-promedio)\n{:.2f} (promedio ponderado)\n".format(micro_roc_auc_ovr,
+                                                                                             weighted_roc_auc_ovr))
+print("Puntuaciones AUC-PR:\n{:.2f} (micro-promedio)\n{:.2f} (promedio ponderado)".format(micro_pr_auc_ovr,
+                                                                                          weighted_pr_auc_ovr))
 
-""" Una vez calculadas las dos puntuaciones, se dibujan estas dos curvas que resumen el comportamiento de todas las
-clases del problema. Esto es mejor que dibujar una curva para cada una de las clases que hay en el problema. """
+""" Una vez calculadas las dos puntuaciones, se dibuja la curva micro-promedio. Esto es mejor que dibujar una curva para 
+cada una de las clases que hay en el problema. """
 fpr = dict()
 tpr = dict()
 auc_roc = dict()
@@ -387,7 +392,7 @@ for i in range(len(lb.classes_)):
 fpr["micro"], tpr["micro"], _ = roc_curve(test_labels.ravel(), y_pred_prob.ravel())
 auc_roc["micro"] = auc(fpr["micro"], tpr["micro"])
 
-""" Finalmente se dibujan las dos curvas AUC-ROC micro-promedio y macro-promedio """
+""" Finalmente se dibuja la curva AUC-ROC micro-promedio """
 plt.figure()
 plt.plot(fpr["micro"], tpr["micro"],
          label = 'Micro-average AUC-ROC curve (AUC = {0:.2f})'.format(auc_roc["micro"]),
@@ -415,7 +420,7 @@ for i in range(len(lb.classes_)):
 precision["micro"], recall["micro"], _ = precision_recall_curve(test_labels.ravel(), y_pred_prob.ravel())
 auc_pr["micro"] = auc(recall["micro"], precision["micro"])
 
-""" Finalmente se dibujan las dos curvas AUC-PR micro-promedio y macro-promedio """
+""" Finalmente se dibuja la curvas AUC-PR micro-promedio """
 plt.figure()
 plt.plot(recall["micro"], precision["micro"],
          label = 'Micro-average AUC-PR curve (AUC = {0:.2f})'.format(auc_pr["micro"]),
