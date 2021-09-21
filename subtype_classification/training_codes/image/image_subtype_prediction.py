@@ -136,24 +136,50 @@ train_image_data = [] # Lista con las imágenes redimensionadas del subconjunto 
 valid_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de validación
 test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
 
-for imagen_train in train_data['img_path']:
-    train_image_data.append(cv2.resize(cv2.imread(imagen_train, cv2.IMREAD_COLOR), (ancho, alto),
-                                           interpolation=cv2.INTER_CUBIC))
+normalizer = staintools.StainNormalizer(method='vahadane')
+#augmentor = staintools.StainAugmentor(method='vahadane', sigma1=0.2, sigma2=0.2)
+
+for index_normal_train, imagen_train in enumerate(train_data['img_path']):
+    if index_normal_train == 0:
+        target = staintools.read_image(imagen_train)
+        target = staintools.LuminosityStandardizer.standardize(target)
+        normalizer.fit(target)
+
+    img_train = staintools.read_image(imagen_train)
+
+    normal_image_train = staintools.LuminosityStandardizer.standardize(img_train)
+    normal_image_train = normalizer.transform(normal_image_train)
+
+    img_train_norm_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
+    #img_train_norm_resize = cv2.filter2D(img_train_norm_resize, -1, kernel)
+    #img_train_norm_resize = cv2.cvtColor(img_train_norm_resize, cv2.COLOR_RGB2HSV_FULL)
+    train_image_data.append(img_train_norm_resize)
 
 for imagen_valid in valid_data['img_path']:
-    valid_image_data.append(cv2.resize(cv2.imread(imagen_valid, cv2.IMREAD_COLOR), (ancho, alto),
-                                           interpolation=cv2.INTER_CUBIC))
+    img_valid = staintools.read_image(imagen_valid)
+    normal_image_valid = staintools.LuminosityStandardizer.standardize(img_valid)
+    normal_image_valid = normalizer.transform(normal_image_valid)
+    img_valid_norm_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
+    #img_valid_norm_resize = cv2.filter2D(img_valid_norm_resize, -1, kernel)
+    #img_valid_norm_resize = cv2.cvtColor(img_valid_norm_resize, cv2.COLOR_RGB2HSV_FULL)
+    valid_image_data.append(img_valid_norm_resize)
 
 for imagen_test in test_data['img_path']:
-    test_image_data.append(cv2.resize(cv2.imread(imagen_test, cv2.IMREAD_COLOR), (ancho, alto),
-                                          interpolation=cv2.INTER_CUBIC))
+    img_test = staintools.read_image(imagen_test)
+    normal_image_test = staintools.LuminosityStandardizer.standardize(img_test)
+    normal_image_test = normalizer.transform(normal_image_test)
+    img_test_norm_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
+    #img_test_norm_resize = cv2.filter2D(img_test_norm_resize, -1, kernel)
+    #img_test_norm_resize = cv2.cvtColor(img_test_norm_resize, cv2.COLOR_RGB2HSV_FULL)
+
+    test_image_data.append(img_test_norm_resize)
 
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
 se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
 array con forma (X, alto, ancho, canales). """
-train_image_data = (np.array(train_image_data).astype('float32'))
-valid_image_data = (np.array(valid_image_data).astype('float32'))
-test_image_data = ((np.array(test_image_data) / 255.0).astype('float32'))
+train_image_data = np.array(train_image_data)
+valid_image_data = np.array(valid_image_data)
+test_image_data = (np.array(test_image_data) / 255.0)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
@@ -181,8 +207,13 @@ train_labels = lb.fit_transform(train_labels)
 valid_labels = lb.transform(valid_labels)
 test_labels = lb.transform(test_labels)
 
-""" Se borran los dataframes utilizados, puesto que ya no sirven para nada: """
+""" Se borran los dataframes utilizados, puesto que ya no sirven para nada, y se recopila la longitud de las imagenes de
+entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
 del df_all_merge, df_path_n_stage, df_list, train_data
+
+train_image_data_len = len(train_image_data)
+valid_image_data_len = len(valid_image_data)
+batch_dimension = 32
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL (CNN) -----------------------------------------------
@@ -206,7 +237,7 @@ model.summary()
 Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
 la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
 trainAug = ImageDataGenerator(rescale = 1.0/255, horizontal_flip = True, vertical_flip = True, zoom_range= 0.2,
-                              shear_range= 0.2)
+                              shear_range= 0.2, width_shift_range= 0.2, height_shift_range= 0.2, rotation_range= 20)
 valAug = ImageDataGenerator(rescale = 1.0/255)
 
 """ Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
@@ -243,9 +274,9 @@ class_weights = compute_class_weight(class_weight = 'balanced', classes = np.uni
 d_class_weights = dict(enumerate(class_weights)) # {0: 1.4780, 1: 2.055238, 2: 0.40186, 3: 0.85... etc}
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-model.fit(x = trainGen, epochs = 10, verbose = 1, batch_size = 32,
-          class_weight = d_class_weights,
-          validation_data = valGen)
+model.fit(trainGen, epochs = 100, verbose = 1,
+          steps_per_epoch = train_image_data_len / batch_dimension, class_weight = d_class_weights,
+          validation_data = valGen, validation_steps = valid_image_data_len / batch_dimension)
 
 """ Transfer learning """
 cnn_model.trainable = True
@@ -257,9 +288,9 @@ model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele u
 model.summary()
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = trainGen, epochs = 100, verbose = 1, batch_size = 32,
-                           class_weight = d_class_weights,
-                           validation_data = valGen)
+neural_network = model.fit(trainGen, epochs = 500, verbose = 1,
+                           steps_per_epoch= valid_image_data_len / batch_dimension, class_weight = d_class_weights,
+                           validation_data = valGen, validation_steps = valid_image_data_len / batch_dimension)
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

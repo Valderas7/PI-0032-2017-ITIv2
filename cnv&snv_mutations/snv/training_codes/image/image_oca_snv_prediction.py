@@ -125,14 +125,14 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, random_state = 42)
-train_data, valid_data = train_test_split(train_data, test_size = 0.20, random_state = 42)
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20)
+train_data, valid_data = train_test_split(train_data, test_size = 0.20)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de imágenes con cáncer y sin cáncer: """
-image_dir = '/img_lotes'
+image_dir = '/home/avalderas/img_slides/img_lotes'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
 cancer_dir = glob.glob(image_dir + "/img_lote*_cancer/*") # 1702 imágenes con cáncer en total
@@ -215,8 +215,13 @@ test_labels = test_data.iloc[:,2:-1]; test_columns = test_labels.columns.values
 """ Los nombres de las distintas clases (columnas) se pasan a una lista para usarlos en un futuro """
 classes = test_columns.tolist()
 
-""" Se borran los dataframes utilizados, puesto que ya no sirven para nada: """
+""" Se borran los dataframes utilizados, puesto que ya no sirven para nada, y se recopila la longitud de las imagenes de
+entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
 del df_all_merge, df_path_n_stage, df_list
+
+train_image_data_len = len(train_image_data)
+valid_image_data_len = len(valid_image_data)
+batch_dimension = 32
 
 """ Para poder entrenar la red hace falta transformar las tablas en arrays. Para ello se utiliza 'numpy'. Las imágenes 
 YA están convertidas en 'arrays' numpy """
@@ -243,6 +248,12 @@ all_model = layers.Dense(train_labels.shape[1], activation= 'sigmoid')(all_model
 model = keras.models.Model(inputs = inputs, outputs = all_model)
 model.summary()
 
+""" Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
+de datos que se tratan en este problema es muy imbalanceado. """
+from sklearn.utils.class_weight import compute_sample_weight
+sample_weights = class_weight.compute_sample_weight(class_weight = 'balanced', y = train_labels)
+sample_weights_dict = dict(enumerate(sample_weights)) # {0: 2.5243569600427398e-26, 1: 2.5243569600427398e-26, etc}
+
 """ Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
 Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
 la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
@@ -251,7 +262,7 @@ valAug = ImageDataGenerator(rescale = 1.0/255)
 
 """ Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
 instancias posteriormente: """
-trainGen = trainAug.flow(x = train_image_data, y = train_labels, batch_size = 32)
+trainGen = trainAug.flow(x = train_image_data, y = train_labels, batch_size = 32, sample_weight= sample_weights)
 valGen = valAug.flow(x = valid_image_data, y = valid_labels, batch_size = 32, shuffle= False)
 #testGen = valAug.flow(x = test_image_data, y = test_labels, batch_size = 32, shuffle= False)
 
@@ -274,13 +285,10 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
 checkpoint_path = 'model_snv_image_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
-#class_weights = class_weight.compute_class_weight(class_weight = 'balanced',
-                                                  #classes = np.unique(train_labels),
-                                                  #y = train_labels)
-#class_weight_dict = dict(enumerate(class_weights))
-
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = trainGen, epochs = 1, verbose = 1, batch_size = 32, validation_data = valGen)
+model.fit(trainGen, epochs = 20, verbose = 1, validation_data = valGen,
+          steps_per_epoch=(train_image_data_len / batch_dimension),
+          validation_steps=(valid_image_data_len / batch_dimension))
 
 """ Una vez el modelo ya ha sido entrenado, se puede descongelar el modelo base de la red EfficientNetB7 y reeentrenar
 todo el modelo de principio a fin con una tasa de aprendizaje muy baja ('fine tuning'). Este es un último paso opcional
@@ -292,14 +300,16 @@ cnn_model.trainable = True
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta (y se utiliza un 'learning rate' muy pequeño): """
-model.compile(optimizer = keras.optimizers.Adam (learning_rate = 1e-6),
+model.compile(optimizer = keras.optimizers.Adam (learning_rate = 1e-5),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()
 
 """ Se entrena el modelo de principio a fin: """
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = trainGen, epochs = 0, verbose = 1, batch_size = 32, validation_data = valGen)
+neural_network = model.fit(trainGen, epochs = 500, verbose = 1, validation_data = valGen,
+                           steps_per_epoch = (train_image_data_len / batch_dimension),
+                           validation_steps = (valid_image_data_len / batch_dimension))
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -315,20 +325,20 @@ print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de p
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
 posteriormentes para dibujar la gráfica de la 'loss'."""
-#loss = neural_network.history['loss']
-#val_loss = neural_network.history['val_loss']
+loss = neural_network.history['loss']
+val_loss = neural_network.history['val_loss']
 
-#epochs = neural_network.epoch
+epochs = neural_network.epoch
 
 """ Una vez definidas las variables se dibujan las distintas gráficas. """
 """ Gráfica de la 'loss' del entreno y la validación: """
-#plt.plot(epochs, loss, 'r', label='Loss del entreno')
-#plt.plot(epochs, val_loss, 'b--', label='Loss de la validación')
-#plt.title('Loss del entreno y de la validación')
-#plt.ylabel('Loss')
-#plt.xlabel('Epochs')
-#plt.legend()
-#plt.figure() # Crea o activa una figura
+plt.plot(epochs, loss, 'r', label='Loss del entreno')
+plt.plot(epochs, val_loss, 'b--', label='Loss de la validación')
+plt.title('Loss del entreno y de la validación')
+plt.ylabel('Loss')
+plt.xlabel('Epochs')
+plt.legend()
+plt.figure() # Crea o activa una figura
 
 """ -------------------------------------------------------------------------------------------------------------------
 ------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
@@ -381,93 +391,86 @@ for label, matrix in conf_mat_dict.items():
         print("\n")
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
-documento grafico del rendimiento del clasificador multietiqueta. Esta curva representa la tasa de verdaderos positivos 
-y la tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
-En el caso de un clasificador multietiqueta, para implementarlas, se puede dibujar una curva ROC por clase, o tambien se 
-puede dibujar una curva ROC considerando cada elemento de la matriz de confusion de cada clase como una prediccion 
-binaria (micro-average). Otra evaluacion seria la llamada macro-averaging, que le da igual valor a la clasificacion de 
-cada clase. """
+documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
+tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
+Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
 # @ravel: Aplana el vector a 1D
-# Se calcula el AUC-ROC para cada clase
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, roc_auc_score, average_precision_score
 from scipy import interp
 
+""" Para empezar, se calculan dos puntuaciones de la curva ROC. En primer lugar se calcula la puntuación micro-promedio 
+(se calcula la puntuación de forma igualitaria, contando el total de todos los falsos positivos y verdaderos negativos), 
+que es la mejor puntuación para ver el rendimiento de forma igualitaria del clasificador. Seguidamente, se calcula la 
+puntuación promedia ponderada (se calcula la puntuación de cada una de las clases por separado, ponderando cada una de 
+ellas según el número de veces que aparezca en el conjunto de datos), que es la mejor puntuación en caso de conjuntos de
+datos no balanceados como el que se está analizando. """
+y_pred_prob = model.predict(test_image_data)
+
+micro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
+                                     average="micro")
+weighted_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
+                                     average="weighted")
+micro_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="micro")
+weighted_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="weighted")
+
+print("Puntuaciones AUC-ROC:\n{:.2f} (micro-promedio)\n{:.2f} (promedio ponderado)\n".format(micro_roc_auc_ovr,
+                                                                                             weighted_roc_auc_ovr))
+print("Puntuaciones AUC-PR:\n{:.2f} (micro-promedio)\n{:.2f} (promedio ponderado)".format(micro_pr_auc_ovr,
+                                                                                          weighted_pr_auc_ovr))
+
+""" Una vez calculadas las dos puntuaciones, se dibuja la curva micro-promedio. Esto es mejor que dibujar una curva para 
+cada una de las clases que hay en el problema. """
 fpr = dict()
 tpr = dict()
-roc_auc = dict()
+auc_roc = dict()
 
-for i in range(len(test_columns)):
-    fpr[i], tpr[i], _ = roc_curve(y_true[:, i], y_pred[:, i])
-    roc_auc[i] = auc(fpr[i], tpr[i])
+""" Se calcula la tasa de falsos positivos y de verdaderos negativos para cada una de las clases, buscando en cada una
+de las 'n' (del número de clases) columnas del problema y se calcula con ello el AUC-ROC micro-promedio """
+for i in range(len(lb.classes_)):
+    fpr[i], tpr[i], _ = roc_curve(test_labels[:, i], y_pred_prob[:, i])
+    auc_roc[i] = auc(fpr[i], tpr[i])
 
-# Se calcula el AUC-ROC micro-average
-fpr["micro"], tpr["micro"], _ = roc_curve(y_true.ravel(), y_pred_prob)
-roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+fpr["micro"], tpr["micro"], _ = roc_curve(test_labels.ravel(), y_pred_prob.ravel())
+auc_roc["micro"] = auc(fpr["micro"], tpr["micro"])
 
-# Primero se agrupan todos los falsos positivos
-all_fpr = np.unique(np.concatenate([fpr[i] for i in range(len(test_columns))]))
-
-# Se interpolan todas las curvas ROC en este punto
-mean_tpr = np.zeros_like(all_fpr)
-for i in range(len(test_columns)):
-    mean_tpr += interp(all_fpr, fpr[i], tpr[i])
-
-# Finally average it and compute AUC
-mean_tpr /= len(test_columns)
-
-fpr["macro"] = all_fpr
-tpr["macro"] = mean_tpr
-roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
-
-# Se dibujan todas las curvas ROC
+""" Finalmente se dibuja la curva AUC-ROC micro-promedio """
 plt.figure()
 plt.plot(fpr["micro"], tpr["micro"],
-         label='micro-average ROC curve (area = {0:0.2f})'
-               ''.format(roc_auc["micro"]),
-         color='deeppink', linestyle=':', linewidth=4)
+         label = 'Micro-average AUC-ROC curve (AUC = {0:.2f})'.format(auc_roc["micro"]),
+         color = 'blue', linewidth = 2)
 
-plt.plot(fpr["macro"], tpr["macro"],
-         label='macro-average ROC curve (area = {0:0.2f})'
-               ''.format(roc_auc["macro"]),
-         color='navy', linestyle=':', linewidth=4)
-
-plt.plot([0, 1], [0, 1], 'k--', lw = 2)
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('AUC-ROC')
-plt.legend(loc="best")
-plt.show()
-
-
-
-"""from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
-y_pred_prob = model.predict(test_image_data).ravel()
-fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
-auc_roc = auc(fpr, tpr)
-
-plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve')
+plt.title('AUC-ROC curve (micro)')
 plt.legend(loc = 'best')
-plt.show()"""
+plt.show()
 
 """ Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
 del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
-precision, recall, threshold = precision_recall_curve(y_true, y_pred_prob)
-auc_pr = auc(recall, precision)
+precision = dict()
+recall = dict()
+auc_pr = dict()
 
-plt.figure(2)
-plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
-plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
+""" Se calcula precisión y la sensibilidad para cada una de las clases, buscando en cada una de las 'n' (del número de 
+clases) columnas del problema y se calcula con ello el AUC-PR micro-promedio """
+for i in range(len(lb.classes_)):
+    precision[i], recall[i], _ = precision_recall_curve(test_labels[:, i], y_pred_prob[:, i])
+    auc_pr[i] = auc(recall[i], precision[i])
+
+precision["micro"], recall["micro"], _ = precision_recall_curve(test_labels.ravel(), y_pred_prob.ravel())
+auc_pr["micro"] = auc(recall["micro"], precision["micro"])
+
+""" Finalmente se dibuja la curvas AUC-PR micro-promedio """
+plt.figure()
+plt.plot(recall["micro"], precision["micro"],
+         label = 'Micro-average AUC-PR curve (AUC = {0:.2f})'.format(auc_pr["micro"]),
+         color = 'blue', linewidth = 2)
+
+plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('AUC-PR curve')
+plt.title('AUC-PR curve (micro)')
 plt.legend(loc = 'best')
 plt.show()
 
