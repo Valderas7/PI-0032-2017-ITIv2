@@ -407,7 +407,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
-checkpoint_path = 'model_snv_image_epoch{epoch:02d}.h5'
+checkpoint_path = 'model_cnv_image_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Una vez definido el modelo, se entrena: """

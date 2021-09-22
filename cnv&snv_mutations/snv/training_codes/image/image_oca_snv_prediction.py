@@ -234,20 +234,19 @@ test_labels = np.asarray(test_labels).astype('float32')
 --------------------------------------------------------------------------------------------------------------------"""
 """ En esta ocasión, se crea un modelo secuencial para la red neuronal convolucional que será la encargada de procesar
 todas las imágenes: """
-inputs = keras.Input(shape=(alto, ancho, canales))
-cnn_model = keras.applications.EfficientNetB7(weights='imagenet', input_shape=(alto, ancho, canales),
-                                              include_top=False)
-cnn_model.trainable = False
-
-all_model = cnn_model(inputs, training=False)
-all_model = layers.GlobalAveragePooling2D()(all_model)
-all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.BatchNormalization()(all_model)
+base_model = keras.applications.ResNet50V2(weights = 'imagenet', input_tensor = Input(shape=(alto, ancho, canales)),
+                                              include_top = False)
+all_model = base_model.output
+all_model = layers.Flatten()(all_model)
 all_model = layers.Dense(256)(all_model)
+all_model = layers.Dropout(0.5)(all_model)
 all_model = layers.Dense(train_labels.shape[1], activation= 'sigmoid')(all_model)
-model = keras.models.Model(inputs = inputs, outputs = all_model)
-model.summary()
+model = keras.models.Model(inputs = base_model.input, outputs = all_model)
 
+""" Se congelan todas las capas convolucionales del modelo base"""
+for layer in base_model.layers:
+    layer.trainable = False
+    
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
 de datos que se tratan en este problema es muy imbalanceado. """
 from sklearn.utils.class_weight import compute_sample_weight
@@ -281,23 +280,27 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
               optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
+model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
 checkpoint_path = 'model_snv_image_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(trainGen, epochs = 1, verbose = 1, validation_data = valGen,
+model.fit(trainGen, epochs = 10, verbose = 1, validation_data = valGen,
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
-""" Una vez el modelo ya ha sido entrenado, se puede descongelar el modelo base de la red EfficientNetB7 y reeentrenar
-todo el modelo de principio a fin con una tasa de aprendizaje muy baja ('fine tuning'). Este es un último paso opcional
-que puede dar grandes mejoras o un rápido sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
-con las capas congeladas, ya que sino, podría destruir todo lo realizado anteriormente. 
-Para ello, primero se descongela el modelo base. Destacar que aunque el modelo base ahora pasa a ser entrenable, todavía
-se ejecuta en modo inferencia, ya que se pasó el argumento @training = False anteriormente, al contruir el modelo."""
-cnn_model.trainable = True
+""" Una vez el modelo ya ha sido entrenado, se resetean los generadores de data augmentation de los conjuntos de 
+entrenamiento y validacion y se descongelan algunas capas convolucionales del modelo base de la red para reeentrenar
+todo el modelo de principio a fin ('fine tuning'). Este es un último paso opcional que puede dar grandes mejoras o un 
+rápido sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo con las capas congeladas. 
+Para ello, primero se descongela el modelo base."""
+trainGen.reset()
+valGen.reset()
+
+for layer in base_model.layers[15:]:
+    layer.trainable = True
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta (y se utiliza un 'learning rate' muy pequeño): """
@@ -308,7 +311,7 @@ model.summary()
 
 """ Se entrena el modelo de principio a fin: """
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(trainGen, epochs = 1, verbose = 1, validation_data = valGen,
+neural_network = model.fit(trainGen, epochs = 100, verbose = 1, validation_data = valGen,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -379,8 +382,8 @@ for label_col in range(len(classes)):
     conf_mat_dict[classes[label_col]] = confusion_matrix(y_pred=y_pred_label, y_true=y_true_label)
 
 for label, matrix in conf_mat_dict.items():
-    #print("Matriz de confusion para el gen {}:".format(label))
-    #print(matrix)
+    print("Matriz de confusion para el gen {}:".format(label))
+    print(matrix)
     if matrix.shape == (2,2):
         """ @zip: Une las tuplas del nombre de los grupos con la de la cantidad de casos por grupo """
         group_counts = ['{0:0.0f}'.format(value) for value in matrix.flatten()]  # Cantidad de casos por grupo
