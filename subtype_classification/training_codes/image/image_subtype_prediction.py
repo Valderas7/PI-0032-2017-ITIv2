@@ -124,8 +124,8 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(100) # Eje Y: 630. Nº de filas
-ancho = int(100) # Eje X: 1480. Nº de columnas
+alto = int(630) # Eje Y: 630. Nº de filas
+ancho = int(1480) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
 """ Se establece la primera imagen como la imagen objetivo respecto a la que normalizar el color, se estandariza también
@@ -157,7 +157,7 @@ for index_normal_train, imagen_train in enumerate(train_data['img_path']):
 
     img_train_norm_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
     img_train_norm_resize = cv2.filter2D(img_train_norm_resize, -1, kernel)
-    #img_train_norm_resize = cv2.cvtColor(img_train_norm_resize, cv2.COLOR_RGB2HSV_FULL)
+    img_train_norm_resize = cv2.cvtColor(img_train_norm_resize, cv2.COLOR_RGB2HSV_FULL)
     train_image_data.append(img_train_norm_resize)
 
 for imagen_valid in valid_data['img_path']:
@@ -166,7 +166,7 @@ for imagen_valid in valid_data['img_path']:
     normal_image_valid = normalizer.transform(normal_image_valid)
     img_valid_norm_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
     img_valid_norm_resize = cv2.filter2D(img_valid_norm_resize, -1, kernel)
-    #img_valid_norm_resize = cv2.cvtColor(img_valid_norm_resize, cv2.COLOR_RGB2HSV_FULL)
+    img_valid_norm_resize = cv2.cvtColor(img_valid_norm_resize, cv2.COLOR_RGB2HSV_FULL)
     valid_image_data.append(img_valid_norm_resize)
 
 for imagen_test in test_data['img_path']:
@@ -175,7 +175,7 @@ for imagen_test in test_data['img_path']:
     normal_image_test = normalizer.transform(normal_image_test)
     img_test_norm_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
     img_test_norm_resize = cv2.filter2D(img_test_norm_resize, -1, kernel)
-    #img_test_norm_resize = cv2.cvtColor(img_test_norm_resize, cv2.COLOR_RGB2HSV_FULL)
+    img_test_norm_resize = cv2.cvtColor(img_test_norm_resize, cv2.COLOR_RGB2HSV_FULL)
 
     test_image_data.append(img_test_norm_resize)
 
