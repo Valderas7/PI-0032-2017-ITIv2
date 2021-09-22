@@ -391,7 +391,7 @@ for label, matrix in conf_mat_dict.items():
         #sns.heatmap(matrix, annot=true_neg_pos_neg, fmt='', cmap='Blues')
         #plt.title(label)
         #plt.show()
-        #print("\n")
+print("\n")
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
 documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
@@ -413,7 +413,7 @@ micro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
                                      average="micro")
 micro_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="micro")
 
-print("Puntuación AUC-ROC: {:.2f} (micro-promedio)\n".format(micro_roc_auc_ovr))
+print("Puntuación AUC-ROC: {:.2f} (micro-promedio)".format(micro_roc_auc_ovr))
 print("Puntuación AUC-PR: {:.2f} (micro-promedio)\n".format(micro_pr_auc_ovr))
 
 """ Una vez calculadas las dos puntuaciones, se dibuja la curva micro-promedio. Esto es mejor que dibujar una curva para 

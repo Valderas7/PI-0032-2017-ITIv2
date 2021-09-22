@@ -304,8 +304,8 @@ model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(trainGen, epochs = 500, verbose = 1, validation_data = valGen,
-                           steps_per_epoch= valid_image_data_len / batch_dimension, class_weight = d_class_weights,
-                           validation_steps = valid_image_data_len / batch_dimension)
+                           steps_per_epoch = (train_image_data_len / batch_dimension), class_weight = d_class_weights,
+                           validation_steps = (valid_image_data_len / batch_dimension))
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
