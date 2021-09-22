@@ -303,14 +303,13 @@ for layer in base_model.layers[15:]:
     layer.trainable = True
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
-se tomen en cuenta (y se utiliza un 'learning rate' muy pequeño): """
+se tomen en cuenta. """
 model.compile(optimizer = keras.optimizers.Adam (learning_rate = 1e-5),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()
 
-""" Se entrena el modelo de principio a fin: """
-""" Una vez definido y compilado el modelo, es hora de entrenarlo. """
+""" Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(trainGen, epochs = 100, verbose = 1, validation_data = valGen,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
