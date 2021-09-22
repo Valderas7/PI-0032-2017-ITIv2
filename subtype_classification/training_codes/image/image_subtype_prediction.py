@@ -139,6 +139,11 @@ test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto d
 normalizer = staintools.StainNormalizer(method='vahadane')
 #augmentor = staintools.StainAugmentor(method='vahadane', sigma1=0.2, sigma2=0.2)
 
+""" Filtro de detección de bordes (enfocar) """
+kernel = np.array([[-1.0, -1.0, -1.0],
+                   [-1.0, 5.0, -1.0],
+                   [-1.0, -1.0, -1.0]])
+
 for index_normal_train, imagen_train in enumerate(train_data['img_path']):
     if index_normal_train == 0:
         target = staintools.read_image(imagen_train)
@@ -151,7 +156,7 @@ for index_normal_train, imagen_train in enumerate(train_data['img_path']):
     normal_image_train = normalizer.transform(normal_image_train)
 
     img_train_norm_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    #img_train_norm_resize = cv2.filter2D(img_train_norm_resize, -1, kernel)
+    img_train_norm_resize = cv2.filter2D(img_train_norm_resize, -1, kernel)
     #img_train_norm_resize = cv2.cvtColor(img_train_norm_resize, cv2.COLOR_RGB2HSV_FULL)
     train_image_data.append(img_train_norm_resize)
 
@@ -160,7 +165,7 @@ for imagen_valid in valid_data['img_path']:
     normal_image_valid = staintools.LuminosityStandardizer.standardize(img_valid)
     normal_image_valid = normalizer.transform(normal_image_valid)
     img_valid_norm_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    #img_valid_norm_resize = cv2.filter2D(img_valid_norm_resize, -1, kernel)
+    img_valid_norm_resize = cv2.filter2D(img_valid_norm_resize, -1, kernel)
     #img_valid_norm_resize = cv2.cvtColor(img_valid_norm_resize, cv2.COLOR_RGB2HSV_FULL)
     valid_image_data.append(img_valid_norm_resize)
 
@@ -169,7 +174,7 @@ for imagen_test in test_data['img_path']:
     normal_image_test = staintools.LuminosityStandardizer.standardize(img_test)
     normal_image_test = normalizer.transform(normal_image_test)
     img_test_norm_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    #img_test_norm_resize = cv2.filter2D(img_test_norm_resize, -1, kernel)
+    img_test_norm_resize = cv2.filter2D(img_test_norm_resize, -1, kernel)
     #img_test_norm_resize = cv2.cvtColor(img_test_norm_resize, cv2.COLOR_RGB2HSV_FULL)
 
     test_image_data.append(img_test_norm_resize)
