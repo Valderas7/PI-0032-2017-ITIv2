@@ -302,7 +302,7 @@ model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele u
               metrics = metrics)
 model.summary()
 
-""" Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
+""" Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(trainGen, epochs = 500, verbose = 1, validation_data = valGen,
                            steps_per_epoch = (train_image_data_len / batch_dimension), class_weight = d_class_weights,
                            validation_steps = (valid_image_data_len / batch_dimension))

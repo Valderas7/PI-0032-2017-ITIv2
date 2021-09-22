@@ -12,7 +12,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras import models
-from tensorflow.keras.layers import *
+from tensorflow.keras import *
 from functools import reduce # 'reduce' aplica una función pasada como argumento para todos los miembros de una lista.
 from sklearn.model_selection import train_test_split # Se importa la librería para dividir los datos en entreno y test.
 from sklearn.preprocessing import MinMaxScaler # Para escalar valores
@@ -244,14 +244,14 @@ for layer in base_model.layers:
 """ Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
 Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
 la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
-trainAug = ImageDataGenerator(rescale = 1.0/255, horizontal_flip = True, vertical_flip = True, zoom_range= 0.2,
-                              shear_range= 0.2, width_shift_range= 0.2, height_shift_range= 0.2, rotation_range= 20)
+trainAug = ImageDataGenerator(rescale = 1.0/255, horizontal_flip = True, vertical_flip = True, zoom_range = 0.2,
+                              shear_range = 0.2, width_shift_range = 0.2, height_shift_range = 0.2, rotation_range = 20)
 valAug = ImageDataGenerator(rescale = 1.0/255)
 
 """ Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
 instancias posteriormente: """
 trainGen = trainAug.flow(x = train_image_data, y = train_labels, batch_size = 32)
-valGen = valAug.flow(x = valid_image_data, y = valid_labels, batch_size = 32, shuffle= False)
+valGen = valAug.flow(x = valid_image_data, y = valid_labels, batch_size = 32, shuffle = False)
 #testGen = valAug.flow(x = test_image_data, y = test_labels, batch_size = 32, shuffle= False)
 
 """ Hay que definir las métricas de la red y configurar los distintos hiperparámetros para entrenar la red. El modelo ya
@@ -304,7 +304,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
               metrics = metrics)
 model.summary()
 
-""" Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
+""" Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = trainGen, epochs = 100, verbose = 1, class_weight = class_weight_dict,
                            validation_data = valGen, steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))

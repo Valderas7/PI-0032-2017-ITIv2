@@ -129,15 +129,15 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(200) # Eje Y: 630. Nº de filas
-ancho = int(200) # Eje X: 1480. Nº de columnas
+alto = int(100) # Eje Y: 630. Nº de filas
+ancho = int(100) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
 """ Se establece la primera imagen como la imagen objetivo respecto a la que normalizar el color, se estandariza también
 el brillo para mejorar el cálculo y depués de normalizar el color, se redimensionan las imágenes, añadiéndolas
 posteriormente a su respectiva lista del subconjunto de datos"""
 # @StainNormalizer: Instancia para normalizar el color de la imagen mediante el metodo de normalizacion especificado
-pre_train_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de entrenamiento
+train_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de entrenamiento
 valid_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de validación
 test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
 
@@ -150,37 +150,30 @@ for index_normal_train, image_train in enumerate(train_data['img_path']):
         normalizer.fit(target)
 
     img_train = staintools.read_image(image_train)
-    #cv2.imshow('image', img_train)
-    #cv2.waitKey(0)
-
     normal_image_train = staintools.LuminosityStandardizer.standardize(img_train)
-    normal_image_train = normalizer.transform(normal_image_train)
-
+    #normal_image_train = normalizer.transform(normal_image_train)
     img_train_norm_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    #cv2.imshow('image_norm', img_train_norm_resize)
-    #cv2.waitKey(0)
-    pre_train_image_data.append(img_train_norm_resize)
-    print(index_normal_train)
+    train_image_data.append(img_train_norm_resize)
 
 for image_valid in valid_data['img_path']:
     img_valid = staintools.read_image(image_valid)
     normal_image_valid = staintools.LuminosityStandardizer.standardize(img_valid)
-    normal_image_valid = normalizer.transform(normal_image_valid)
+    #normal_image_valid = normalizer.transform(normal_image_valid)
     img_valid_norm_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
     valid_image_data.append(img_valid_norm_resize)
 
 for image_test in test_data['img_path']:
     img_test = staintools.read_image(image_test)
     normal_image_test = staintools.LuminosityStandardizer.standardize(img_test)
-    normal_image_test = normalizer.transform(normal_image_test)
+    #normal_image_test = normalizer.transform(normal_image_test)
     img_test_norm_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
     test_image_data.append(img_test_norm_resize)
 
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
 se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
 array con forma (X, alto, ancho, canales). """
-train_image_data = (np.array(pre_train_image_data) / 255.0)
-valid_image_data = (np.array(valid_image_data) / 255.0)
+train_image_data = np.array(train_image_data)
+valid_image_data = np.array(valid_image_data)
 test_image_data = (np.array(test_image_data) / 255.0)
 
 """ -------------------------------------------------------------------------------------------------------------------
@@ -213,35 +206,42 @@ train_labels = np.asarray(train_labels).astype('float32')
 valid_labels = np.asarray(valid_labels).astype('float32')
 test_labels = np.asarray(test_labels).astype('float32')
 
+""" Se recopila la longitud de las imagenes de entrenamiento y validacion para utilizarlas posteriormente en el 
+entrenamiento:"""
+train_image_data_len = len(train_image_data)
+valid_image_data_len = len(valid_image_data)
+batch_dimension = 32
+
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL (CNN) -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-""" Se define la red neuronal convolucional: """
-cnn_model = keras.applications.ResNet50V2(weights='imagenet', input_shape=(alto, ancho, canales),
-                                              include_top=False)
-cnn_model.trainable = False
-
-inputs = keras.Input(shape=(alto, ancho, canales))
-all_model = cnn_model(inputs, training=False)
-all_model = layers.GlobalAveragePooling2D()(all_model)
+""" En esta ocasión, se crea un modelo secuencial para la red neuronal convolucional que será la encargada de procesar
+todas las imágenes: """
+base_model = keras.applications.VGG16(weights = 'imagenet', input_tensor = Input(shape=(alto, ancho, canales)),
+                                              include_top = False)
+all_model = base_model.output
+all_model = layers.Flatten()(all_model)
+all_model = layers.Dense(256)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.BatchNormalization()(all_model)
 all_model = layers.Dense(1, activation= 'sigmoid')(all_model)
-model = keras.models.Model(inputs = inputs, outputs = all_model)
-model.summary()
+model = keras.models.Model(inputs = base_model.input, outputs = all_model)
+
+""" Se congelan todas las capas convolucionales del modelo base"""
+for layer in base_model.layers:
+    layer.trainable = False
 
 """ Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
 Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
 la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
-trainAug = ImageDataGenerator(rescale = 1.0/255, rotation_range=90, zoom_range=0.70, width_shift_range=0.8, height_shift_range=0.8,
-                              shear_range=0.90, horizontal_flip=True, fill_mode="nearest")
+trainAug = ImageDataGenerator(rescale = 1.0/255, horizontal_flip = True, vertical_flip = True, zoom_range = 0.2,
+                              shear_range = 0.2, width_shift_range = 0.2, height_shift_range = 0.2, rotation_range = 20)
 valAug = ImageDataGenerator(rescale = 1.0/255)
 
 """ Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
 instancias posteriormente: """
 trainGen = trainAug.flow(x = train_image_data, y = train_labels, batch_size = 32)
-valGen = valAug.flow(x = valid_image_data, y = valid_labels, batch_size = 32, shuffle= False)
-testGen = valAug.flow(x = test_image_data, y = test_labels, batch_size = 32, shuffle= False)
+valGen = valAug.flow(x = valid_image_data, y = valid_labels, batch_size = 32, shuffle = False)
+#testGen = valAug.flow(x = test_image_data, y = test_labels, batch_size = 32, shuffle= False)
 
 """ Hay que definir las métricas de la red y configurar los distintos hiperparámetros para entrenar la red. El modelo ya
 ha sido definido anteriormente, así que ahora hay que compilarlo. Para ello se define una función de loss y un 
@@ -257,6 +257,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
               optimizer = keras.optimizers.Adam(learning_rate = 0.001),
               metrics = metrics)
+model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
 checkpoint_path = '../../training_codes/image/model_image_relapse_prediction.h5'
@@ -270,21 +271,32 @@ class_weights = class_weight.compute_class_weight(class_weight = 'balanced', cla
 class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-model.fit(x = trainGen, epochs = 5, verbose = 1, batch_size = 32, class_weight = class_weight_dict,
-          validation_data = valGen)
+model.fit(x = trainGen, epochs = 5, verbose = 1, class_weight = class_weight_dict, validation_data = valGen,
+          steps_per_epoch = (train_image_data_len / batch_dimension),
+          validation_steps = (valid_image_data_len / batch_dimension))
 
-""" Transfer learning """
-cnn_model.trainable = True
+""" Una vez el modelo ya ha sido entrenado, se resetean los generadores de data augmentation de los conjuntos de 
+entrenamiento y validacion y se descongelan algunas capas convolucionales del modelo base de la red para reeentrenar
+todo el modelo de principio a fin ('fine tuning'). Este es un último paso opcional que puede dar grandes mejoras o un 
+rápido sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo con las capas congeladas. 
+Para ello, primero se descongela el modelo base."""
+trainGen.reset()
+valGen.reset()
 
+for layer in base_model.layers[15:]:
+    layer.trainable = True
+
+""" Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
+se tomen en cuenta """
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
-
 model.summary()
 
-""" Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = trainGen, epochs = 100, verbose = 1, batch_size = 32, class_weight = class_weight_dict,
-                           validation_data = valGen)
+""" Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
+neural_network = model.fit(x = trainGen, epochs = 100, verbose = 1, class_weight = class_weight_dict,
+                           validation_data = valGen, steps_per_epoch = (train_image_data_len / batch_dimension),
+                           validation_steps = (valid_image_data_len / batch_dimension))
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -292,8 +304,10 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(testGen, verbose = 0)
 print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Exactitud del conjunto de prueba: {:.2f} %\n"
-      "El AUC ROC del conjunto de prueba es de: {:.2f}".format(results[0],results[5],results[6],results[7] * 100,
+      "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
+      "Exactitud del conjunto de prueba: {:.2f} %\n" 
+      "El AUC-ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
+                                                               results[3]/(results[3]+results[2]), results[7] * 100,
                                                                results[8]))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
