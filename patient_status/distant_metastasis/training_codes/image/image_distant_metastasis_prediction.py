@@ -93,10 +93,8 @@ df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas váli
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento, validación y test. """
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
 # @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['distant_metastasis'],
-                                         random_state= 42)
-train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['distant_metastasis'],
-                                          random_state= 42)
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['distant_metastasis'])
+train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['distant_metastasis'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -366,7 +364,7 @@ conjunto de datos de test que se definió anteriormente al repartir los datos. "
 print("\nGenera predicciones para 10 muestras")
 print("Clase de las salidas: ", test_labels[:10])
 np.set_printoptions(precision=3, suppress=True)
-print("Predicciones:\n", np.round(model.predict(test_image_data[:10])))
+print("Predicciones: ", np.round(model.predict(test_image_data[:10])))
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """

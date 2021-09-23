@@ -351,14 +351,14 @@ conjunto de datos de test que se definió anteriormente al repartir los datos. "
 # @suppress=True: Muestra los números con representación de coma fija
 # @predict: Genera predicciones para nuevas entradas
 print("\nGenera predicciones para la primera muestra:")
-print("Clases para la primera muestra: ", test_labels[:1]); print("\n")
+print("Clases para la primera muestra: ", test_labels[:1])
 np.set_printoptions(precision=3, suppress=True)
-print("Predicciones para la primera muestra:\n", model.predict(test_image_data[:1])); print("\n")
+print("\nPredicciones para la primera muestra:\n", model.predict(test_image_data[:1])); print("\n")
 proba = model.predict(test_image_data[:1])[0] # Muestra las predicciones pero en una sola dimension
 idxs = np.argsort(proba)[::-1][:1] # Muestra los dos indices mas altos de las predicciones
 
 for (i, j) in enumerate(idxs):
-    label = "La mutacion SNV más probable de esta imagen es del gen {}: {:.2f}%".format(classes[j][4:], proba[j] * 100)
+    label = "La mutacion SNV más probable de esta imagen es del gen {}: {:.2f}%".format(classes[j], proba[j] * 100)
     print(label)
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
@@ -425,8 +425,9 @@ auc_roc = dict()
 """ Se calcula la tasa de falsos positivos y de verdaderos negativos para cada una de las clases, buscando en cada una
 de las 'n' (del número de clases) columnas del problema y se calcula con ello el AUC-ROC micro-promedio """
 for i in range(len(classes)):
-    fpr[i], tpr[i], _ = roc_curve(test_labels[:, i], y_pred_prob[:, i])
-    auc_roc[i] = auc(fpr[i], tpr[i])
+    if 1 in test_labels[:,i]:
+        fpr[i], tpr[i], _ = roc_curve(test_labels[:, i], y_pred_prob[:, i])
+        auc_roc[i] = auc(fpr[i], tpr[i])
 
 fpr["micro"], tpr["micro"], _ = roc_curve(test_labels.ravel(), y_pred_prob.ravel())
 auc_roc["micro"] = auc(fpr["micro"], tpr["micro"])
@@ -453,8 +454,9 @@ auc_pr = dict()
 """ Se calcula precisión y la sensibilidad para cada una de las clases, buscando en cada una de las 'n' (del número de 
 clases) columnas del problema y se calcula con ello el AUC-PR micro-promedio """
 for i in range(len(classes)):
-    precision[i], recall[i], _ = precision_recall_curve(test_labels[:, i], y_pred_prob[:, i])
-    auc_pr[i] = auc(recall[i], precision[i])
+    if 1 in test_labels[:, i]:
+        precision[i], recall[i], _ = precision_recall_curve(test_labels[:, i], y_pred_prob[:, i])
+        auc_pr[i] = auc(recall[i], precision[i])
 
 precision["micro"], recall["micro"], _ = precision_recall_curve(test_labels.ravel(), y_pred_prob.ravel())
 auc_pr["micro"] = auc(recall["micro"], precision["micro"])
