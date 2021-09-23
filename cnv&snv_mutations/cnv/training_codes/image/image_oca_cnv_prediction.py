@@ -358,7 +358,7 @@ test_labels = np.asarray(test_labels).astype('float32')
 --------------------------------------------------------------------------------------------------------------------"""
 """ En esta ocasión, se crea un modelo secuencial para la red neuronal convolucional que será la encargada de procesar
 todas las imágenes: """
-base_model = keras.applications.ResNet50V2(weights = 'imagenet', input_tensor = Input(shape=(alto, ancho, canales)),
+base_model = keras.applications.VGG16(weights = 'imagenet', input_tensor = Input(shape=(alto, ancho, canales)),
                                               include_top = False)
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
@@ -408,7 +408,8 @@ model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
 checkpoint_path = 'model_cnv_image_epoch{epoch:02d}.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
+mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False,
+                           monitor= '(2 * val_recall * val_precision) / (val_recall + val_precision)')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(trainGen, epochs = 1, verbose = 1, validation_data = valGen,
@@ -477,12 +478,12 @@ conjunto de datos de test que se definió anteriormente al repartir los datos. "
 print("\nGenera predicciones para la primera muestra:")
 print("Clases para la primera muestra: ", test_labels[:1])
 np.set_printoptions(precision=3, suppress=True)
-print("\nPredicciones para la primera muestra:\n", model.predict(test_image_data[:1])); print("\n")
+print("\nPredicciones para la primera muestra:\n", np.round(model.predict(test_image_data[:1])))
 proba = model.predict(test_image_data[:1])[0] # Muestra las predicciones pero en una sola dimension
 idxs = np.argsort(proba)[::-1][:1] # Muestra el indices más alto de las predicciones
 
 for (i, j) in enumerate(idxs):
-    label = "La mutación CNV más probable de esta imagen es del gen {}, siendo de tipo {}: {:.2f}%".\
+    label = "\nLa mutación CNV más probable de esta imagen es del gen {}, siendo de tipo {}: {:.2f}%".\
         format(classes[j].split('_')[1], classes[j].split('_')[2], proba[j] * 100)
     print(label)
 
@@ -534,12 +535,11 @@ ellas según el número de veces que aparezca en el conjunto de datos), que es l
 datos no balanceados como el que se está analizando. """
 y_pred_prob = model.predict(test_image_data)
 
-micro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
-                                     average="micro")
+micro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr", average="micro")
 micro_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="micro")
 
 print("Puntuación AUC-ROC: {:.2f} (micro-promedio)".format(micro_roc_auc_ovr))
-print("Puntuación AUC-PR: {:.2f} (micro-promedio)\n".format(micro_pr_auc_ovr))
+print("Puntuación AUC-PR: {:.2f} (micro-promedio)".format(micro_pr_auc_ovr))
 
 """ Una vez calculadas las dos puntuaciones, se dibuja la curva micro-promedio. Esto es mejor que dibujar una curva para 
 cada una de las clases que hay en el problema. """

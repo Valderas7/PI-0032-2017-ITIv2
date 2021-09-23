@@ -154,8 +154,7 @@ for index_normal_train, image_train in enumerate(train_data['img_path']):
 
     img_train = staintools.read_image(image_train)
     normal_image_train = staintools.LuminosityStandardizer.standardize(img_train)
-    #normal_image_train = normalizer.transform(normal_image_train)
-
+    normal_image_train = normalizer.transform(normal_image_train)
     img_train_norm_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
     #img_train_norm_resize = cv2.filter2D(img_train_norm_resize, -1, kernel)
     #img_train_norm_resize = cv2.cvtColor(img_train_norm_resize, cv2.COLOR_RGB2HSV_FULL)
@@ -164,7 +163,7 @@ for index_normal_train, image_train in enumerate(train_data['img_path']):
 for image_valid in valid_data['img_path']:
     img_valid = staintools.read_image(image_valid)
     normal_image_valid = staintools.LuminosityStandardizer.standardize(img_valid)
-    #normal_image_valid = normalizer.transform(normal_image_valid)
+    normal_image_valid = normalizer.transform(normal_image_valid)
     img_valid_norm_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
     #img_valid_norm_resize = cv2.filter2D(img_valid_norm_resize, -1, kernel)
     #img_valid_norm_resize = cv2.cvtColor(img_valid_norm_resize, cv2.COLOR_RGB2HSV_FULL)
@@ -173,7 +172,7 @@ for image_valid in valid_data['img_path']:
 for image_test in test_data['img_path']:
     img_test = staintools.read_image(image_test)
     normal_image_test = staintools.LuminosityStandardizer.standardize(img_test)
-    #normal_image_test = normalizer.transform(normal_image_test)
+    normal_image_test = normalizer.transform(normal_image_test)
     img_test_norm_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
     #img_test_norm_resize = cv2.filter2D(img_test_norm_resize, -1, kernel)
     #img_test_norm_resize = cv2.cvtColor(img_test_norm_resize, cv2.COLOR_RGB2HSV_FULL)
@@ -300,7 +299,7 @@ for layer in base_model.layers[15:]:
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta """
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 model.summary()
 

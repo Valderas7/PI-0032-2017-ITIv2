@@ -234,7 +234,7 @@ test_labels = np.asarray(test_labels).astype('float32')
 --------------------------------------------------------------------------------------------------------------------"""
 """ En esta ocasión, se crea un modelo secuencial para la red neuronal convolucional que será la encargada de procesar
 todas las imágenes: """
-base_model = keras.applications.ResNet50V2(weights = 'imagenet', input_tensor = Input(shape=(alto, ancho, canales)),
+base_model = keras.applications.VGG16(weights = 'imagenet', input_tensor = Input(shape=(alto, ancho, canales)),
                                               include_top = False)
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
@@ -304,7 +304,7 @@ for layer in base_model.layers[15:]:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam (learning_rate = 1e-5),
+model.compile(optimizer = keras.optimizers.Adam (learning_rate = 0.0001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()
@@ -353,12 +353,12 @@ conjunto de datos de test que se definió anteriormente al repartir los datos. "
 print("\nGenera predicciones para la primera muestra:")
 print("Clases para la primera muestra: ", test_labels[:1])
 np.set_printoptions(precision=3, suppress=True)
-print("\nPredicciones para la primera muestra:\n", model.predict(test_image_data[:1])); print("\n")
+print("\nPredicciones para la primera muestra:\n", np.round(model.predict(test_image_data[:1])))
 proba = model.predict(test_image_data[:1])[0] # Muestra las predicciones pero en una sola dimension
 idxs = np.argsort(proba)[::-1][:1] # Muestra los dos indices mas altos de las predicciones
 
 for (i, j) in enumerate(idxs):
-    label = "La mutacion SNV más probable de esta imagen es del gen {}: {:.2f}%".format(classes[j], proba[j] * 100)
+    label = "\nLa mutacion SNV más probable de esta imagen es del gen {}: {:.2f}%".format(classes[j], proba[j] * 100)
     print(label)
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
