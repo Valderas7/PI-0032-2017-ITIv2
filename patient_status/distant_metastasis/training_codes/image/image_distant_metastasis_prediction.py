@@ -177,7 +177,7 @@ for index_normal_train, image_train in enumerate(train_data['img_path']):
     otsu_thresh_value = sk_filters.threshold_otsu(complement)
     otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
     result_train = train_image_resize * np.dstack([otsu, otsu, otsu])
-    result_train = rgb2hsv(result_train)
+    #result_train = rgb2hsv(result_train)
     train_image_data.append(result_train)
 
 for image_valid in valid_data['img_path']:
@@ -191,7 +191,7 @@ for image_valid in valid_data['img_path']:
     otsu_thresh_value = sk_filters.threshold_otsu(complement)
     otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
     result_valid = valid_image_resize * np.dstack([otsu, otsu, otsu])
-    result_valid = rgb2hsv(result_valid)
+    #result_valid = rgb2hsv(result_valid)
     valid_image_data.append(result_valid)
 
 for image_test in test_data['img_path']:
@@ -205,7 +205,7 @@ for image_test in test_data['img_path']:
     otsu_thresh_value = sk_filters.threshold_otsu(complement)
     otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
     result_test = test_image_resize * np.dstack([otsu, otsu, otsu])
-    result_test = rgb2hsv(result_test)
+    #result_test = rgb2hsv(result_test)
     test_image_data.append(result_test)
 
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
