@@ -185,17 +185,54 @@ train_image_data = [] # Lista con las imágenes redimensionadas
 valid_image_data = []
 test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
 
-for imagen_train in train_data['img_path']:
-    train_image_data.append(cv2.resize(cv2.imread(imagen_train, cv2.IMREAD_COLOR), (ancho, alto),
-                                           interpolation=cv2.INTER_CUBIC))
+normalizer = staintools.StainNormalizer(method='vahadane')
+
+for index_normal_train, imagen_train in enumerate(train_data['img_path']):
+    if index_normal_train == 0:
+        target = staintools.read_image(imagen_train)
+        target = staintools.LuminosityStandardizer.standardize(target)
+        normalizer.fit(target)
+
+    img_train = staintools.read_image(imagen_train)
+    normal_image_train = staintools.LuminosityStandardizer.standardize(img_train)
+    normal_image_train = normalizer.transform(normal_image_train)
+    train_image_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
+    # train_image_resize = np.asarray(train_image_resize)
+    grayscale = np.dot(train_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
+    complement = 255 - grayscale
+    otsu_thresh_value = sk_filters.threshold_otsu(complement)
+    otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
+    result_train = train_image_resize * np.dstack([otsu, otsu, otsu])
+    # result_train = rgb2hsv(result_train)
+    train_image_data.append(result_train)
 
 for imagen_valid in valid_data['img_path']:
-    valid_image_data.append(cv2.resize(cv2.imread(imagen_valid, cv2.IMREAD_COLOR), (ancho, alto),
-                                           interpolation=cv2.INTER_CUBIC))
+    img_valid = staintools.read_image(imagen_valid)
+    normal_image_valid = staintools.LuminosityStandardizer.standardize(img_valid)
+    normal_image_valid = normalizer.transform(normal_image_valid)
+    valid_image_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
+    # train_image_resize = np.asarray(train_image_resize)
+    grayscale = np.dot(valid_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
+    complement = 255 - grayscale
+    otsu_thresh_value = sk_filters.threshold_otsu(complement)
+    otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
+    result_valid = valid_image_resize * np.dstack([otsu, otsu, otsu])
+    # result_valid = rgb2hsv(result_valid)
+    valid_image_data.append(result_valid)
 
 for imagen_test in test_data['img_path']:
-    test_image_data.append(cv2.resize(cv2.imread(imagen_test, cv2.IMREAD_COLOR), (ancho, alto),
-                                           interpolation=cv2.INTER_CUBIC))
+    img_test = staintools.read_image(imagen_test)
+    normal_image_test = staintools.LuminosityStandardizer.standardize(img_test)
+    normal_image_test = normalizer.transform(normal_image_test)
+    test_image_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
+    # train_image_resize = np.asarray(train_image_resize)
+    grayscale = np.dot(test_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
+    complement = 255 - grayscale
+    otsu_thresh_value = sk_filters.threshold_otsu(complement)
+    otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
+    result_test = test_image_resize * np.dstack([otsu, otsu, otsu])
+    # result_test = rgb2hsv(result_test)
+    test_image_data.append(result_test)
 
 """ Se convierten las imágenes a un array de numpy para manipularlas con más comodidad y se divide el array entre 255
 para escalar los píxeles entre el intervalo (0-1). Como resultado, habrá un array con forma (471, alto, ancho, canales). """
@@ -243,7 +280,8 @@ all_model = layers.Dropout(0.5)(all_model)
 all_model = layers.Dense(train_labels.shape[1], activation= 'sigmoid')(all_model)
 model = keras.models.Model(inputs = base_model.input, outputs = all_model)
 
-""" Se congelan todas las capas convolucionales del modelo base"""
+""" Se congelan todas las capas convolucionales del modelo base """
+# A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
 for layer in base_model.layers:
     layer.trainable = False
     
@@ -287,7 +325,7 @@ checkpoint_path = 'model_snv_image_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(trainGen, epochs = 10, verbose = 1, validation_data = valGen,
+model.fit(trainGen, epochs = 50, verbose = 1, validation_data = valGen,
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -300,7 +338,8 @@ trainGen.reset()
 valGen.reset()
 
 for layer in base_model.layers[15:]:
-    layer.trainable = True
+    if not isinstance(layer, layers.BatchNormalization):
+        layer.trainable = True
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
@@ -310,7 +349,7 @@ model.compile(optimizer = keras.optimizers.Adam (learning_rate = 0.0001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(trainGen, epochs = 100, verbose = 1, validation_data = valGen,
+neural_network = model.fit(trainGen, epochs = 150, verbose = 1, validation_data = valGen,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
