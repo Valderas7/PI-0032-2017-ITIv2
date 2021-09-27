@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import cv2 #OpenCV
 import glob
 import cmapy
-from skimage.color import rgb2hed, hed2rgb
+from skimage.color import rgb2hsv, hed2rgb
 import skimage.filters as sk_filters
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -177,7 +177,7 @@ for index_normal_train, image_train in enumerate(train_data['img_path']):
     otsu_thresh_value = sk_filters.threshold_otsu(complement)
     otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
     result_train = train_image_resize * np.dstack([otsu, otsu, otsu])
-    # result_train = rgb2hsv(result_train)
+    result_train = rgb2hsv(result_train)
     train_image_data.append(result_train)
 
 for image_valid in valid_data['img_path']:
@@ -191,7 +191,7 @@ for image_valid in valid_data['img_path']:
     otsu_thresh_value = sk_filters.threshold_otsu(complement)
     otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
     result_valid = valid_image_resize * np.dstack([otsu, otsu, otsu])
-    # result_valid = rgb2hsv(result_valid)
+    result_valid = rgb2hsv(result_valid)
     valid_image_data.append(result_valid)
 
 for image_test in test_data['img_path']:
@@ -205,7 +205,7 @@ for image_test in test_data['img_path']:
     otsu_thresh_value = sk_filters.threshold_otsu(complement)
     otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
     result_test = test_image_resize * np.dstack([otsu, otsu, otsu])
-    # result_test = rgb2hsv(result_test)
+    result_test = rgb2hsv(result_test)
     test_image_data.append(result_test)
 
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
@@ -213,7 +213,7 @@ se divide todo el array de imágenes entre 255 para escalar los píxeles en el i
 array con forma (X, alto, ancho, canales). """
 train_image_data = (np.array(train_image_data))
 valid_image_data = (np.array(valid_image_data))
-test_image_data = ((np.array(test_image_data)) / 255.0)
+test_image_data = (np.array(test_image_data)) # / 255.0)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
@@ -273,9 +273,9 @@ for layer in base_model.layers:
 """ Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
 Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
 la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
-trainAug = ImageDataGenerator(rescale = 1.0/255, horizontal_flip = True, vertical_flip = True, zoom_range= 0.2,
+trainAug = ImageDataGenerator(horizontal_flip = True, vertical_flip = True, zoom_range= 0.2,
                               shear_range= 0.2, width_shift_range= 0.2, height_shift_range= 0.2, rotation_range= 20)
-valAug = ImageDataGenerator(rescale = 1.0/255)
+valAug = ImageDataGenerator()
 
 """ Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
 instancias posteriormente: """
@@ -323,7 +323,7 @@ Para ello, primero se descongela el modelo base."""
 trainGen.reset()
 valGen.reset()
 
-for layer in base_model.layers[15:]:
+for layer in base_model.layers[-20:]:
     if not isinstance(layer, layers.BatchNormalization):
         layer.trainable = True
 

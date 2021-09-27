@@ -7,6 +7,8 @@ import cv2 #OpenCV
 import glob
 import staintools
 from sklearn.preprocessing import MultiLabelBinarizer
+import skimage.filters as sk_filters
+from skimage.color import rgb2hsv, hed2rgb
 from tensorflow.keras.callbacks import ModelCheckpoint
 from sklearn.utils import class_weight
 from tensorflow import keras
@@ -327,7 +329,7 @@ for index_normal_train, image_train in enumerate(train_data['img_path']):
     otsu_thresh_value = sk_filters.threshold_otsu(complement)
     otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
     result_train = train_image_resize * np.dstack([otsu, otsu, otsu])
-    # result_train = rgb2hsv(result_train)
+    result_train = rgb2hsv(result_train)
     train_image_data.append(result_train)
 
 for image_valid in valid_data['img_path']:
@@ -341,7 +343,7 @@ for image_valid in valid_data['img_path']:
     otsu_thresh_value = sk_filters.threshold_otsu(complement)
     otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
     result_valid = valid_image_resize * np.dstack([otsu, otsu, otsu])
-    # result_valid = rgb2hsv(result_valid)
+    result_valid = rgb2hsv(result_valid)
     valid_image_data.append(result_valid)
 
 for image_test in test_data['img_path']:
@@ -355,14 +357,14 @@ for image_test in test_data['img_path']:
     otsu_thresh_value = sk_filters.threshold_otsu(complement)
     otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
     result_test = test_image_resize * np.dstack([otsu, otsu, otsu])
-    # result_test = rgb2hsv(result_test)
+    result_test = rgb2hsv(result_test)
     test_image_data.append(result_test)
 
 """ Se convierten las imágenes a un array de numpy para manipularlas con más comodidad y se divide el array entre 255
 para escalar los píxeles entre el intervalo (0-1). Como resultado, habrá un array con forma (471, alto, ancho, canales). """
-train_image_data = (np.array(train_image_data) / 255.0)
-valid_image_data = (np.array(valid_image_data) / 255.0)
-test_image_data = (np.array(test_image_data))
+train_image_data = np.array(train_image_data) # / 255.0)
+valid_image_data = np.array(valid_image_data) # / 255.0)
+test_image_data = np.array(test_image_data)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
@@ -418,9 +420,9 @@ sample_weights_dict = dict(enumerate(sample_weights)) # {0: 2.5243569600427398e-
 """ Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
 Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
 la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
-trainAug = ImageDataGenerator(rescale = 1.0/255, horizontal_flip = True, zoom_range= 0.2, shear_range= 0.2,
+trainAug = ImageDataGenerator(horizontal_flip = True, zoom_range= 0.2, shear_range= 0.2,
                               width_shift_range= 0.2, height_shift_range= 0.2, rotation_range= 20)
-valAug = ImageDataGenerator(rescale = 1.0/255)
+valAug = ImageDataGenerator()
 
 """ Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
 instancias posteriormente: """
@@ -450,7 +452,7 @@ mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False,
                            monitor= '(2 * val_recall * val_precision) / (val_recall + val_precision)')
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(trainGen, epochs = 1, verbose = 1, validation_data = valGen,
+model.fit(trainGen, epochs = 5, verbose = 1, validation_data = valGen,
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -462,7 +464,7 @@ Para ello, primero se descongela el modelo base."""
 trainGen.reset()
 valGen.reset()
 
-for layer in base_model.layers[15:]:
+for layer in base_model.layers[-20]:
     if not isinstance(layer, layers.BatchNormalization):
         layer.trainable = True
 
@@ -474,7 +476,7 @@ model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(trainGen, epochs = 1, verbose = 1, validation_data = valGen,
+neural_network = model.fit(trainGen, epochs = 200, verbose = 1, validation_data = valGen,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

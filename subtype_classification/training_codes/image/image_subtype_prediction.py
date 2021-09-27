@@ -236,7 +236,7 @@ batch_dimension = 32
 --------------------------------------------------------------------------------------------------------------------"""
 """ En esta ocasión, se crea un modelo secuencial para la red neuronal convolucional que será la encargada de procesar
 todas las imágenes: """
-base_model = keras.applications.VGG16(weights = 'imagenet', input_tensor = Input(shape=(alto, ancho, canales)),
+base_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = Input(shape=(alto, ancho, canales)),
                                               include_top = False)
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
@@ -275,7 +275,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
 
 model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.001),
               metrics = metrics)
 model.summary()
 
@@ -292,7 +292,7 @@ class_weights = compute_class_weight(class_weight = 'balanced', classes = np.uni
 d_class_weights = dict(enumerate(class_weights)) # {0: 1.4780, 1: 2.055238, 2: 0.40186, 3: 0.85... etc}
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-model.fit(trainGen, epochs = 50, verbose = 1, steps_per_epoch = (train_image_data_len / batch_dimension),
+model.fit(trainGen, epochs = 20, verbose = 1, steps_per_epoch = (train_image_data_len / batch_dimension),
           class_weight = d_class_weights, validation_data = valGen,
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -304,14 +304,14 @@ Para ello, primero se descongela el modelo base."""
 trainGen.reset()
 valGen.reset()
 
-for layer in base_model.layers[15:]:
+for layer in base_model.layers[-20:]:
     if not isinstance(layer, layers.BatchNormalization):
         layer.trainable = True
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta """
 model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 model.summary()
 
