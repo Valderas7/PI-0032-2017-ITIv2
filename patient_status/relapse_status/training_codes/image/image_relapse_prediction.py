@@ -138,11 +138,11 @@ canales = 3 # Imágenes a color (RGB) = 3
 el brillo para mejorar el cálculo y depués de normalizar el color, se redimensionan las imágenes, añadiéndolas
 posteriormente a su respectiva lista del subconjunto de datos"""
 # @StainNormalizer: Instancia para normalizar el color de la imagen mediante el metodo de normalizacion especificado
+normalizer = staintools.StainNormalizer(method='vahadane')
+
 train_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de entrenamiento
 valid_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de validación
 test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
-
-normalizer = staintools.StainNormalizer(method='vahadane')
 
 for index_normal_train, image_train in enumerate(train_data['img_path']):
     if index_normal_train == 0:
@@ -155,13 +155,13 @@ for index_normal_train, image_train in enumerate(train_data['img_path']):
     normal_image_train = normalizer.transform(normal_image_train)
     train_image_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
     # train_image_resize = np.asarray(train_image_resize)
-    grayscale = np.dot(train_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
-    complement = 255 - grayscale
-    otsu_thresh_value = sk_filters.threshold_otsu(complement)
-    otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
-    result_train = train_image_resize * np.dstack([otsu, otsu, otsu])
+    # grayscale = np.dot(train_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
+    # complement = 255 - grayscale
+    # otsu_thresh_value = sk_filters.threshold_otsu(complement)
+    # otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
+    # result_train = train_image_resize * np.dstack([otsu, otsu, otsu])
     # result_train = rgb2hsv(result_train)
-    train_image_data.append(result_train)
+    train_image_data.append(train_image_resize)
 
 for image_valid in valid_data['img_path']:
     img_valid = staintools.read_image(image_valid)
@@ -169,13 +169,13 @@ for image_valid in valid_data['img_path']:
     normal_image_valid = normalizer.transform(normal_image_valid)
     valid_image_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
     # train_image_resize = np.asarray(train_image_resize)
-    grayscale = np.dot(valid_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
-    complement = 255 - grayscale
-    otsu_thresh_value = sk_filters.threshold_otsu(complement)
-    otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
-    result_valid = valid_image_resize * np.dstack([otsu, otsu, otsu])
+    # grayscale = np.dot(valid_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
+    # complement = 255 - grayscale
+    # otsu_thresh_value = sk_filters.threshold_otsu(complement)
+    # otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
+    # result_valid = valid_image_resize * np.dstack([otsu, otsu, otsu])
     # result_valid = rgb2hsv(result_valid)
-    valid_image_data.append(result_valid)
+    valid_image_data.append(valid_image_resize)
 
 for image_test in test_data['img_path']:
     img_test = staintools.read_image(image_test)
@@ -183,20 +183,20 @@ for image_test in test_data['img_path']:
     normal_image_test = normalizer.transform(normal_image_test)
     test_image_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
     # train_image_resize = np.asarray(train_image_resize)
-    grayscale = np.dot(test_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
-    complement = 255 - grayscale
-    otsu_thresh_value = sk_filters.threshold_otsu(complement)
-    otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
-    result_test = test_image_resize * np.dstack([otsu, otsu, otsu])
+    # grayscale = np.dot(test_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
+    # complement = 255 - grayscale
+    # otsu_thresh_value = sk_filters.threshold_otsu(complement)
+    # otsu = (complement > otsu_thresh_value)  # .astype("uint8") * 255
+    # result_test = test_image_resize * np.dstack([otsu, otsu, otsu])
     # result_test = rgb2hsv(result_test)
-    test_image_data.append(result_test)
+    test_image_data.append(test_image_resize)
 
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
 se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
 array con forma (X, alto, ancho, canales). """
 train_image_data = np.array(train_image_data)
 valid_image_data = np.array(valid_image_data)
-test_image_data = (np.array(test_image_data) / 255.0)
+test_image_data = np.array(test_image_data) # / 255.0)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
@@ -245,6 +245,8 @@ all_model = base_model.output
 all_model = layers.Flatten()(all_model)
 all_model = layers.Dense(256)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
+all_model = layers.Dense(32)(all_model)
+all_model = layers.Dropout(0.5)(all_model)
 all_model = layers.Dense(1, activation= 'sigmoid')(all_model)
 model = keras.models.Model(inputs = base_model.input, outputs = all_model)
 
@@ -256,9 +258,9 @@ for layer in base_model.layers:
 """ Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
 Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
 la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
-trainAug = ImageDataGenerator(rescale = 1.0/255, horizontal_flip = True, vertical_flip = True, zoom_range = 0.2,
-                              shear_range = 0.2, width_shift_range = 0.2, height_shift_range = 0.2, rotation_range = 20)
-valAug = ImageDataGenerator(rescale = 1.0/255)
+trainAug = ImageDataGenerator(horizontal_flip = True, vertical_flip = True, zoom_range = 0.2, shear_range = 0.2,
+                              width_shift_range = 0.2, height_shift_range = 0.2, rotation_range = 20)
+valAug = ImageDataGenerator()
 
 """ Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
 instancias posteriormente: """
@@ -294,7 +296,7 @@ class_weights = class_weight.compute_class_weight(class_weight = 'balanced', cla
 class_weight_dict = dict(enumerate(class_weights))
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-model.fit(x = trainGen, epochs = 5, verbose = 1, class_weight = class_weight_dict, validation_data = valGen,
+model.fit(x = trainGen, epochs = 20, verbose = 1, class_weight = class_weight_dict, validation_data = valGen,
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -306,7 +308,7 @@ Para ello, primero se descongela el modelo base."""
 trainGen.reset()
 valGen.reset()
 
-for layer in base_model.layers[-20]:
+for layer in base_model.layers[-150]:
     if not isinstance(layer, layers.BatchNormalization):
         layer.trainable = True
 
@@ -318,7 +320,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
 model.summary()
 
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = trainGen, epochs = 100, verbose = 1, class_weight = class_weight_dict,
+neural_network = model.fit(x = trainGen, epochs = 300, verbose = 1, class_weight = class_weight_dict,
                            validation_data = valGen, steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

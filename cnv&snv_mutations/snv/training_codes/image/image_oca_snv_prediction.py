@@ -176,17 +176,19 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-# IMPORTANTE: La anchura no puede ser más alta que la altura.
-alto = 100 # 630
-ancho = 100 # 1480
+alto = int(100) # Eje Y: 630. Nº de filas
+ancho = int(100) # Eje X: 1480. Nº de columnas
 canales = 3 # Imágenes a color (RGB) = 3
 
-""" Se leen y se redimensionan posteriormente las imágenes a las dimensiones especificadas arriba: """
+""" Se establece la primera imagen como la imagen objetivo respecto a la que normalizar el color, se estandariza también
+el brillo para mejorar el cálculo y depués de normalizar el color, se redimensionan las imágenes, añadiéndolas
+posteriormente a su respectiva lista del subconjunto de datos"""
+# @StainNormalizer: Instancia para normalizar el color de la imagen mediante el metodo de normalizacion especificado
+normalizer = staintools.StainNormalizer(method='vahadane')
+
 train_image_data = [] # Lista con las imágenes redimensionadas
 valid_image_data = []
 test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
-
-normalizer = staintools.StainNormalizer(method='vahadane')
 
 for index_normal_train, image_train in enumerate(train_data['img_path']):
     if index_normal_train == 0:
@@ -326,7 +328,7 @@ checkpoint_path = 'model_snv_image_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(trainGen, epochs = 30, verbose = 1, validation_data = valGen,
+model.fit(trainGen, epochs = 15, verbose = 1, validation_data = valGen,
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
