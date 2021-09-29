@@ -1,4 +1,6 @@
 import shelve # datos persistentes
+
+import cv2.cv2
 import pandas as pd
 import numpy as np
 import seaborn as sns # Para realizar gráficas sobre datos
@@ -400,9 +402,10 @@ proba = model.predict(test_image_data[:1])[0] # Muestra las predicciones pero en
 idxs = np.argsort(proba)[::-1][:1] # Muestra los dos indices mas altos de las predicciones
 
 for (i, j) in enumerate(idxs):
-    label = "\nLa mutacion SNV más probable de esta imagen es del gen {}: {:.2f}%".format(classes[j], proba[j] * 100)
+    label = "\nLa mutacion SNV más probable es del gen {}: {:.2f}%".format(classes[j], proba[j] * 100)
     print(label)
-    # cv2.putText(test_image_data[:1], label, (5, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0 ,0), 2)
+    # text = "Most likely SNV mutation: {} gene ({:.2f}%)".format(classes[j].split('_')[1], proba[j] * 100)
+    # cv2.putText(test_image_data[:1], text, (920, 620), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0 ,0), 2)
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """

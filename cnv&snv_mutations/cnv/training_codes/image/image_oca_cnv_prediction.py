@@ -213,13 +213,17 @@ columnas para cada uno de los genes objetivo, para asi mostrar la informacion de
 columnas distintas para cada gen CNV a estudiar (amplificacion y delecion). Ademas, se recopilan las columnas creadas en 
 listas (dos para las columnas de mutaciones CNV). """
 columns_list_cnv_amp = []
+columns_list_cnv_normal = []
 columns_list_cnv_del = []
 
 df_all_merge.drop(['CNV'], axis=1, inplace= True)
+
 for gen_cnv in cnv_list:
     df_all_merge['CNV_' + gen_cnv + '_AMP'] = 0
+    df_all_merge['CNV_' + gen_cnv + '_NORMAL'] = 0
     df_all_merge['CNV_' + gen_cnv + '_DEL'] = 0
     columns_list_cnv_amp.append('CNV_' + gen_cnv + '_AMP')
+    columns_list_cnv_normal.append('CNV_' + gen_cnv + '_NORMAL')
     columns_list_cnv_del.append('CNV_' + gen_cnv + '_DEL')
 
 """ Una vez han sido creadas las columnas, se añade un '1' en aquellas filas donde el paciente tiene mutación sobre el
@@ -237,6 +241,15 @@ for column_cnv_del in columns_list_cnv_del:
     for index_cnv_sublist_del in list_gen_cnv_del[i_cnv_del]:
         df_all_merge.loc[index_cnv_sublist_del, column_cnv_del] = 1
     i_cnv_del += 1
+
+""" Falta por rellenar la columna normal de todas las mutaciones CNV. Para ello se colocará un '1' en aquellas filas 
+donde no haya mutación CNV ni de amplificación ni de deleción para un gen en especifico. """
+i_cnv_normal = 0
+for column_cnv_normal in columns_list_cnv_normal:
+    for i_row in range(1084):
+        if i_row not in list_gen_cnv_amp[i_cnv_normal] and i_row not in list_gen_cnv_del[i_cnv_normal]:
+            df_all_merge.loc[i_row, column_cnv_normal] = 1
+    i_cnv_normal += 1
 
 """ En este caso, el número de muestras de imágenes y de datos deben ser iguales. Las imágenes de las que se disponen se 
 enmarcan según el sistema de estadificación TNM como N1A, N1, N2A, N2, N3A, N1MI, N1B, N3, NX, N3B, N1C o N3C según la
@@ -526,10 +539,13 @@ proba = model.predict(test_image_data[:1])[0] # Muestra las predicciones pero en
 idxs = np.argsort(proba)[::-1][:1] # Muestra el indices más alto de las predicciones
 
 for (i, j) in enumerate(idxs):
-    label = "\nLa mutación CNV más probable de esta imagen es del gen {}, siendo de tipo {}: {:.2f}%".\
-        format(classes[j].split('_')[1], classes[j].split('_')[2], proba[j] * 100)
+    label = "\nLa mutación CNV más probable es del gen {}, siendo de tipo {}: {:.2f}%".format(classes[j].split('_')[1],
+                                                                                              classes[j].split('_')[2],
+                                                                                              proba[j] * 100)
     print(label)
-    # cv2.putText(test_image_data[:1], label, (5, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0 ,0), 2)
+    # text = "Most likely CNV mutation: {} gene [{}] ({:.2f}%)".format(classes[j].split('_')[1], classes[j].split('_')[2],
+                                                                     # proba[j] * 100)
+    # cv2.putText(test_image_data[:1], text, (870, 620), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0 ,0), 2)
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
