@@ -512,16 +512,18 @@ print("Clases para la primera muestra: \n ", test_labels[:1])
 np.set_printoptions(precision=3, suppress=True)
 print("\nPredicciones para la primera muestra:\n", np.round(model.predict(test_image_data[:1])))
 proba = model.predict(test_image_data[:1])[0] # Muestra las predicciones pero en una sola dimension
-idxs = np.argsort(proba)[::-1][:1] # Muestra el indices más alto de las predicciones
+idxs = np.argsort(proba)[::-1] # Muestra los indices de las predicciones del mas alto al mas bajo
 
 for (i, j) in enumerate(idxs):
-    label = "\nLa mutación CNV más probable es del gen {}, siendo de tipo {}: {:.2f}%".format(classes[j].split('_')[1],
-                                                                                              classes[j].split('_')[2],
-                                                                                              proba[j] * 100)
-    print(label)
-    # text = "Most likely CNV mutation: {} gene [{}] ({:.2f}%)".format(classes[j].split('_')[1], classes[j].split('_')[2],
-                                                                     # proba[j] * 100)
-    # cv2.putText(test_image_data[:1], text, (870, 620), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0 ,0), 2)
+    if classes[j].split('_')[2] == 'AMP' or classes[j].split('_')[2] == 'DEL':
+        label = "\nLa mutación CNV más probable es del gen {}, siendo de tipo {}: {:.2f}%".format(classes[j].split('_')[1],
+                                                                                                  classes[j].split('_')[2],
+                                                                                                  proba[j] * 100)
+        print(label)
+        break
+        # text = "Most likely CNV mutation: {} gene [{}] ({:.2f}%)".format(classes[j].split('_')[1], classes[j].split('_')[2],
+                                                                          # proba[j] * 100)
+        # cv2.putText(test_image_data[:1], text, (870, 620), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0 ,0), 2)
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """

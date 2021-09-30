@@ -302,7 +302,8 @@ model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
 checkpoint_path = 'model_snv_image_epoch{epoch:02d}.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
+mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False,
+                           monitor = '(2 * val_recall * val_precision) / (val_recall + val_precision)')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(trainGen, epochs = 15, verbose = 1, validation_data = valGen,
@@ -370,14 +371,14 @@ conjunto de datos de test que se definió anteriormente al repartir los datos. "
 # @suppress=True: Muestra los números con representación de coma fija
 # @predict: Genera predicciones para nuevas entradas
 print("\nGenera predicciones para la primera muestra:")
-print("Clases para la primera muestra: ", test_labels[:1])
+print("Clases para la primera muestra: \n", test_labels[:1])
 np.set_printoptions(precision=3, suppress=True)
 print("\nPredicciones para la primera muestra:\n", np.round(model.predict(test_image_data[:1])))
 proba = model.predict(test_image_data[:1])[0] # Muestra las predicciones pero en una sola dimension
-idxs = np.argsort(proba)[::-1][:1] # Muestra los dos indices mas altos de las predicciones
+idxs = np.argsort(proba)[::-1][:1] # Muestra el indice mas altos de las predicciones
 
 for (i, j) in enumerate(idxs):
-    label = "\nLa mutacion SNV más probable es del gen {}: {:.2f}%".format(classes[j], proba[j] * 100)
+    label = "\nLa mutacion SNV más probable es del gen {}: {:.2f}%".format(classes[j].split('_')[1], proba[j] * 100)
     print(label)
     # text = "Most likely SNV mutation: {} gene ({:.2f}%)".format(classes[j].split('_')[1], proba[j] * 100)
     # cv2.putText(test_image_data[:1], text, (920, 620), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0 ,0), 2)

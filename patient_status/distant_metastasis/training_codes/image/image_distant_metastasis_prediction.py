@@ -171,13 +171,6 @@ for index_normal_train, image_train in enumerate(train_data['img_path']):
     normal_image_train = staintools.LuminosityStandardizer.standardize(img_train)
     normal_image_train = normalizer.transform(normal_image_train)
     train_image_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    # train_image_resize = np.asarray(train_image_resize)
-    # grayscale_train = np.dot(train_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
-    # complement_train = 255 - grayscale_train
-    # otsu_thresh_value_train = sk_filters.threshold_otsu(complement_train)
-    # otsu_train = (complement_train > otsu_thresh_value_train)  # .astype("uint8") * 255
-    # result_train = train_image_resize * np.dstack([otsu_train, otsu_train, otsu_train])
-    #result_train = rgb2hsv(result_train)
     train_image_data.append(train_image_resize)
 
 for image_valid in valid_data['img_path']:
@@ -185,13 +178,6 @@ for image_valid in valid_data['img_path']:
     normal_image_valid = staintools.LuminosityStandardizer.standardize(img_valid)
     normal_image_valid = normalizer.transform(normal_image_valid)
     valid_image_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    # train_image_resize = np.asarray(train_image_resize)
-    # grayscale_valid = np.dot(valid_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
-    # complement_valid = 255 - grayscale_valid
-    # otsu_thresh_value_valid = sk_filters.threshold_otsu(complement_valid)
-    # otsu_valid = (complement_valid > otsu_thresh_value_valid)  # .astype("uint8") * 255
-    # result_valid = valid_image_resize * np.dstack([otsu_valid, otsu_valid, otsu_valid])
-    #result_valid = rgb2hsv(result_valid)
     valid_image_data.append(valid_image_resize)
 
 for image_test in test_data['img_path']:
@@ -199,13 +185,6 @@ for image_test in test_data['img_path']:
     normal_image_test = staintools.LuminosityStandardizer.standardize(img_test)
     normal_image_test = normalizer.transform(normal_image_test)
     test_image_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    # train_image_resize = np.asarray(train_image_resize)
-    # grayscale_test = np.dot(test_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
-    # complement_test = 255 - grayscale_test
-    # otsu_thresh_value_test = sk_filters.threshold_otsu(complement_test)
-    # otsu_test = (complement_test > otsu_thresh_value_test)  # .astype("uint8") * 255
-    # result_test = test_image_resize * np.dstack([otsu_test, otsu_test, otsu_test])
-    #result_test = rgb2hsv(result_test)
     test_image_data.append(test_image_resize)
 
 """ Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
