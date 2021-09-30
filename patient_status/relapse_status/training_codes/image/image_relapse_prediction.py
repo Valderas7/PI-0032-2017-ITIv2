@@ -308,7 +308,7 @@ Para ello, primero se descongela el modelo base."""
 trainGen.reset()
 valGen.reset()
 
-for layer in base_model.layers[-150]:
+for layer in base_model.layers[-150:]:
     if not isinstance(layer, layers.BatchNormalization):
         layer.trainable = True
 
@@ -320,7 +320,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
 model.summary()
 
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = trainGen, epochs = 300, verbose = 1, class_weight = class_weight_dict,
+neural_network = model.fit(x = trainGen, epochs = 200, verbose = 1, class_weight = class_weight_dict,
                            validation_data = valGen, steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

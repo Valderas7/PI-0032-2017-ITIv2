@@ -1,6 +1,4 @@
 import shelve # datos persistentes
-
-import cv2.cv2
 import pandas as pd
 import numpy as np
 import seaborn as sns # Para realizar gráficas sobre datos
@@ -24,7 +22,6 @@ from sklearn.metrics import multilabel_confusion_matrix, confusion_matrix # Para
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN DATOS TABULARES ------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-
 """ - Datos de entrada: Age, cancer_type, cancer_type_detailed, dfs_months, dfs_status, dss_months, dss_status,
 ethnicity, neoadjuvant, os_months, os_status, path_m_stage. path_n_stage, path_t_stage, sex, stage, subtype.
     - Salida binaria: Presenta mutación o no en el gen 'X' (BRCA1 [ID: 672] en este caso). CNAs (CNV) y mutations (SNV). """
@@ -130,7 +127,6 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_data, test_data = train_test_split(df_all_merge, test_size = 0.20)
 train_data, valid_data = train_test_split(train_data, test_size = 0.20)
-
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
@@ -202,13 +198,6 @@ for index_normal_train, image_train in enumerate(train_data['img_path']):
     normal_image_train = staintools.LuminosityStandardizer.standardize(img_train)
     normal_image_train = normalizer.transform(normal_image_train)
     train_image_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    # train_image_resize = np.asarray(train_image_resize)
-    # grayscale_train = np.dot(train_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
-    # complement_train = 255 - grayscale_train
-    # otsu_thresh_value_train = sk_filters.threshold_otsu(complement_train)
-    # otsu_train = (complement_train > otsu_thresh_value_train)  # .astype("uint8") * 255
-    # result_train = train_image_resize * np.dstack([otsu_train, otsu_train, otsu_train])
-    # result_train = rgb2hsv(result_train)
     train_image_data.append(train_image_resize)
 
 for image_valid in valid_data['img_path']:
@@ -216,13 +205,6 @@ for image_valid in valid_data['img_path']:
     normal_image_valid = staintools.LuminosityStandardizer.standardize(img_valid)
     normal_image_valid = normalizer.transform(normal_image_valid)
     valid_image_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    # train_image_resize = np.asarray(train_image_resize)
-    # grayscale_valid = np.dot(valid_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
-    # complement_valid = 255 - grayscale_valid
-    # otsu_thresh_value_valid = sk_filters.threshold_otsu(complement_valid)
-    # otsu_valid = (complement_valid > otsu_thresh_value_valid)  # .astype("uint8") * 255
-    # result_valid = valid_image_resize * np.dstack([otsu_valid, otsu_valid, otsu_valid])
-    # result_valid = rgb2hsv(result_valid)
     valid_image_data.append(valid_image_resize)
 
 for image_test in test_data['img_path']:
@@ -230,13 +212,6 @@ for image_test in test_data['img_path']:
     normal_image_test = staintools.LuminosityStandardizer.standardize(img_test)
     normal_image_test = normalizer.transform(normal_image_test)
     test_image_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    # train_image_resize = np.asarray(train_image_resize)
-    # grayscale_test = np.dot(test_image_resize[..., :3], [0.2125, 0.7154, 0.0721]).astype("uint8")
-    # complement_test = 255 - grayscale_test
-    # otsu_thresh_value_test = sk_filters.threshold_otsu(complement_test)
-    # otsu_test = (complement_test > otsu_thresh_value_test)  # .astype("uint8") * 255
-    # result_test = test_image_resize * np.dstack([otsu_test, otsu_test, otsu_test])
-    # result_test = rgb2hsv(result_test)
     test_image_data.append(test_image_resize)
 
 """ Se convierten las imágenes a un array de numpy para manipularlas con más comodidad y se divide el array entre 255
@@ -455,12 +430,25 @@ ellas según el número de veces que aparezca en el conjunto de datos), que es l
 datos no balanceados como el que se está analizando. """
 y_pred_prob = model.predict(test_image_data)
 
-micro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
-                                     average="micro")
-micro_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="micro")
+micro_auc_roc = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr", average="micro")
+micro_auc_pr = average_precision_score(test_labels, y_pred_prob, average="micro")
 
-print("Puntuación AUC-ROC: {:.2f} (micro-promedio)".format(micro_roc_auc_ovr))
-print("Puntuación AUC-PR: {:.2f} (micro-promedio)\n".format(micro_pr_auc_ovr))
+weighted_auc_roc_scores = []
+weighted_pr_roc_scores = []
+
+for i in range(len(classes)):
+    if len(np.unique(test_labels[:, i])) > 1:
+        weighted_auc_roc_columns = roc_auc_score(test_labels[:, i], y_pred_prob[:, i], average = 'weighted')
+        weighted_auc_roc_scores.append(weighted_auc_roc_columns)
+        weighted_pr_roc_columns = average_precision_score(test_labels[:, i], y_pred_prob[:, i], average='weighted')
+        weighted_pr_roc_scores.append(weighted_pr_roc_columns)
+weighted_auc_roc = sum(weighted_auc_roc_scores) / len(weighted_auc_roc_scores)
+weighted_auc_pr = sum(weighted_pr_roc_scores) / len(weighted_pr_roc_scores)
+
+print("\nPuntuación AUC-ROC: {:.2f} (micro-promedio)".format(micro_auc_roc))
+print("Puntuación AUC-PR: {:.2f} (micro-promedio)".format(micro_auc_pr))
+print("Puntuación AUC-ROC: {:.2f} (promedio-ponderado)".format(weighted_auc_roc))
+print("Puntuación AUC-PR: {:.2f} (promedio-ponderado)".format(weighted_auc_pr))
 
 """ Una vez calculadas las dos puntuaciones, se dibuja la curva micro-promedio. Esto es mejor que dibujar una curva para 
 cada una de las clases que hay en el problema. """
@@ -471,7 +459,7 @@ auc_roc = dict()
 """ Se calcula la tasa de falsos positivos y de verdaderos negativos para cada una de las clases, buscando en cada una
 de las 'n' (del número de clases) columnas del problema y se calcula con ello el AUC-ROC micro-promedio """
 for i in range(len(classes)):
-    if 1 in test_labels[:,i]:
+    if len(np.unique(test_labels[:, i])) > 1:
         fpr[i], tpr[i], _ = roc_curve(test_labels[:, i], y_pred_prob[:, i])
         auc_roc[i] = auc(fpr[i], tpr[i])
 
@@ -500,7 +488,7 @@ auc_pr = dict()
 """ Se calcula precisión y la sensibilidad para cada una de las clases, buscando en cada una de las 'n' (del número de 
 clases) columnas del problema y se calcula con ello el AUC-PR micro-promedio """
 for i in range(len(classes)):
-    if 1 in test_labels[:, i]:
+    if len(np.unique(test_labels[:, i])) > 1:
         precision[i], recall[i], _ = precision_recall_curve(test_labels[:, i], y_pred_prob[:, i])
         auc_pr[i] = auc(recall[i], precision[i])
 
