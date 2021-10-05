@@ -311,45 +311,101 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(100) # Eje Y: 630. Nº de filas
-ancho = int(100) # Eje X: 1480. Nº de columnas
+alto = int(630) # Eje Y: 630. Nº de filas. 210 x 3 = 630
+ancho = int(1470) # Eje X: 1480. Nº de columnas. 210 x 7 = 1470
 canales = 3 # Imágenes a color (RGB) = 3
 
-""" Se establece la primera imagen como la imagen objetivo respecto a la que normalizar el color, se estandariza también
-el brillo para mejorar el cálculo y depués de normalizar el color, se redimensionan las imágenes, añadiéndolas
-posteriormente a su respectiva lista del subconjunto de datos"""
+""" -------------------------------------------------------------------------------------------------------------------
+---------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
+--------------------------------------------------------------------------------------------------------------------"""
+""" Se establece una imagen como la imagen objetivo respecto a la que normalizar el color, estandarizando también el
+brillo para mejorar el cálculo """
 # @StainNormalizer: Instancia para normalizar el color de la imagen mediante el metodo de normalizacion especificado
 normalizer = staintools.StainNormalizer(method='vahadane')
+target = staintools.read_image('/home/avalderas/img_slides/img_lotes/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
+target = staintools.LuminosityStandardizer.standardize(target)
+normalizer.fit(target)
 
-train_image_data = [] # Lista con las imágenes redimensionadas
+""" Se dividen las imagenes en teselas del mismo tamaño para cada imagen. Por otra parte, tambien se multiplican las
+etiquetas de salida dependiendo del numero de teselas que tenga la imagen. Si por ejemplo, una imagen se ha dividido en
+20 teselas, pues estas 20 teselas deben tener la misma etiqueta que la de la imagen original. """
+train_image_tile = []
+train_image_data = []
+train_labels_tile = []
+train_labels = []
+
+valid_image_tile = []
 valid_image_data = []
-test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
+valid_labels_tile = []
+valid_labels = []
+
+test_image_tile = []
+test_image_data = []
+test_labels_tile = []
+test_labels = []
 
 for index_normal_train, image_train in enumerate(train_data['img_path']):
-    if index_normal_train == 0:
-        target = staintools.read_image(image_train)
-        target = staintools.LuminosityStandardizer.standardize(target)
-        normalizer.fit(target)
+    train_image_resize = staintools.read_image(image_train)
+    train_image_resize = staintools.LuminosityStandardizer.standardize(train_image_resize)
+    train_image_resize = normalizer.transform(train_image_resize)
+    train_image_resize = cv2.resize(train_image_resize, (ancho, alto), interpolation = cv2.INTER_CUBIC)
+    train_tiles = [train_image_resize[x:x + 210, y:y + 210] for x in range(0, train_image_resize.shape[0], 210) for y in
+                   range(0, train_image_resize.shape[1], 210)]
 
-    img_train = staintools.read_image(image_train)
-    normal_image_train = staintools.LuminosityStandardizer.standardize(img_train)
-    normal_image_train = normalizer.transform(normal_image_train)
-    train_image_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    train_image_data.append(train_image_resize)
+    for train_tile in train_tiles:
+        if not np.all(train_tile == 255):
+            train_image_tile.append(train_tile)
+            train_image_data.append(train_tile)
 
-for image_valid in valid_data['img_path']:
-    img_valid = staintools.read_image(image_valid)
-    normal_image_valid = staintools.LuminosityStandardizer.standardize(img_valid)
-    normal_image_valid = normalizer.transform(normal_image_valid)
-    valid_image_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    valid_image_data.append(valid_image_resize)
+    train_tile_df_labels = pd.DataFrame(train_data.iloc[index_normal_train, 2:-1]).transpose()
+    train_tile_df_labels = pd.DataFrame(np.repeat(train_tile_df_labels.values, len(train_image_tile), axis = 0),
+                                     columns = train_tile_df_labels.columns)
+    train_image_tile.clear()
+    train_labels_tile.append(train_tile_df_labels)
 
-for image_test in test_data['img_path']:
-    img_test = staintools.read_image(image_test)
-    normal_image_test = staintools.LuminosityStandardizer.standardize(img_test)
-    normal_image_test = normalizer.transform(normal_image_test)
-    test_image_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    test_image_data.append(test_image_resize)
+train_labels = pd.concat(train_labels_tile, ignore_index=True)
+
+for index_normal_valid, image_valid in enumerate(valid_data['img_path']):
+    valid_image_resize = staintools.read_image(image_valid)
+    valid_image_resize = staintools.LuminosityStandardizer.standardize(valid_image_resize)
+    valid_image_resize = normalizer.transform(valid_image_resize)
+    valid_image_resize = cv2.resize(valid_image_resize, (ancho, alto), interpolation = cv2.INTER_CUBIC)
+    valid_tiles = [valid_image_resize[x:x + 210, y:y + 210] for x in range(0, valid_image_resize.shape[0], 210) for y in
+                   range(0, valid_image_resize.shape[1], 210)]
+
+    for valid_tile in valid_tiles:
+        if not np.all(valid_tile == 0):
+            valid_image_tile.append(valid_tile)
+            valid_image_data.append(valid_tile)
+
+    valid_tile_df_labels = pd.DataFrame(valid_data.iloc[index_normal_valid, 2:-1]).transpose()
+    valid_tile_df_labels = pd.DataFrame(np.repeat(valid_tile_df_labels.values, len(valid_image_tile), axis = 0),
+                                        columns = valid_tile_df_labels.columns)
+    valid_image_tile.clear()
+    valid_labels_tile.append(valid_tile_df_labels)
+
+valid_labels = pd.concat(valid_labels_tile, ignore_index=True)
+
+for index_normal_test, image_test in enumerate(test_data['img_path']):
+    test_image_resize = staintools.read_image(image_test)
+    test_image_resize = staintools.LuminosityStandardizer.standardize(test_image_resize)
+    test_image_resize = normalizer.transform(test_image_resize)
+    test_image_resize = cv2.resize(test_image_resize, (ancho, alto), interpolation = cv2.INTER_CUBIC)
+    test_tiles = [test_image_resize[x:x + 210, y:y + 210] for x in range(0, test_image_resize.shape[0], 210) for y in
+                  range(0, test_image_resize.shape[1], 210)]
+
+    for test_tile in test_tiles:
+        if not np.all(test_tile == 0):
+            test_image_tile.append(test_tile)
+            test_image_data.append(test_tile)
+
+    test_tile_df_labels = pd.DataFrame(test_data.iloc[index_normal_test, 2:-1]).transpose()
+    test_tile_df_labels = pd.DataFrame(np.repeat(test_tile_df_labels.values, len(test_image_tile), axis = 0),
+                                        columns = test_tile_df_labels.columns)
+    test_image_tile.clear()
+    test_labels_tile.append(test_tile_df_labels)
+
+test_labels = pd.concat(test_labels_tile, ignore_index=True)
 
 """ Se convierten las imágenes a un array de numpy para manipularlas con más comodidad y se divide el array entre 255
 para escalar los píxeles entre el intervalo (0-1). Como resultado, habrá un array con forma (471, alto, ancho, canales). """
@@ -357,14 +413,9 @@ train_image_data = np.array(train_image_data) # / 255.0)
 valid_image_data = np.array(valid_image_data) # / 255.0)
 test_image_data = np.array(test_image_data)
 
-""" -------------------------------------------------------------------------------------------------------------------
----------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
---------------------------------------------------------------------------------------------------------------------"""
 """ Una vez ya se tienen las imágenes convertidas en arrays y en el orden establecido por cada paciente, se puede
 extraer del dataframe la columna 'SNV', que será la salida de la red:"""
-train_labels = train_data.iloc[:,2:-1]
-valid_labels = valid_data.iloc[:,2:-1]
-test_labels = test_data.iloc[:,2:-1]; test_columns = test_labels.columns.values
+test_columns = test_labels.columns.values
 
 """ Los nombres de las distintas clases (columnas) se pasan a una lista para usarlos en un futuro """
 classes = test_columns.tolist()
@@ -439,7 +490,7 @@ model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
 checkpoint_path = 'model_cnv_image_epoch{epoch:02d}.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False,
+mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True,
                            monitor= '(2 * val_recall * val_precision) / (val_recall + val_precision)')
 
 """ Una vez definido el modelo, se entrena: """

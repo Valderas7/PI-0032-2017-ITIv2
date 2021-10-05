@@ -125,66 +125,20 @@ for id_img in remove_img_list:
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
-alto = int(100) # Eje Y: 630. Nº de filas
-ancho = int(100) # Eje X: 1480. Nº de columnas
+alto = int(630) # Eje Y: 630. Nº de filas. 210 x 3 = 630
+ancho = int(1470) # Eje X: 1480. Nº de columnas. 210 x 7 = 1470
 canales = 3 # Imágenes a color (RGB) = 3
-
-""" Se establece la primera imagen como la imagen objetivo respecto a la que normalizar el color, se estandariza también
-el brillo para mejorar el cálculo y depués de normalizar el color, se redimensionan las imágenes, añadiéndolas
-posteriormente a su respectiva lista del subconjunto de datos"""
-# @StainNormalizer: Instancia para normalizar el color de la imagen mediante el metodo de normalizacion especificado
-train_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de entrenamiento
-valid_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de validación
-test_image_data = [] # Lista con las imágenes redimensionadas del subconjunto de test
-
-normalizer = staintools.StainNormalizer(method='vahadane')
-
-for index_normal_train, image_train in enumerate(train_data['img_path']):
-    if index_normal_train == 0:
-        target = staintools.read_image(image_train)
-        target = staintools.LuminosityStandardizer.standardize(target)
-        normalizer.fit(target)
-
-    img_train = staintools.read_image(image_train)
-    normal_image_train = staintools.LuminosityStandardizer.standardize(img_train)
-    normal_image_train = normalizer.transform(normal_image_train)
-    train_image_resize = cv2.resize(normal_image_train, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    train_image_data.append(train_image_resize)
-
-for image_valid in valid_data['img_path']:
-    img_valid = staintools.read_image(image_valid)
-    normal_image_valid = staintools.LuminosityStandardizer.standardize(img_valid)
-    normal_image_valid = normalizer.transform(normal_image_valid)
-    valid_image_resize = cv2.resize(normal_image_valid, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    valid_image_data.append(valid_image_resize)
-
-for image_test in test_data['img_path']:
-    img_test = staintools.read_image(image_test)
-    normal_image_test = staintools.LuminosityStandardizer.standardize(img_test)
-    normal_image_test = normalizer.transform(normal_image_test)
-    test_image_resize = cv2.resize(normal_image_test, (ancho, alto), interpolation=cv2.INTER_CUBIC)
-    test_image_data.append(test_image_resize)
-
-""" Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
-se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
-array con forma (X, alto, ancho, canales). """
-train_image_data = np.array(train_image_data)
-valid_image_data = np.array(valid_image_data)
-test_image_data = np.array(test_image_data) # / 255.0)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN PROCESAMIENTO DE DATOS -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-""" Una vez ya se tienen las imágenes convertidas en arrays de numpy, se puede eliminar de los dos subconjuntos tanto la
-columna 'ID' como la columna 'path_img' que no son útiles para la red MLP: """
-train_data = train_data.drop(['ID'], axis=1)
-train_data = train_data.drop(['img_path'], axis=1)
-
-valid_data = valid_data.drop(['ID'], axis=1)
-valid_data = valid_data.drop(['img_path'], axis=1)
-
-test_data = test_data.drop(['ID'], axis=1)
-test_data = test_data.drop(['img_path'], axis=1)
+""" Se establece una imagen como la imagen objetivo respecto a la que normalizar el color, estandarizando también el
+brillo para mejorar el cálculo """
+# @StainNormalizer: Instancia para normalizar el color de la imagen mediante el metodo de normalizacion especificado
+normalizer = staintools.StainNormalizer(method='vahadane')
+target = staintools.read_image('/home/avalderas/img_slides/img_lotes/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
+target = staintools.LuminosityStandardizer.standardize(target)
+normalizer.fit(target)
 
 """ Se extrae la columna 'subtype' del dataframe de todos los subconjuntos, ya que ésta es la salida del modelo que se 
 va a entrenar. """
@@ -197,6 +151,91 @@ lb = LabelBinarizer()
 train_labels = lb.fit_transform(train_labels)
 valid_labels = lb.transform(valid_labels)
 test_labels = lb.transform(test_labels)
+
+""" Se dividen las imagenes en teselas del mismo tamaño para cada imagen. Por otra parte, tambien se multiplican las
+etiquetas de salida dependiendo del numero de teselas que tenga la imagen. Si por ejemplo, una imagen se ha dividido en
+20 teselas, pues estas 20 teselas deben tener la misma etiqueta que la de la imagen original. """
+train_image_tile = []
+train_image_data = []
+train_labels_tile = []
+
+valid_image_tile = []
+valid_image_data = []
+valid_labels_tile = []
+
+test_image_tile = []
+test_image_data = []
+test_labels_tile = []
+
+for index_normal_train, image_train in enumerate(train_data['img_path']):
+    train_image_resize = cv2.imread(image_train, cv2.COLOR_BGR2RGB)
+    train_image_resize = cv2.resize(train_image_resize, (ancho, alto), interpolation = cv2.INTER_CUBIC)
+    train_tiles = [train_image_resize[x:x + 210, y:y + 210] for x in range(0, train_image_resize.shape[0], 210) for y in
+                   range(0, train_image_resize.shape[1], 210)]
+
+    for train_tile in train_tiles:
+        if not np.all(train_tile == 255):
+            train_image_tile.append(train_tile)
+            train_image_data.append(train_tile)
+
+    train_tile_df_labels = pd.DataFrame(train_labels[index_normal_train, :]).transpose()
+    train_tile_df_labels = pd.DataFrame(np.repeat(train_tile_df_labels.values, len(train_image_tile), axis = 0),
+                                     columns = lb.classes_)
+    train_image_tile.clear()
+    train_labels_tile.append(train_tile_df_labels)
+
+train_labels = pd.concat(train_labels_tile, ignore_index=True)
+
+for index_normal_valid, image_valid in enumerate(valid_data['img_path']):
+    valid_image_resize = cv2.imread(image_valid, cv2.COLOR_BGR2RGB)
+    valid_image_resize = cv2.resize(valid_image_resize, (ancho, alto), interpolation = cv2.INTER_CUBIC)
+    valid_tiles = [valid_image_resize[x:x + 210, y:y + 210] for x in range(0, valid_image_resize.shape[0], 210) for y in
+                   range(0, valid_image_resize.shape[1], 210)]
+
+    for valid_tile in valid_tiles:
+        if not np.all(valid_tile == 0):
+            valid_image_tile.append(valid_tile)
+            valid_image_data.append(valid_tile)
+
+    valid_tile_df_labels = pd.DataFrame(valid_labels[index_normal_valid, :]).transpose()
+    valid_tile_df_labels = pd.DataFrame(np.repeat(valid_tile_df_labels.values, len(valid_image_tile), axis = 0),
+                                        columns = lb.classes_)
+    valid_image_tile.clear()
+    valid_labels_tile.append(valid_tile_df_labels)
+
+valid_labels = pd.concat(valid_labels_tile, ignore_index=True)
+
+for index_normal_test, image_test in enumerate(test_data['img_path']):
+    test_image_resize = cv2.imread(image_test, cv2.COLOR_BGR2RGB)
+    test_image_resize = cv2.resize(test_image_resize, (ancho, alto), interpolation = cv2.INTER_CUBIC)
+    test_tiles = [test_image_resize[x:x + 210, y:y + 210] for x in range(0, test_image_resize.shape[0], 210) for y in
+                  range(0, test_image_resize.shape[1], 210)]
+
+    for test_tile in test_tiles:
+        if not np.all(test_tile == 0):
+            test_image_tile.append(test_tile)
+            test_image_data.append(test_tile)
+
+    test_tile_df_labels = pd.DataFrame(test_labels[index_normal_test, :]).transpose()
+    test_tile_df_labels = pd.DataFrame(np.repeat(test_tile_df_labels.values, len(test_image_tile), axis = 0),
+                                        columns = lb.classes_)
+    test_image_tile.clear()
+    test_labels_tile.append(test_tile_df_labels)
+
+test_labels = pd.concat(test_labels_tile, ignore_index=True)
+
+""" Se convierten las imágenes a un array de numpy para poderlas introducir posteriormente en el modelo de red. Además,
+se divide todo el array de imágenes entre 255 para escalar los píxeles en el intervalo (0-1). Como resultado, habrá un 
+array con forma (X, alto, ancho, canales). """
+train_image_data = np.array(train_image_data)
+valid_image_data = np.array(valid_image_data)
+test_image_data = np.array(test_image_data) # / 255.0)
+
+""" Para poder entrenar la red hace falta transformar las tablas en arrays. Para ello se utiliza 'numpy'. Las imágenes 
+YA están convertidas en 'arrays' numpy """
+train_labels = np.asarray(train_labels).astype('float32')
+valid_labels = np.asarray(valid_labels).astype('float32')
+test_labels = np.asarray(test_labels).astype('float32')
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada, y se recopila la longitud de las imagenes de
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
@@ -257,19 +296,20 @@ model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele u
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
-checkpoint_path = '../../training_codes/image/model_image_distant_metastasis_prediction.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = False)
+checkpoint_path = 'model_image_subtype_epoch{epoch:02d}.h5'
+mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True,
+                           monitor= '(2 * val_recall * val_precision) / (val_recall + val_precision)')
 
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
 de datos que se tratan en este problema es muy imbalanceado. """
 from sklearn.utils.class_weight import compute_class_weight
 
-y_integers = np.argmax(train_labels, axis=1)
+y_integers = np.argmax(train_labels, axis = 1)
 class_weights = compute_class_weight(class_weight = 'balanced', classes = np.unique(y_integers), y = y_integers)
 d_class_weights = dict(enumerate(class_weights)) # {0: 1.4780, 1: 2.055238, 2: 0.40186, 3: 0.85... etc}
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-model.fit(trainGen, epochs = 20, verbose = 1, steps_per_epoch = (train_image_data_len / batch_dimension),
+model.fit(trainGen, epochs = 4, verbose = 1, steps_per_epoch = (train_image_data_len / batch_dimension),
           class_weight = d_class_weights, validation_data = valGen,
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -343,14 +383,14 @@ print("\n")
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
-y_true = []
-for label_test in test_labels:
-    y_true.append(np.argmax(label_test))
+#y_true = []
+#for label_test in test_labels:
+ #   y_true.append(np.argmax(label_test))
 
-y_true = np.array(y_true)
-y_pred = np.argmax(model.predict(test_image_data), axis = 1)
+#y_true = np.array(y_true)
+#y_pred = np.argmax(model.predict(test_image_data), axis = 1)
 
-matrix = confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
+#matrix = confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
 matrix_classes = lb.classes_
 
 """ Función para mostrar por pantalla la matriz de confusión multiclase con todas las clases de subtipos moleculares """
@@ -380,9 +420,8 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Matriz de confusi
     plt.xlabel('Predicción')
 
 np.set_printoptions(precision=2)
-
 fig1 = plt.figure(figsize=(7,6))
-plot_confusion_matrix(matrix, classes = matrix_classes, title='Matriz de confusión multiclase')
+plot_confusion_matrix(matrix, classes = matrix_classes, title = 'Matriz de confusión multiclase')
 plt.show()
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
