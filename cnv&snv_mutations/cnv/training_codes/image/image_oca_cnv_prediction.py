@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import cv2 #OpenCV
 import glob
 import staintools
-import skimage.filters as sk_filters
 from tensorflow.keras.callbacks import ModelCheckpoint
 from sklearn.utils import class_weight
 from tensorflow import keras
@@ -321,7 +320,7 @@ canales = 3 # Imágenes a color (RGB) = 3
 """ Se establece una imagen como la imagen objetivo respecto a la que normalizar el color, estandarizando también el
 brillo para mejorar el cálculo """
 # @StainNormalizer: Instancia para normalizar el color de la imagen mediante el metodo de normalizacion especificado
-normalizer = staintools.StainNormalizer(method='vahadane')
+normalizer = staintools.StainNormalizer(method = 'vahadane')
 target = staintools.read_image('/home/avalderas/img_slides/img_lotes/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
 target = staintools.LuminosityStandardizer.standardize(target)
 normalizer.fit(target)
@@ -407,17 +406,17 @@ for index_normal_test, image_test in enumerate(test_data['img_path']):
 
 test_labels = pd.concat(test_labels_tile, ignore_index=True)
 
-""" Se convierten las imágenes a un array de numpy para manipularlas con más comodidad y se divide el array entre 255
-para escalar los píxeles entre el intervalo (0-1). Como resultado, habrá un array con forma (471, alto, ancho, canales). """
+""" Se convierten las imágenes a un array de numpy para manipularlas con más comodidad y NO se divide el array entre 255
+para escalar los píxeles entre el intervalo (0-1), ya que la red convolucional elegida para entrenar las imagenes no lo
+hizo originalmente, y por tanto, se debe seguir sus mismos pasos de pre-procesamiento. Como resultado, habrá un array 
+con forma (N, alto, ancho, canales). """
 train_image_data = np.array(train_image_data) # / 255.0)
 valid_image_data = np.array(valid_image_data) # / 255.0)
 test_image_data = np.array(test_image_data)
 
-""" Una vez ya se tienen las imágenes convertidas en arrays y en el orden establecido por cada paciente, se puede
-extraer del dataframe la columna 'SNV', que será la salida de la red:"""
+""" Se extraen los nombres de las columnas de las clases de salida para usarlos posteriormente en la sección de
+evaluación: """
 test_columns = test_labels.columns.values
-
-""" Los nombres de las distintas clases (columnas) se pasan a una lista para usarlos en un futuro """
 classes = test_columns.tolist()
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada, y se recopila la longitud de las imagenes de
@@ -490,8 +489,8 @@ model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
 checkpoint_path = 'model_cnv_image_epoch{epoch:02d}.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True,
-                           monitor= '(2 * val_recall * val_precision) / (val_recall + val_precision)')
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True,
+                           monitor = '(2 * val_recall * val_precision) / (val_recall + val_precision)')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(trainGen, epochs = 15, verbose = 1, validation_data = valGen,

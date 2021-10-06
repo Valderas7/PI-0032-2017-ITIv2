@@ -168,7 +168,9 @@ test_image_data = []
 test_labels_tile = []
 
 for index_normal_train, image_train in enumerate(train_data['img_path']):
-    train_image_resize = cv2.imread(image_train, cv2.COLOR_BGR2RGB)
+    train_image_resize = staintools.read_image(image_train)
+    train_image_resize = staintools.LuminosityStandardizer.standardize(train_image_resize)
+    train_image_resize = normalizer.transform(train_image_resize)
     train_image_resize = cv2.resize(train_image_resize, (ancho, alto), interpolation = cv2.INTER_CUBIC)
     train_tiles = [train_image_resize[x:x + 210, y:y + 210] for x in range(0, train_image_resize.shape[0], 210) for y in
                    range(0, train_image_resize.shape[1], 210)]
@@ -187,7 +189,9 @@ for index_normal_train, image_train in enumerate(train_data['img_path']):
 train_labels = pd.concat(train_labels_tile, ignore_index=True)
 
 for index_normal_valid, image_valid in enumerate(valid_data['img_path']):
-    valid_image_resize = cv2.imread(image_valid, cv2.COLOR_BGR2RGB)
+    valid_image_resize = staintools.read_image(image_valid)
+    valid_image_resize = staintools.LuminosityStandardizer.standardize(valid_image_resize)
+    valid_image_resize = normalizer.transform(valid_image_resize)
     valid_image_resize = cv2.resize(valid_image_resize, (ancho, alto), interpolation = cv2.INTER_CUBIC)
     valid_tiles = [valid_image_resize[x:x + 210, y:y + 210] for x in range(0, valid_image_resize.shape[0], 210) for y in
                    range(0, valid_image_resize.shape[1], 210)]
@@ -206,7 +210,9 @@ for index_normal_valid, image_valid in enumerate(valid_data['img_path']):
 valid_labels = pd.concat(valid_labels_tile, ignore_index=True)
 
 for index_normal_test, image_test in enumerate(test_data['img_path']):
-    test_image_resize = cv2.imread(image_test, cv2.COLOR_BGR2RGB)
+    test_image_resize = staintools.read_image(image_test)
+    test_image_resize = staintools.LuminosityStandardizer.standardize(test_image_resize)
+    test_image_resize = normalizer.transform(test_image_resize)
     test_image_resize = cv2.resize(test_image_resize, (ancho, alto), interpolation = cv2.INTER_CUBIC)
     test_tiles = [test_image_resize[x:x + 210, y:y + 210] for x in range(0, test_image_resize.shape[0], 210) for y in
                   range(0, test_image_resize.shape[1], 210)]
