@@ -359,7 +359,7 @@ model.summary()
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
 checkpoint_path = 'model_snv_image_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True,
-                           monitor = '(2 * val_recall * val_precision) / (val_recall + val_precision)')
+                           monitor = '(2 * val_recall * val_precision) / (val_recall + val_precision)', mode = 'max')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(trainGen, epochs = 5, verbose = 1, validation_data = valGen,
@@ -388,6 +388,7 @@ model.summary()
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(trainGen, epochs = 200, verbose = 1, validation_data = valGen,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
+                           #callbacks = mcp_save,
                            validation_steps = (valid_image_data_len / batch_dimension))
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
