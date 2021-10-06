@@ -532,7 +532,7 @@ x = layers.Dense(28, activation = "relu")(x)
 x = keras.models.Model(inputs = inputA, outputs = x)
 
 """ La segunda rama (Red neuronal convolucional) opera con la segunda entrada: """
-# @training = False: Para que el modelo se ejecute en modo inferencia. Es importante para el posterior 'fine-tuning'
+# @training = False: Para que el modelo se ejecute en modo inference. Es importante para el posterior 'fine-tuning'
 # @Dropout: Capa de regularización para no favorecer el sobreentrenamiento
 # @GlobalAveragePooling2D: Convierte características de 'inputB.output_shape[1:]' en vectores
 y = cnn_model(inputB, training=False)

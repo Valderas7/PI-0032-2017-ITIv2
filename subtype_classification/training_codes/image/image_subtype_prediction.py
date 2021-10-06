@@ -272,18 +272,19 @@ model = keras.models.Model(inputs = base_model.input, outputs = all_model)
 for layer in base_model.layers:
     layer.trainable = False
 
-""" Se realiza data augmentation y definición de la substracción media de píxeles con la que se entrenó la red VGG19.
-Como se puede comprobar, solo se aumenta el conjunto de entrenamiento. Los conjuntos de validacion y test solo modifican
-la media de pixeles en canal BGR (OpenCV lee las imagenes en formato BGR): """
+""" Se instancian generadores de técnicas de 'data augmentation'. Como se puede comprobar, se van a instanciar dos 
+generadores: uno para el conjunto de entrenamiento donde se realizan técnicas de rotación, volteo de imágenes, etc; y 
+otro para el conjunto de validación, que se mantendrá igual que estaba anteriormente, sin modificaciones. """
 trainAug = ImageDataGenerator(horizontal_flip = True, vertical_flip = True, zoom_range= 0.2,
                               shear_range= 0.2, width_shift_range= 0.2, height_shift_range= 0.2, rotation_range= 20)
 valAug = ImageDataGenerator()
 
-""" Se instancian las imágenes aumentadas con las variables creadas de imageens y de clases para entrenar estas
-instancias posteriormente: """
+""" Se utilizan las imágenes de cada uno de los distintos subconjuntos de datos para los distintos generadores creados 
+arriba. Como ya se ha descrito anteriormente, las imágenes de entrenamiento serán usadas en el generador de técnicas de 
+'data augmentation', mientras que las imágenes de validación y test no sufrirán cambio alguno. """
 trainGen = trainAug.flow(x = train_image_data, y = train_labels, batch_size = 32)
-valGen = valAug.flow(x = valid_image_data, y = valid_labels, batch_size = 32, shuffle= False)
-#testGen = valAug.flow(x = test_image_data, y = test_labels, batch_size = 32, shuffle= False)
+valGen = valAug.flow(x = valid_image_data, y = valid_labels, batch_size = 32, shuffle = False)
+#testGen = valAug.flow(x = test_image_data, y = test_labels, batch_size = 32, shuffle = False)
 
 """ Hay que definir las métricas de la red y configurar los distintos hiperparámetros para entrenar la red. El modelo ya
 ha sido definido anteriormente, así que ahora hay que compilarlo. Para ello se define una función de loss y un 
@@ -301,12 +302,12 @@ model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele u
               metrics = metrics)
 model.summary()
 
-""" Se implementa un callback: para guardar el mejor modelo que tenga la mayor sensibilidad en la validación. """
+""" Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
 checkpoint_path = 'model_image_subtype_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True,
                            monitor= '(2 * val_recall * val_precision) / (val_recall + val_precision)')
 
-""" Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
+""" Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balanceen, ya que el conjunto
 de datos que se tratan en este problema es muy imbalanceado. """
 from sklearn.utils.class_weight import compute_class_weight
 
