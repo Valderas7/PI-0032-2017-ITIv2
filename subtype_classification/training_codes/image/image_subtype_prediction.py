@@ -135,10 +135,10 @@ canales = 3 # Imágenes a color (RGB) = 3
 """ Se establece una imagen como la imagen objetivo respecto a la que normalizar el color, estandarizando también el
 brillo para mejorar el cálculo """
 # @StainNormalizer: Instancia para normalizar el color de la imagen mediante el metodo de normalizacion especificado
-normalizer = staintools.StainNormalizer(method='vahadane')
+normalizer = staintools.StainNormalizer(method = 'vahadane')
 target = staintools.read_image('/home/avalderas/img_slides/img_lotes/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
 target = staintools.LuminosityStandardizer.standardize(target)
-normalizer.fit(target)
+target = normalizer.fit(target)
 
 """ Se extrae la columna 'subtype' del dataframe de todos los subconjuntos, ya que ésta es la salida del modelo que se 
 va a entrenar. """
@@ -152,9 +152,11 @@ train_labels = lb.fit_transform(train_labels)
 valid_labels = lb.transform(valid_labels)
 test_labels = lb.transform(test_labels)
 
-""" Se dividen las imagenes en teselas del mismo tamaño para cada imagen. Por otra parte, tambien se multiplican las
-etiquetas de salida dependiendo del numero de teselas que tenga la imagen. Si por ejemplo, una imagen se ha dividido en
-20 teselas, pues estas 20 teselas deben tener la misma etiqueta que la de la imagen original. """
+""" Se dividen las imágenes en teselas del mismo tamaño (en este caso ancho = 7 x 120 y alto = 3 x 210), por lo que al 
+final se tienen un total de 21 teselas por imagen. Por otra parte, también se multiplican las etiquetas de salida 
+dependiendo del número de teselas en el que se ha dividido la imagen. De esta forma, cada imagen tendrá N teselas, y 
+también N filas en las etiquetas de salida, para que así cada tesela esté etiquetada correctamente dependiendo de la 
+imagen de la que provenía. """
 train_image_tile = []
 train_image_data = []
 train_labels_tile = []
@@ -197,7 +199,7 @@ for index_normal_valid, image_valid in enumerate(valid_data['img_path']):
                    range(0, valid_image_resize.shape[1], 210)]
 
     for valid_tile in valid_tiles:
-        if not np.all(valid_tile == 0):
+        if not np.all(valid_tile == 255):
             valid_image_tile.append(valid_tile)
             valid_image_data.append(valid_tile)
 
@@ -218,9 +220,8 @@ for index_normal_test, image_test in enumerate(test_data['img_path']):
                   range(0, test_image_resize.shape[1], 210)]
 
     for test_tile in test_tiles:
-        if not np.all(test_tile == 0):
-            test_image_tile.append(test_tile)
-            test_image_data.append(test_tile)
+        test_image_tile.append(test_tile)
+        test_image_data.append(test_tile)
 
     test_tile_df_labels = pd.DataFrame(test_labels[index_normal_test, :]).transpose()
     test_tile_df_labels = pd.DataFrame(np.repeat(test_tile_df_labels.values, len(test_image_tile), axis = 0),
