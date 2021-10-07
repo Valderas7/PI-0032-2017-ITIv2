@@ -125,6 +125,7 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_data, test_data = train_test_split(df_all_merge, test_size = 0.20)
 train_data, valid_data = train_test_split(train_data, test_size = 0.20)
+
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
@@ -216,9 +217,8 @@ for index_normal_train, image_train in enumerate(train_data['img_path']):
                    range(0, train_image_resize.shape[1], 210)]
 
     for train_tile in train_tiles:
-        if not np.all(train_tile == 255):
-            train_image_tile.append(train_tile)
-            train_image_data.append(train_tile)
+        train_image_tile.append(train_tile)
+        train_image_data.append(train_tile)
 
     train_tile_df_labels = pd.DataFrame(train_data.iloc[index_normal_train, 2:-1]).transpose()
     train_tile_df_labels = pd.DataFrame(np.repeat(train_tile_df_labels.values, len(train_image_tile), axis = 0),
@@ -357,7 +357,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
-checkpoint_path = 'model_snv_image_epoch{epoch:02d}.h5'
+checkpoint_path = '/home/avalderas/img_slides/cnv&snv_mutations/snv/inference/image/test_data&models/model_snv_image_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True,
                            monitor = '(2 * val_recall * val_precision) / (val_recall + val_precision)', mode = 'max')
 

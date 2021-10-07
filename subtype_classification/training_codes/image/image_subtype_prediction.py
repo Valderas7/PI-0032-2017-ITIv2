@@ -252,6 +252,11 @@ train_image_data_len = len(train_image_data)
 valid_image_data_len = len(valid_image_data)
 batch_dimension = 32
 
+""" Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
+neuronal convolucional. """
+#np.save('test_image', test_image_data)
+#np.save('test_labels', test_labels)
+
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL (CNN) -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
@@ -304,9 +309,9 @@ model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele u
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
-checkpoint_path = 'model_image_subtype_epoch{epoch:02d}.h5'
+checkpoint_path = '/home/avalderas/img_slides/subtype_classification/inference/image/test_data&models/model_image_subtype_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True,
-                           monitor= '(2 * val_recall * val_precision) / (val_recall + val_precision)')
+                           monitor= '(2 * val_recall * val_precision) / (val_recall + val_precision)', mode = 'max')
 
 """ Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balanceen, ya que el conjunto
 de datos que se tratan en este problema es muy imbalanceado. """
@@ -317,7 +322,7 @@ class_weights = compute_class_weight(class_weight = 'balanced', classes = np.uni
 d_class_weights = dict(enumerate(class_weights)) # {0: 1.4780, 1: 2.055238, 2: 0.40186, 3: 0.85... etc}
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-model.fit(trainGen, epochs = 4, verbose = 1, steps_per_epoch = (train_image_data_len / batch_dimension),
+model.fit(trainGen, epochs = 5, verbose = 1, steps_per_epoch = (train_image_data_len / batch_dimension),
           class_weight = d_class_weights, validation_data = valGen,
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -343,6 +348,7 @@ model.summary()
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(trainGen, epochs = 200, verbose = 1, validation_data = valGen,
                            steps_per_epoch = (train_image_data_len / batch_dimension), class_weight = d_class_weights,
+                           #callbacks = mcp_save,
                            validation_steps = (valid_image_data_len / batch_dimension))
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
@@ -515,6 +521,3 @@ plt.ylabel('Precision')
 plt.title('AUC-PR curve (micro)')
 plt.legend(loc = 'best')
 plt.show()
-
-#np.save('test_image', test_image_data)
-#np.save('test_labels', test_labels)

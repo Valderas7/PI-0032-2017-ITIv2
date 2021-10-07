@@ -495,7 +495,7 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
-checkpoint_path = 'model_cnv_image_epoch{epoch:02d}.h5'
+checkpoint_path = '/home/avalderas/img_slides/cnv&snv_mutations/cnv/inference/image/test_data&models/model_cnv_image_epoch{epoch:02d}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True,
                            monitor = '(2 * val_recall * val_precision) / (val_recall + val_precision)', mode = 'max')
 
