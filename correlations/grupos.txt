@@ -1,0 +1,19 @@
+4 grandes grupos de datos:
+
+1) Datos (texto/números) clínicos: Edad diagnóstico, neoadyuvante, antecedentes personales, metástasis a distancia,
+supervivencia, recaída.
+
+2) Datos de anatomía patológica: Tipo histológico, STAGE, pT, pN, pM, IHQ.
+
+3) Datos de mutaciones (SNV, CNV-A, CNV-D).
+
+4) Imágenes microscópicas.
+
+Y hay que correlacionar todos los grupos con todos:
+
+- Datos clínicos (el 1) con datos de anatomía patológica (2)
+- Datos clínicos (el 1) con datos de mutaciones (3)
+- Datos clínicos (el 1) con imágenes microscópicas (4)
+- Datos de anatomía patológica (2) con datos de mutaciones (3)
+- Datos de anatomía patológica (3) con imágenes microscópicas (4)
+- Datos de mutaciones (3) con imágenes microscópicas (4)
