@@ -266,9 +266,9 @@ base_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tenso
                                               include_top = False, pooling = 'max')
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
-all_model = layers.Dense(256, activation = 'relu')(all_model)
+all_model = layers.Dense(256)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.Dense(16, activation = 'relu')(all_model)
+all_model = layers.Dense(16)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 all_model = layers.Dense(len(lb.classes_), activation = 'softmax')(all_model)
 model = keras.models.Model(inputs = base_model.input, outputs = all_model)

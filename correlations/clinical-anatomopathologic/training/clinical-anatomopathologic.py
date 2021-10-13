@@ -31,7 +31,7 @@ list_to_read = ['CNV_oncomine', 'age', 'all_oncomine', 'mutations_oncomine', 'ca
                 'pfs_months', 'pfs_status', 'radiation_therapy']
 
 filename = '/home/avalderas/img_slides/data/brca_tcga_pan_can_atlas_2018.out'
-#filename = 'C:\\Users\\valde\Desktop\Datos_repositorio\cbioportal\data/brca_tcga_pan_can_atlas_2018.out'
+#filename = 'C:\\Users\\valde\Desktop\Datos_repositorio\\tcga_data\data/brca_tcga_pan_can_atlas_2018.out'
 
 """ Almacenamos en una variable los diccionarios: """
 with shelve.open(filename) as data:
@@ -124,8 +124,6 @@ ahora se realiza esta técnica antes de hacer la repartición de subconjuntos pa
 df_all_merge = pd.get_dummies(df_all_merge, columns=["tumor_type", "stage", "path_t_stage", "path_n_stage", "path_m_stage",
                                                      "subtype"])
 
-print(df_all_merge.columns.values)
-quit()
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 # 298train, 34val, 84test
@@ -200,9 +198,7 @@ train_tabular_data.loc[:,'Age'] = train_continuous[:,0]
 valid_tabular_data.loc[:,'Age'] = valid_continuous[:,0]
 test_tabular_data.loc[:,'Age'] = test_continuous[:,0]
 
-""" Para poder entrenar la red hace falta transformar los dataframes de entrenamiento y test en arrays de numpy, así 
-como también la columna de salida de ambos subconjuntos (las imágenes YA fueron convertidas anteriormente, por lo que no
-hace falta transformarlas de nuevo). """
+""" Para poder entrenar la red hace falta transformar los dataframes de entrenamiento y test en arrays de numpy. """
 train_tabular_data = np.asarray(train_tabular_data).astype('float32')
 train_labels_tumor_type = np.asarray(train_labels_tumor_type).astype('float32')
 train_labels_STAGE = np.asarray(train_labels_STAGE).astype('float32')
@@ -233,8 +229,8 @@ test_labels_IHQ = np.asarray(test_labels_IHQ).astype('float32')
 Input_ = Input(shape=train_tabular_data.shape[1], )
 model = layers.Dense(128, activation= 'relu')(Input_)
 model = layers.Dropout(0.5)(model)
-#model = layers.Dense(64, activation= 'relu')(model)
-#model = layers.Dropout(0.5)(model)
+model = layers.Dense(64, activation= 'relu')(model)
+model = layers.Dropout(0.5)(model)
 output1 = layers.Dense(train_labels_tumor_type.shape[1], activation = "softmax", name= 'tumor_type')(model)
 output2 = layers.Dense(train_labels_STAGE.shape[1], activation = "softmax", name = 'STAGE')(model)
 output3 = layers.Dense(train_labels_pT.shape[1], activation = "softmax", name= 'pT')(model)
@@ -255,8 +251,8 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.Precision(name='precision'), # TP / (TP + FP)
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
 
-model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'categorical_crossentropy', 
-                      'pT': 'categorical_crossentropy', 'pN': 'categorical_crossentropy', 
+model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'categorical_crossentropy',
+                      'pT': 'categorical_crossentropy', 'pN': 'categorical_crossentropy',
                       'pM': 'categorical_crossentropy', 'IHQ': 'categorical_crossentropy'},
               optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
@@ -268,11 +264,11 @@ checkpoint_path = '/home/avalderas/img_slides/correlations/clinical-anatomopatho
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = train_tabular_data, 
+neural_network = model.fit(x = train_tabular_data,
                            y = {'tumor_type': train_labels_tumor_type, 'STAGE': train_labels_STAGE,
                                 'pT': train_labels_pT, 'pN': train_labels_pN, 'pM': train_labels_pM,
                                 'IHQ': train_labels_IHQ},
-                           epochs = 300,
+                           epochs = 100,
                            verbose = 1,
                            batch_size = 32,
                            #callbacks= mcp_save,
@@ -292,9 +288,12 @@ print("\n'Loss' del tipo histológico en el conjunto de prueba: {:.2f}\n""Sensib
       "conjunto de prueba: {:.2f}\n""Precisión del tipo histológico en el conjunto de prueba: {:.2f}\n""Especifidad del "
       "tipo histológico en el conjunto de prueba: {:.2f} \n""Exactitud del tipo histológico en el conjunto de prueba: "
       "{:.2f} %\n""AUC-ROC del tipo histológico en el conjunto de prueba: {:.2f}".format(results[1], results[11],
-                                                                                         results[12],
-                                                                                         results[9]/(results[9]+results[8]),
-                                                                                         results[13] * 100, results[14]))
+                                                                                           results[12],
+                                                                                           results[9]/(results[9]+results[8]),
+                                                                                           results[13] * 100, results[14]))
+if results[11] > 0 or results[12] > 0:
+    print("Valor-F del tipo histológico en el conjunto de prueba: {:.2f}".format((2 * results[11] * results[12]) /
+                                                                                    (results[11] + results[12])))
 
 print("\n'Loss' del estadio anatomopatológico en el conjunto de prueba: {:.2f}\n""Sensibilidad del estadio "
       "anatomopatológico en el conjunto de prueba: {:.2f}\n""Precisión del estadio anatomopatológico en el conjunto de "
@@ -302,6 +301,9 @@ print("\n'Loss' del estadio anatomopatológico en el conjunto de prueba: {:.2f}\
       "estadio anatomopatológico en el conjunto de prueba: {:.2f} %\n""AUC-ROC del estadio anatomopatológico en el "
       "conjunto de prueba: {:.2f}".format(results[2], results[19], results[20], results[17]/(results[17]+results[16]),
                                           results[21] * 100, results[22]))
+if results[19] > 0 or results[20] > 0:
+    print("Valor-F del estadio anatomopatológico en el conjunto de prueba: {:.2f}".format((2 * results[19] * results[20]) /
+                                                                                            (results[19] + results[20])))
 
 print("\n'Loss' del parámetro 'T' en el conjunto de prueba: {:.2f}\n""Sensibilidad del parámetro 'T' en el conjunto de "
       "prueba: {:.2f}\n""Precisión del parámetro 'T' en el conjunto de prueba: {:.2f}\n""Especifidad del parámetro 'T' "
@@ -309,6 +311,9 @@ print("\n'Loss' del parámetro 'T' en el conjunto de prueba: {:.2f}\n""Sensibili
       "del parámetro 'T' en el conjunto de prueba: {:.2f}".format(results[3], results[27], results[28],
                                                                   results[25]/(results[25]+results[24]),
                                                                   results[29] * 100, results[30]))
+if results[27] > 0 or results[28] > 0:
+    print("Valor-F del parámetro 'T' en el conjunto de prueba: {:.2f}".format((2 * results[27] * results[28]) /
+                                                                                (results[27] + results[28])))
 
 print("\n'Loss' del parámetro 'N' en el conjunto de prueba: {:.2f}\n""Sensibilidad del parámetro 'N' en el conjunto de "
       "prueba: {:.2f}\n""Precisión del parámetro 'N' en el conjunto de prueba: {:.2f}\n""Especifidad del parámetro 'N' "
@@ -316,6 +321,9 @@ print("\n'Loss' del parámetro 'N' en el conjunto de prueba: {:.2f}\n""Sensibili
       "del parámetro 'N' en el conjunto de prueba: {:.2f}".format(results[4], results[35], results[36],
                                                                   results[33]/(results[33]+results[32]),
                                                                   results[37] * 100, results[38]))
+if results[35] > 0 or results[36] > 0:
+    print("Valor-F del parámetro 'N' en el conjunto de prueba: {:.2f}".format((2 * results[35] * results[36]) /
+                                                                                (results[35] + results[36])))
 
 print("\n'Loss' del parámetro 'M' en el conjunto de prueba: {:.2f}\n""Sensibilidad del parámetro 'M' en el conjunto de "
       "prueba: {:.2f}\n""Precisión del parámetro 'M' en el conjunto de prueba: {:.2f}\n""Especifidad del parámetro 'M' "
@@ -323,6 +331,9 @@ print("\n'Loss' del parámetro 'M' en el conjunto de prueba: {:.2f}\n""Sensibili
       "del parámetro 'M' en el conjunto de prueba: {:.2f}".format(results[5], results[43], results[44],
                                                                   results[41]/(results[41]+results[40]),
                                                                   results[45] * 100, results[46]))
+if results[43] > 0 or results[44] > 0:
+    print("Valor-F del parámetro 'M' en el conjunto de prueba: {:.2f}".format((2 * results[43] * results[44]) /
+                                                                                (results[43] + results[44])))
 
 print("\n'Loss' del subtipo molecular en el conjunto de prueba: {:.2f}\n""Sensibilidad del subtipo molecular en el "
       "conjunto de prueba: {:.2f}\n""Precisión del subtipo molecular en el conjunto de prueba: {:.2f}\n""Especifidad del "
@@ -332,6 +343,9 @@ print("\n'Loss' del subtipo molecular en el conjunto de prueba: {:.2f}\n""Sensib
                                                                                           results[49]/(results[49]+results[48]),
                                                                                           results[53] * 100,
                                                                                           results[54]))
+if results[51] > 0 or results[52] > 0:
+    print("Valor-F del subtipo molecular en el conjunto de prueba: {:.2f}".format((2 * results[51] * results[52]) /
+                                                                                    (results[51] + results[52])))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
 posteriormentes para dibujar las gráficas de la 'loss', la sensibilidad y la precisión del entrenamiento y  validación 
@@ -359,11 +373,11 @@ plt.show() # Se muestran todas las gráficas
 conjunto de datos de test que se definió anteriormente al repartir los datos. """
 # @suppress = True: Muestra los números con representación de coma fija
 # @predict: Genera predicciones para nuevas entradas
-print("\nGenera predicciones para 10 muestras")
-print("Clase del primer paciente: \n", test_labels_tumor_type[:1], test_labels_STAGE[:1], test_labels_pT[:1],
-      test_labels_pN[:1], test_labels_pM[:1], test_labels_IHQ[:1])
+#print("\nGenera predicciones para 10 muestras")
+#print("Clase del primer paciente: \n", test_labels_tumor_type[:1], test_labels_STAGE[:1], test_labels_pT[:1],
+      #test_labels_pN[:1], test_labels_pM[:1], test_labels_IHQ[:1])
 np.set_printoptions(precision=3, suppress=True)
-print("\nPredicciones:\n", np.round(model.predict(test_tabular_data[:1])[0])) # El índice da una salida u otra
+#print("\nPredicciones:\n", np.round(model.predict(test_tabular_data[:1])[0])) # El índice da una salida u otra
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
@@ -378,7 +392,7 @@ y_pred_tumor_type = np.argmax(model.predict(test_tabular_data)[0], axis = 1)
 matrix_tumor_type = confusion_matrix(y_true_tumor_type, y_pred_tumor_type) # Calcula (pero no dibuja) la matriz de confusión
 matrix_tumor_type_classes = ['IDC', 'ILC', 'Metaplastic', 'Mixed (NOS)', 'Mucinous', 'Other']
 
-# STAGE
+# Estadio anatomopatológico
 y_true_STAGE = []
 for label_test_STAGE in test_labels_STAGE:
     y_true_STAGE.append(np.argmax(label_test_STAGE))
@@ -421,7 +435,7 @@ y_true_pM = np.array(y_true_pM)
 y_pred_pM = np.argmax(model.predict(test_tabular_data)[4], axis = 1)
 
 matrix_pM = confusion_matrix(y_true_pM, y_pred_pM) # Calcula (pero no dibuja) la matriz de confusión
-matrix_pM_classes = test_columns_pM
+matrix_pM_classes = ['M0', 'M1', 'MX']
 
 # IHQ
 y_true_IHQ = []
@@ -432,7 +446,7 @@ y_true_IHQ = np.array(y_true_IHQ)
 y_pred_IHQ = np.argmax(model.predict(test_tabular_data)[5], axis = 1)
 
 matrix_IHQ = confusion_matrix(y_true_IHQ, y_pred_IHQ) # Calcula (pero no dibuja) la matriz de confusión
-matrix_IHQ_classes = test_columns_IHQ
+matrix_IHQ_classes = ['Basal', 'Her2', 'Luminal A', 'Luminal B', 'Normal']
 
 """ Función para mostrar por pantalla la matriz de confusión multiclase con todas las clases de subtipos moleculares """
 def plot_confusion_matrix(cm, classes, normalize=False, title='Matriz de confusión', cmap = plt.cm.Reds):
@@ -482,89 +496,10 @@ plt.show()
 plot_confusion_matrix(matrix_IHQ, classes = matrix_IHQ_classes, title = 'Matriz del subtipo molecular')
 plt.show()
 
-""" Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
-documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
-tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
-Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
-# @ravel: Aplana el vector a 1D
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, roc_auc_score, average_precision_score
-from scipy import interp
-
-""" Para empezar, se calculan dos puntuaciones de la curva ROC. En primer lugar se calcula la puntuación micro-promedio 
-(se calcula la puntuación de forma igualitaria, contando el total de todos los falsos positivos y verdaderos negativos), 
-que es la mejor puntuación para ver el rendimiento de forma igualitaria del clasificador. Seguidamente, se calcula la 
-puntuación promedia ponderada (se calcula la puntuación de cada una de las clases por separado, ponderando cada una de 
-ellas según el número de veces que aparezca en el conjunto de datos), que es la mejor puntuación en caso de conjuntos de
-datos no balanceados como el que se está analizando. """
-y_pred_prob = model.predict(test_image_data)
-
-micro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
-                                     average="micro")
-weighted_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
-                                     average="weighted")
-micro_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="micro")
-weighted_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="weighted")
-
-print("Puntuaciones AUC-ROC:\n{:.2f} (micro-promedio)\n{:.2f} (promedio ponderado)\n".format(micro_roc_auc_ovr,
-                                                                                             weighted_roc_auc_ovr))
-print("Puntuaciones AUC-PR:\n{:.2f} (micro-promedio)\n{:.2f} (promedio ponderado)".format(micro_pr_auc_ovr,
-                                                                                          weighted_pr_auc_ovr))
-
-""" Una vez calculadas las dos puntuaciones, se dibuja la curva micro-promedio. Esto es mejor que dibujar una curva para 
-cada una de las clases que hay en el problema. """
-fpr = dict()
-tpr = dict()
-auc_roc = dict()
-
-""" Se calcula la tasa de falsos positivos y de verdaderos negativos para cada una de las clases, buscando en cada una
-de las 'n' (del número de clases) columnas del problema y se calcula con ello el AUC-ROC micro-promedio """
-for i in range(len(lb.classes_)):
-    fpr[i], tpr[i], _ = roc_curve(test_labels[:, i], y_pred_prob[:, i])
-    auc_roc[i] = auc(fpr[i], tpr[i])
-
-fpr["micro"], tpr["micro"], _ = roc_curve(test_labels.ravel(), y_pred_prob.ravel())
-auc_roc["micro"] = auc(fpr["micro"], tpr["micro"])
-
-""" Finalmente se dibuja la curva AUC-ROC micro-promedio """
-plt.figure()
-plt.plot(fpr["micro"], tpr["micro"],
-         label = 'Micro-average AUC-ROC curve (AUC = {0:.2f})'.format(auc_roc["micro"]),
-         color = 'blue', linewidth = 2)
-
-plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.xlabel('False positive rate')
-plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve (micro)')
-plt.legend(loc = 'best')
-plt.show()
-
-""" Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
-del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
-precision = dict()
-recall = dict()
-auc_pr = dict()
-
-""" Se calcula precisión y la sensibilidad para cada una de las clases, buscando en cada una de las 'n' (del número de 
-clases) columnas del problema y se calcula con ello el AUC-PR micro-promedio """
-for i in range(len(lb.classes_)):
-    precision[i], recall[i], _ = precision_recall_curve(test_labels[:, i], y_pred_prob[:, i])
-    auc_pr[i] = auc(recall[i], precision[i])
-
-precision["micro"], recall["micro"], _ = precision_recall_curve(test_labels.ravel(), y_pred_prob.ravel())
-auc_pr["micro"] = auc(recall["micro"], precision["micro"])
-
-""" Finalmente se dibuja la curvas AUC-PR micro-promedio """
-plt.figure()
-plt.plot(recall["micro"], precision["micro"],
-         label = 'Micro-average AUC-PR curve (AUC = {0:.2f})'.format(auc_pr["micro"]),
-         color = 'blue', linewidth = 2)
-
-plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('AUC-PR curve (micro)')
-plt.legend(loc = 'best')
-plt.show()
-
 #np.save('test_data', test_tabular_data)
-#np.save('test_labels', test_labels)
+#np.save('test_labels_tumor_type', test_labels_tumor_type)
+#np.save('test_labels_STAGE', test_labels_STAGE)
+#np.save('test_labels_pT', test_labels_pT)
+#np.save('test_labels_pN', test_labels_pN)
+#np.save('test_labels_pM', test_labels_pM)
+#np.save('test_labels_IHQ', test_labels_IHQ)
