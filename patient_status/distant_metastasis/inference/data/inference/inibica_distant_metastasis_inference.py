@@ -97,15 +97,6 @@ data_inibica['IHQ_Normal'] = 0
 como pacientes con porcentaje mínimo de Ki-67: """
 data_inibica['Ki-67'].fillna(value = 0, inplace= True)
 
-""" Se crea la misma cantidad de columnas para la IHQ que se crearon en el conjunto de entrenamiento para rellenarlas 
-posteriormente con un '1' en las filas que corresponda, dependiendo del valor de los distintos receptores de los 
-pacientes de INiBICA. """
-data_inibica['IHQ_Basal'] = 0
-data_inibica['IHQ_Her2'] = 0
-data_inibica['IHQ_Luminal_A'] = 0
-data_inibica['IHQ_Luminal_B'] = 0
-data_inibica['IHQ_Normal'] = 0
-
 """ Para el criterio de IHQ, se busca en internet el criterio para clasificar los distintos cáncer de mama en Luminal A, 
 Luminal B, Her2, Basal, etc. """
 data_inibica.loc[((data_inibica['ER'] > 0.01) | (data_inibica['PR'] > 0.01)) & ((data_inibica['Her-2'] == 0) |
