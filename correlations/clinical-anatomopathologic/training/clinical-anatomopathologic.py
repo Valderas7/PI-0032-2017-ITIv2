@@ -261,14 +261,14 @@ model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
 checkpoint_path = '/home/avalderas/img_slides/correlations/clinical-anatomopathologic/inference/test_data&models/clinical-anatomopathologic.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
+mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'loss', mode= 'min')
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,
                            y = {'tumor_type': train_labels_tumor_type, 'STAGE': train_labels_STAGE,
                                 'pT': train_labels_pT, 'pN': train_labels_pN, 'pM': train_labels_pM,
                                 'IHQ': train_labels_IHQ},
-                           epochs = 100,
+                           epochs = 1000,
                            verbose = 1,
                            batch_size = 32,
                            #callbacks= mcp_save,
@@ -449,7 +449,7 @@ matrix_IHQ = confusion_matrix(y_true_IHQ, y_pred_IHQ) # Calcula (pero no dibuja)
 matrix_IHQ_classes = ['Basal', 'Her2', 'Luminal A', 'Luminal B', 'Normal']
 
 """ Función para mostrar por pantalla la matriz de confusión multiclase con todas las clases de subtipos moleculares """
-def plot_confusion_matrix(cm, classes, normalize=False, title='Matriz de confusión', cmap = plt.cm.Reds):
+def plot_confusion_matrix(cm, classes, normalize=False, title='Matriz de confusión', cmap = plt.cm.Blues):
     """ Imprime y dibuja la matriz de confusión. Se puede normalizar escribiendo el parámetro `normalize=True`. """
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)

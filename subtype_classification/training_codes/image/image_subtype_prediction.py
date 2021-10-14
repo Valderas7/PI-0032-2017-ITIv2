@@ -322,7 +322,7 @@ class_weights = compute_class_weight(class_weight = 'balanced', classes = np.uni
 d_class_weights = dict(enumerate(class_weights)) # {0: 1.4780, 1: 2.055238, 2: 0.40186, 3: 0.85... etc}
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-model.fit(trainGen, epochs = 5, verbose = 1, steps_per_epoch = (train_image_data_len / batch_dimension),
+model.fit(trainGen, epochs = 3, verbose = 1, steps_per_epoch = (train_image_data_len / batch_dimension),
           class_weight = d_class_weights, validation_data = valGen,
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -346,7 +346,7 @@ model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele u
 model.summary()
 
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(trainGen, epochs = 200, verbose = 1, validation_data = valGen,
+neural_network = model.fit(trainGen, epochs = 100, verbose = 1, validation_data = valGen,
                            steps_per_epoch = (train_image_data_len / batch_dimension), class_weight = d_class_weights,
                            #callbacks = mcp_save,
                            validation_steps = (valid_image_data_len / batch_dimension))

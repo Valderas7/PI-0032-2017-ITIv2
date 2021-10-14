@@ -9,6 +9,8 @@ from tensorflow import keras
 from tensorflow.keras.models import load_model
 from sklearn.metrics import multilabel_confusion_matrix # Para realizar la matriz de confusión
 
+""" Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
+'numpy' """
 model = load_model('/home/avalderas/img_slides/correlations/anatomopathologic-mutations/inference/test_data&models/anatomopathologic-mutations.h5')
 
 test_tabular_data = np.load('/home/avalderas/img_slides/correlations/anatomopathologic-mutations/inference/test_data&models/test_data.npy')
