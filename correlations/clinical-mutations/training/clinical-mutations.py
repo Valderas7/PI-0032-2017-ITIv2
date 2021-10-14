@@ -105,8 +105,8 @@ df_all_merge = df_all_merge.drop('path_m_stage', 1)
 """ Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para empezar se carga el archivo excel 
 donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y creamos dos listas. Una para
 los genes SNV y otra para los genes CNV."""
-mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genes_panelOCA/Panel_OCA.xlsx', usecols= 'B:C',
-                                 engine= 'openpyxl')
+mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genesOCA&inibica_patients/Panel_OCA.xlsx',
+                                 usecols= 'B:C', engine= 'openpyxl')
 #mutations_target = pd.read_excel('C:\\Users\\valde\Desktop\Datos_repositorio\\img_slides\excel_oca_genes/Panel_OCA.xlsx',
                                  #usecols= 'B:C', engine= 'openpyxl')
 
@@ -451,13 +451,13 @@ model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentrop
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/correlations/clinical-anatomopathologic/inference/test_data&models/clinical-mutations.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
+checkpoint_path = '/home/avalderas/img_slides/correlations/clinical-mutations/inference/test_data&models/clinical-mutations.h5'
+mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'loss', mode= 'min')
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,
                            y = {'snv': train_labels_snv, 'cnv_a': train_labels_cnv_a, 'cnv_d': train_labels_cnv_d},
-                           epochs = 100,
+                           epochs = 1000,
                            verbose = 1,
                            batch_size = 32,
                            #callbacks= mcp_save,
