@@ -552,6 +552,7 @@ for matrix_gen_snv in matrix_snv:
     sns.heatmap(matrix_gen_snv, annot=true_neg_pos_neg, fmt='', cmap='Blues')
     plt.title('Mutación SNV del gen {}'.format(classes_snv[index_snv].split('_')[1]))
     plt.show()
+    plt.pause(0.2)
     index_snv = index_snv + 1
 
 # CNV-A
@@ -568,6 +569,7 @@ for matrix_gen_cnv_a in matrix_cnv_a:
     sns.heatmap(matrix_gen_cnv_a, annot=true_neg_pos_neg, fmt='', cmap='Blues')
     plt.title('Mutación CNV-A del gen {}'.format(classes_cnv_a[index_cnv_a].split('_')[1]))
     plt.show()
+    plt.pause(0.2)
     index_cnv_a = index_cnv_a + 1
 
 # CNV-D
@@ -584,6 +586,7 @@ for matrix_gen_cnv_d in matrix_cnv_d:
     sns.heatmap(matrix_gen_cnv_d, annot=true_neg_pos_neg, fmt='', cmap='Blues')
     plt.title('Mutación CNV-D del gen {}'.format(classes_cnv_d[index_cnv_d].split('_')[1]))
     plt.show()
+    plt.pause(0.2)
     index_cnv_d = index_cnv_d + 1
 
 #np.save('test_data', test_tabular_data)
