@@ -15,10 +15,6 @@ from sklearn.preprocessing import MinMaxScaler # Para escalar valores
 from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
 from pytorch_grad_cam import GradCAM # Hace falta instalar pytorch, ttach, torchvision, tqdm y el propio GRAD-CAM
 
-alto = 315 # 630
-ancho = 740 # 1480
-canales = 3 # Imágenes a color (RGB) = 3
-
 model = load_model('/home/avalderas/img_slides/patient_status/overall_status/inference/data/test_data&models/data_model_survival_prediction.h5')
 
 test_tabular_data = np.load('/home/avalderas/img_slides/patient_status/overall_status/inference/data/test_data&models/test_data.npy')

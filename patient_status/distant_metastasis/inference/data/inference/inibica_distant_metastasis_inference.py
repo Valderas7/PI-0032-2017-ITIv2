@@ -16,7 +16,8 @@ from sklearn.preprocessing import MinMaxScaler # Para escalar valores
 from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
 
 """ Se carga el Excel """
-data_inibica = pd.read_excel('/home/avalderas/img_slides/patient_status/inference_inibica.xlsx', engine='openpyxl')
+data_inibica = pd.read_excel('/home/avalderas/img_slides/excel_genesOCA&inibica_patients/inference_inibica.xlsx',
+                             engine='openpyxl')
 
 """ Se sustituyen los valores de la columna del estado de supervivencia, puesto que se entrenaron para valores de '1' 
 para los pacientes fallecidos, al contrario que en el Excel de los pacientes de INiBICA """
@@ -205,16 +206,16 @@ data_inibica = data_inibica[['Paciente', 'Edad', 'Tratamiento_neoadyuvante', 'pM
 #data_inibica.to_excel('inference_inibica_metastasis.xlsx')
 
 """ Se carga el Excel de nuevo ya que anteriormente se ha guardado """
-data_inibica = pd.read_excel('/home/avalderas/img_slides/patient_status/distant_metastasis/inference/data/test_data&models/inference_inibica_metastasis.xlsx', engine='openpyxl')
+data_inibica_metastasis = pd.read_excel('/home/avalderas/img_slides/patient_status/distant_metastasis/inference/data/test_data&models/inference_inibica_metastasis.xlsx', engine='openpyxl')
 
 """ Ahora habria que eliminar la columna de pacientes y guardar la columna de metastasis a distancia como variable de 
 salida. """
-data_inibica = data_inibica.drop(['Paciente'], axis = 1)
-inibica_labels = data_inibica.pop('Metástasis_distancia')
+data_inibica_metastasis = data_inibica_metastasis.drop(['Paciente'], axis = 1)
+inibica_labels = data_inibica_metastasis.pop('Metástasis_distancia')
 
 """ Se transforman ambos dataframes en formato numpy para que se les pueda aplicar la inferencia del modelo de la red 
 neuronal """
-test_data_inibica = np.asarray(data_inibica).astype('float32')
+test_data_inibica = np.asarray(data_inibica_metastasis).astype('float32')
 inibica_labels = np.asarray(inibica_labels)
 
 metastasis_model = load_model('/home/avalderas/img_slides/patient_status/distant_metastasis/inference/data/test_data&models/data_model_distant_metastasis_prediction.h5')
