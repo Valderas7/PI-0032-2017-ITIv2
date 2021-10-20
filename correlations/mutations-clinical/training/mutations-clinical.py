@@ -431,13 +431,13 @@ model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
 checkpoint_path = '/home/avalderas/img_slides/correlations/mutations-clinical/inference/test_data&models/mutations-clinical.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'loss', mode= 'min')
+mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,
                            y = {'survival': train_labels_survival, 'relapse': train_labels_relapse,
                                 'metastasis': train_labels_metastasis},
-                           epochs = 1000,
+                           epochs = 200,
                            verbose = 1,
                            batch_size = 32,
                            #callbacks= mcp_save,
