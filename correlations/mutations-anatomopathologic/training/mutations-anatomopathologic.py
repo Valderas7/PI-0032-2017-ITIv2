@@ -356,45 +356,45 @@ train_labels_pN = train_tabular_data.iloc[:, 264:275]
 valid_labels_pN = valid_tabular_data.iloc[:, 264:275]
 test_labels_pN = test_tabular_data.iloc[:, 264:275]
 
-train_labels_pM = train_tabular_data.iloc[:, 40:43]
-valid_labels_pM = valid_tabular_data.iloc[:, 40:43]
-test_labels_pM = test_tabular_data.iloc[:, 40:43]
-print(train_labels_pN)
-quit()
-train_labels_IHQ = train_tabular_data.iloc[:, 43:]
-valid_labels_IHQ = valid_tabular_data.iloc[:, 43:]
-test_labels_IHQ = test_tabular_data.iloc[:, 43:]
+train_labels_pM = train_tabular_data.iloc[:, 275:278]
+valid_labels_pM = valid_tabular_data.iloc[:, 275:278]
+test_labels_pM = test_tabular_data.iloc[:, 275:278]
 
-train_tabular_data = train_tabular_data.iloc[:, :6]
-valid_tabular_data = valid_tabular_data.iloc[:, :6]
-test_tabular_data = test_tabular_data.iloc[:, :6]
+train_labels_IHQ = train_tabular_data.iloc[:, 278:]
+valid_labels_IHQ = valid_tabular_data.iloc[:, 278:]
+test_labels_IHQ = test_tabular_data.iloc[:, 278:]
 
-""" Se extraen los nombres de las columnas de las clases de salida para usarlos posteriormente en la sección de
-evaluación: """
-test_columns_snv = test_labels_snv.columns.values
-classes_snv = test_columns_snv.tolist()
-
-test_columns_cnv_a = test_labels_cnv_a.columns.values
-classes_cnv_a = test_columns_cnv_a.tolist()
-
-test_columns_cnv_d = test_labels_cnv_d.columns.values
-classes_cnv_d = test_columns_cnv_d.tolist()
+train_tabular_data = train_tabular_data.iloc[:, :237]
+valid_tabular_data = valid_tabular_data.iloc[:, :237]
+test_tabular_data = test_tabular_data.iloc[:, :237]
 
 """ Para poder entrenar la red hace falta transformar los dataframes en arrays de numpy. """
 train_tabular_data = np.asarray(train_tabular_data).astype('float32')
-train_labels_snv = np.asarray(train_labels_snv).astype('float32')
-train_labels_cnv_a = np.asarray(train_labels_cnv_a).astype('float32')
-train_labels_cnv_d = np.asarray(train_labels_cnv_d).astype('float32')
+
+train_labels_tumor_type = np.asarray(train_labels_tumor_type).astype('float32')
+train_labels_STAGE = np.asarray(train_labels_STAGE).astype('float32')
+train_labels_pT = np.asarray(train_labels_pT).astype('float32')
+train_labels_pN = np.asarray(train_labels_pN).astype('float32')
+train_labels_pM = np.asarray(train_labels_pM).astype('float32')
+train_labels_IHQ = np.asarray(train_labels_IHQ).astype('float32')
 
 valid_tabular_data = np.asarray(valid_tabular_data).astype('float32')
-valid_labels_snv = np.asarray(valid_labels_snv).astype('float32')
-valid_labels_cnv_a = np.asarray(valid_labels_cnv_a).astype('float32')
-valid_labels_cnv_d = np.asarray(valid_labels_cnv_d).astype('float32')
+
+valid_labels_tumor_type = np.asarray(valid_labels_tumor_type).astype('float32')
+valid_labels_STAGE = np.asarray(valid_labels_STAGE).astype('float32')
+valid_labels_pT = np.asarray(valid_labels_pT).astype('float32')
+valid_labels_pN = np.asarray(valid_labels_pN).astype('float32')
+valid_labels_pM = np.asarray(valid_labels_pM).astype('float32')
+valid_labels_IHQ = np.asarray(valid_labels_IHQ).astype('float32')
 
 test_tabular_data = np.asarray(test_tabular_data).astype('float32')
-test_labels_snv = np.asarray(test_labels_snv).astype('float32')
-test_labels_cnv_a = np.asarray(test_labels_cnv_a).astype('float32')
-test_labels_cnv_d = np.asarray(test_labels_cnv_d).astype('float32')
+
+test_labels_tumor_type = np.asarray(test_labels_tumor_type).astype('float32')
+test_labels_STAGE = np.asarray(test_labels_STAGE).astype('float32')
+test_labels_pT = np.asarray(test_labels_pT).astype('float32')
+test_labels_pN = np.asarray(test_labels_pN).astype('float32')
+test_labels_pM = np.asarray(test_labels_pM).astype('float32')
+test_labels_IHQ = np.asarray(test_labels_IHQ).astype('float32')
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL (MLP) -----------------------------------------------
@@ -404,81 +404,122 @@ model = layers.Dense(128, activation= 'relu')(Input_)
 model = layers.Dropout(0.5)(model)
 model = layers.Dense(64, activation= 'relu')(model)
 model = layers.Dropout(0.5)(model)
-output1 = layers.Dense(train_labels_snv.shape[1], activation = "sigmoid", name= 'snv')(model)
-output2 = layers.Dense(train_labels_cnv_a.shape[1], activation = "sigmoid", name = 'cnv_a')(model)
-output3 = layers.Dense(train_labels_cnv_d.shape[1], activation = "sigmoid", name= 'cnv_d')(model)
+output1 = layers.Dense(train_labels_tumor_type.shape[1], activation = "softmax", name= 'tumor_type')(model)
+output2 = layers.Dense(train_labels_STAGE.shape[1], activation = "softmax", name = 'STAGE')(model)
+output3 = layers.Dense(train_labels_pT.shape[1], activation = "softmax", name= 'pT')(model)
+output4 = layers.Dense(train_labels_pN.shape[1], activation = "softmax", name= 'pN')(model)
+output5 = layers.Dense(train_labels_pM.shape[1], activation = "softmax", name= 'pM')(model)
+output6 = layers.Dense(train_labels_IHQ.shape[1], activation = "softmax", name= 'IHQ')(model)
 
-model = Model(inputs = Input_, outputs = [output1, output2, output3])
+model = Model(inputs = Input_, outputs = [output1, output2, output3, output4, output5, output6])
 
 """ Hay que definir las métricas de la red y configurar los distintos hiperparámetros para entrenar la red. El modelo ya
 ha sido definido anteriormente, así que ahora hay que compilarlo. Para ello se define una función de loss y un 
 optimizador. Con la función de loss se estimará la 'loss' del modelo. Por su parte, el optimizador actualizará los
 parámetros de la red neuronal con el objetivo de minimizar la función de 'loss'. """
 # @lr: tamaño de pasos para alcanzar el mínimo global de la función de loss.
-metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(name='fp'),
-           keras.metrics.TrueNegatives(name='tn'), keras.metrics.FalseNegatives(name='fn'),
-           keras.metrics.Recall(name='recall'), # TP / (TP + FN)
-           keras.metrics.Precision(name='precision'), # TP / (TP + FP)
-           keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
+metrics = [keras.metrics.TruePositives(name = 'tp'), keras.metrics.FalsePositives(name = 'fp'),
+           keras.metrics.TrueNegatives(name = 'tn'), keras.metrics.FalseNegatives(name = 'fn'),
+           keras.metrics.Recall(name = 'recall'), # TP / (TP + FN)
+           keras.metrics.Precision(name = 'precision'), # TP / (TP + FP)
+           keras.metrics.BinaryAccuracy(name = 'accuracy'), keras.metrics.AUC(name = 'AUC')]
 
-model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentropy', 'cnv_d': 'binary_crossentropy'},
+model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'categorical_crossentropy',
+                      'pT': 'categorical_crossentropy', 'pN': 'categorical_crossentropy',
+                      'pM': 'categorical_crossentropy', 'IHQ': 'categorical_crossentropy'},
               optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/correlations/anatomopathologic-mutations/inference/test_data&models/anatomopathologic-mutations.h5'
+checkpoint_path = '/home/avalderas/img_slides/correlations/mutations-anatomopathologic-/inference/test_data&models/mutations-anatomopathologic-.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'loss', mode= 'min')
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_tabular_data,
-                           y = {'snv': train_labels_snv, 'cnv_a': train_labels_cnv_a, 'cnv_d': train_labels_cnv_d},
-                           epochs = 1000,
+                           y = {'tumor_type': train_labels_tumor_type, 'STAGE': train_labels_STAGE,
+                                'pT': train_labels_pT, 'pN': train_labels_pN, 'pM': train_labels_pM,
+                                'IHQ': train_labels_IHQ},
+                           epochs = 1500,
                            verbose = 1,
                            batch_size = 32,
                            #callbacks= mcp_save,
-                           validation_data = (valid_tabular_data, {'snv': valid_labels_snv, 'cnv_a': valid_labels_cnv_a,
-                                                                   'cnv_d': valid_labels_cnv_d}))
+                           validation_data = (valid_tabular_data, {'tumor_type': valid_labels_tumor_type,
+                                                                   'STAGE': valid_labels_STAGE, 'pT': valid_labels_pT,
+                                                                   'pN': valid_labels_pN, 'pM': valid_labels_pM,
+                                                                   'IHQ': valid_labels_IHQ}))
+
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_tabular_data, [test_labels_snv, test_labels_cnv_a, test_labels_cnv_d], verbose = 0)
+results = model.evaluate(test_tabular_data, [test_labels_tumor_type, test_labels_STAGE, test_labels_pT, test_labels_pN,
+                                             test_labels_pM, test_labels_IHQ], verbose = 0)
 
-print("\n'Loss' de las mutaciones SNV del panel OCA en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
-      "SNV del panel OCA en el conjunto de prueba: {:.2f}\n""Precisión de las mutaciones SNV del panel OCA en el "
-      "conjunto de prueba: {:.2f}\n""Especifidad de las mutaciones SNV del panel OCA en el conjunto de prueba: {:.2f} \n"
-      "Exactitud de las mutaciones SNV del panel OCA en el conjunto de prueba: {:.2f} %\n""AUC-ROC de las mutaciones SNV"
-      " del panel OCA en el conjunto de prueba: {:.2f}".format(results[1], results[8], results[9],
-                                                               results[6]/(results[6]+results[5]), results[10] * 100,
-                                                               results[11]))
-if results[8] > 0 or results[9] > 0:
-    print("Valor-F de las mutaciones SNV del panel OCA en el conjunto de prueba: {:.2f}".format((2 * results[8] * results[9]) /
-                                                                                                (results[8] + results[9])))
+print("\n'Loss' del tipo histológico en el conjunto de prueba: {:.2f}\n""Sensibilidad del tipo histológico en el "
+      "conjunto de prueba: {:.2f}\n""Precisión del tipo histológico en el conjunto de prueba: {:.2f}\n""Especifidad del "
+      "tipo histológico en el conjunto de prueba: {:.2f} \n""Exactitud del tipo histológico en el conjunto de prueba: "
+      "{:.2f} %\n""AUC-ROC del tipo histológico en el conjunto de prueba: {:.2f}".format(results[1], results[11],
+                                                                                           results[12],
+                                                                                           results[9]/(results[9]+results[8]),
+                                                                                           results[13] * 100, results[14]))
+if results[11] > 0 or results[12] > 0:
+    print("Valor-F del tipo histológico en el conjunto de prueba: {:.2f}".format((2 * results[11] * results[12]) /
+                                                                                    (results[11] + results[12])))
 
-print("\n'Loss' de las mutaciones CNV-A del panel OCA en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
-      "CNV-A del panel OCA en el conjunto de prueba: {:.2f}\n""Precisión de las mutaciones CNV-A del panel OCA en el "
-      "conjunto de prueba: {:.2f}\n""Especifidad de las mutaciones CNV-A del panel OCA en el conjunto de prueba: {:.2f}\n"
-      "Exactitud de las mutaciones CNV-A del panel OCA en el conjunto de prueba: {:.2f} %\n""AUC-ROC de las mutaciones "
-      "CNV-A del panel OCA en el conjunto de prueba: {:.2f}".format(results[2], results[16], results[17],
-                                                                    results[14]/(results[14]+results[13]),
-                                                                    results[18] * 100, results[19]))
-if results[16] > 0 or results[17] > 0:
-    print("Valor-F de las mutaciones CNV-A del panel OCA en el conjunto de prueba: {:.2f}".format((2 * results[16] * results[17]) /
-                                                                                                  (results[16] + results[17])))
+print("\n'Loss' del estadio anatomopatológico en el conjunto de prueba: {:.2f}\n""Sensibilidad del estadio "
+      "anatomopatológico en el conjunto de prueba: {:.2f}\n""Precisión del estadio anatomopatológico en el conjunto de "
+      "prueba: {:.2f}\n""Especifidad del estadio anatomopatológico en el conjunto de prueba: {:.2f} \n""Exactitud del "
+      "estadio anatomopatológico en el conjunto de prueba: {:.2f} %\n""AUC-ROC del estadio anatomopatológico en el "
+      "conjunto de prueba: {:.2f}".format(results[2], results[19], results[20], results[17]/(results[17]+results[16]),
+                                          results[21] * 100, results[22]))
+if results[19] > 0 or results[20] > 0:
+    print("Valor-F del estadio anatomopatológico en el conjunto de prueba: {:.2f}".format((2 * results[19] * results[20]) /
+                                                                                            (results[19] + results[20])))
 
-print("\n'Loss' de las mutaciones CNV-D del panel OCA en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
-      "CNV-D del panel OCA en el conjunto de prueba: {:.2f}\n""Precisión de las mutaciones CNV-D del panel OCA en el "
-      "conjunto de prueba: {:.2f}\n""Especifidad de las mutaciones CNV-D del panel OCA en el conjunto de prueba: {:.2f}\n"
-      "Exactitud de las mutaciones CNV-D del panel OCA en el conjunto de prueba: {:.2f} %\n""AUC-ROC de las mutaciones "
-      "CNV-D del panel OCA en el conjunto de prueba: {:.2f}".format(results[3], results[24], results[25],
-                                                                    results[22]/(results[22]+results[21]),
-                                                                    results[26] * 100, results[27]))
-if results[24] > 0 or results[25] > 0:
-    print("Valor-F de las mutaciones CNV-D del panel OCA en el conjunto de prueba: {:.2f}".format((2 * results[24] * results[25]) /
-                                                                                                  (results[24] + results[25])))
+print("\n'Loss' del parámetro 'T' en el conjunto de prueba: {:.2f}\n""Sensibilidad del parámetro 'T' en el conjunto de "
+      "prueba: {:.2f}\n""Precisión del parámetro 'T' en el conjunto de prueba: {:.2f}\n""Especifidad del parámetro 'T' "
+      "en el conjunto de prueba: {:.2f} \n""Exactitud del parámetro 'T' en el conjunto de prueba: {:.2f} %\n""AUC-ROC "
+      "del parámetro 'T' en el conjunto de prueba: {:.2f}".format(results[3], results[27], results[28],
+                                                                  results[25]/(results[25]+results[24]),
+                                                                  results[29] * 100, results[30]))
+if results[27] > 0 or results[28] > 0:
+    print("Valor-F del parámetro 'T' en el conjunto de prueba: {:.2f}".format((2 * results[27] * results[28]) /
+                                                                                (results[27] + results[28])))
+
+print("\n'Loss' del parámetro 'N' en el conjunto de prueba: {:.2f}\n""Sensibilidad del parámetro 'N' en el conjunto de "
+      "prueba: {:.2f}\n""Precisión del parámetro 'N' en el conjunto de prueba: {:.2f}\n""Especifidad del parámetro 'N' "
+      "en el conjunto de prueba: {:.2f} \n""Exactitud del parámetro 'N' en el conjunto de prueba: {:.2f} %\n""AUC-ROC "
+      "del parámetro 'N' en el conjunto de prueba: {:.2f}".format(results[4], results[35], results[36],
+                                                                  results[33]/(results[33]+results[32]),
+                                                                  results[37] * 100, results[38]))
+if results[35] > 0 or results[36] > 0:
+    print("Valor-F del parámetro 'N' en el conjunto de prueba: {:.2f}".format((2 * results[35] * results[36]) /
+                                                                                (results[35] + results[36])))
+
+print("\n'Loss' del parámetro 'M' en el conjunto de prueba: {:.2f}\n""Sensibilidad del parámetro 'M' en el conjunto de "
+      "prueba: {:.2f}\n""Precisión del parámetro 'M' en el conjunto de prueba: {:.2f}\n""Especifidad del parámetro 'M' "
+      "en el conjunto de prueba: {:.2f} \n""Exactitud del parámetro 'M' en el conjunto de prueba: {:.2f} %\n""AUC-ROC "
+      "del parámetro 'M' en el conjunto de prueba: {:.2f}".format(results[5], results[43], results[44],
+                                                                  results[41]/(results[41]+results[40]),
+                                                                  results[45] * 100, results[46]))
+if results[43] > 0 or results[44] > 0:
+    print("Valor-F del parámetro 'M' en el conjunto de prueba: {:.2f}".format((2 * results[43] * results[44]) /
+                                                                                (results[43] + results[44])))
+
+print("\n'Loss' del subtipo molecular en el conjunto de prueba: {:.2f}\n""Sensibilidad del subtipo molecular en el "
+      "conjunto de prueba: {:.2f}\n""Precisión del subtipo molecular en el conjunto de prueba: {:.2f}\n""Especifidad del "
+      "subtipo molecular en el conjunto de prueba: {:.2f}\n""Exactitud del subtipo molecular en el conjunto de prueba: "
+      "{:.2f} %\n""AUC-ROC del subtipo molecular en el conjunto de prueba: {:.2f}".format(results[6], results[51],
+                                                                                          results[52],
+                                                                                          results[49]/(results[49]+results[48]),
+                                                                                          results[53] * 100,
+                                                                                          results[54]))
+if results[51] > 0 or results[52] > 0:
+    print("Valor-F del subtipo molecular en el conjunto de prueba: {:.2f}".format((2 * results[51] * results[52]) /
+                                                                                    (results[51] + results[52])))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
 posteriormentes para dibujar las gráficas de la 'loss', la sensibilidad y la precisión del entrenamiento y  validación 
@@ -503,70 +544,129 @@ plt.show() # Se muestran todas las gráficas
 ------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
-conjunto de datos de test que se definió anteriormente al repartir los datos. """
-# @suppress = True: Muestra los números con representación de coma fija
-# @predict: Genera predicciones para nuevas entradas
-#print("\nGenera predicciones para 10 muestras")
-#print("Clase del primer paciente: \n", test_labels_snv[:1], test_labels_cnv_a[:1], test_labels_cnv_d[:1])
-np.set_printoptions(precision=3, suppress=True)
-#print("\nPredicciones:\n", np.round(model.predict(test_tabular_data[:1])[0])) # El índice da una salida u otra
-
-""" Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
+conjunto de datos de test que se definió anteriormente al repartir los datos.
+Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
-# SNV
-y_true_snv = test_labels_snv
-y_pred_snv = np.round(model.predict(test_tabular_data)[0])
+# Tipo histológico
+y_true_tumor_type = []
+for label_test_tumor_type in test_labels_tumor_type:
+    y_true_tumor_type.append(np.argmax(label_test_tumor_type))
 
-matrix_snv = multilabel_confusion_matrix(y_true_snv, y_pred_snv)
+y_true_tumor_type = np.array(y_true_tumor_type)
+y_pred_tumor_type = np.argmax(model.predict(test_tabular_data)[0], axis = 1)
 
-group_names = ['True Negatives', 'False Positives', 'False Negatives', 'True Positives']
-index_snv = 0
+matrix_tumor_type = confusion_matrix(y_true_tumor_type, y_pred_tumor_type, labels = [0, 1, 2, 3, 4, 5, 6])
+matrix_tumor_type_classes = ['IDC', 'ILC', 'Medullary', 'Metaplastic', 'Mixed (NOS)', 'Mucinous', 'Other']
 
-for matrix_gen_snv in matrix_snv:
-    group_counts = ['{0:0.0f}'.format(value) for value in matrix_gen_snv.flatten()]  # Cantidad de casos por grupo
-    true_neg_pos_neg = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names, group_counts)]
-    true_neg_pos_neg = np.asarray(true_neg_pos_neg).reshape(2, 2)
-    sns.heatmap(matrix_gen_snv, annot=true_neg_pos_neg, fmt='', cmap='Blues')
-    plt.title('Mutación SNV del gen {}'.format(classes_snv[index_snv].split('_')[1]))
-    plt.show()
-    plt.pause(0.1)
-    index_snv = index_snv + 1
+# Estadio anatomopatológico
+y_true_STAGE = []
+for label_test_STAGE in test_labels_STAGE:
+    y_true_STAGE.append(np.argmax(label_test_STAGE))
 
-# CNV-A
-y_true_cnv_a = test_labels_cnv_a
-y_pred_cnv_a = np.round(model.predict(test_tabular_data)[1])
+y_true_STAGE = np.array(y_true_STAGE)
+y_pred_STAGE = np.argmax(model.predict(test_tabular_data)[1], axis = 1)
 
-matrix_cnv_a = multilabel_confusion_matrix(y_true_cnv_a, y_pred_cnv_a) # Calcula (pero no dibuja) la matriz de confusión
-index_cnv_a = 0
+matrix_STAGE = confusion_matrix(y_true_STAGE, y_pred_STAGE, labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) # Calcula (pero no dibuja) la matriz de confusión
+matrix_STAGE_classes = ['Stage IB', 'Stage II', 'Stage IIA', 'Stage IIB', 'Stage III', 'Stage IIIA', 'Stage IIIB',
+                        'Stage IIIC', 'Stage IV', 'STAGE X']
 
-for matrix_gen_cnv_a in matrix_cnv_a:
-    group_counts = ['{0:0.0f}'.format(value) for value in matrix_gen_cnv_a.flatten()]  # Cantidad de casos por grupo
-    true_neg_pos_neg = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names, group_counts)]
-    true_neg_pos_neg = np.asarray(true_neg_pos_neg).reshape(2, 2)
-    sns.heatmap(matrix_gen_cnv_a, annot=true_neg_pos_neg, fmt='', cmap='Blues')
-    plt.title('Mutación CNV-A del gen {}'.format(classes_cnv_a[index_cnv_a].split('_')[1]))
-    plt.show()
-    plt.pause(0.1)
-    index_cnv_a = index_cnv_a + 1
+# pT
+y_true_pT = []
+for label_test_pT in test_labels_pT:
+    y_true_pT.append(np.argmax(label_test_pT))
 
-# CNV-D
-y_true_cnv_d = test_labels_cnv_d
-y_pred_cnv_d = np.round(model.predict(test_tabular_data)[2])
+y_true_pT = np.array(y_true_pT)
+y_pred_pT = np.argmax(model.predict(test_tabular_data)[2], axis = 1)
 
-matrix_cnv_d = multilabel_confusion_matrix(y_true_cnv_d, y_pred_cnv_d) # Calcula (pero no dibuja) la matriz de confusión
-index_cnv_d = 0
+matrix_pT = confusion_matrix(y_true_pT, y_pred_pT, labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) # Calcula (pero no dibuja) la matriz de confusión
+matrix_pT_classes = ['T1', 'T1A', 'T1B', 'T1C', 'T2', 'T2B', 'T3', 'T4', 'T4B', 'T4D']
 
-for matrix_gen_cnv_d in matrix_cnv_d:
-    group_counts = ['{0:0.0f}'.format(value) for value in matrix_gen_cnv_d.flatten()]  # Cantidad de casos por grupo
-    true_neg_pos_neg = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names, group_counts)]
-    true_neg_pos_neg = np.asarray(true_neg_pos_neg).reshape(2, 2)
-    sns.heatmap(matrix_gen_cnv_d, annot=true_neg_pos_neg, fmt='', cmap='Blues')
-    plt.title('Mutación CNV-D del gen {}'.format(classes_cnv_d[index_cnv_d].split('_')[1]))
-    plt.show()
-    plt.pause(0.1)
-    index_cnv_d = index_cnv_d + 1
+# pN
+y_true_pN = []
+for label_test_pN in test_labels_pN:
+    y_true_pN.append(np.argmax(label_test_pN))
+
+y_true_pN = np.array(y_true_pN)
+y_pred_pN = np.argmax(model.predict(test_tabular_data)[3], axis = 1)
+
+matrix_pN = confusion_matrix(y_true_pN, y_pred_pN, labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) # Calcula (pero no dibuja) la matriz de confusión
+matrix_pN_classes = ['N1', 'N1A', 'N1B', 'N1C', 'N1MI', 'N2', 'N2A', 'N3', 'N3A', 'N3B', 'N3C']
+
+# pM
+y_true_pM = []
+for label_test_pM in test_labels_pM:
+    y_true_pM.append(np.argmax(label_test_pM))
+
+y_true_pM = np.array(y_true_pM)
+y_pred_pM = np.argmax(model.predict(test_tabular_data)[4], axis = 1)
+
+matrix_pM = confusion_matrix(y_true_pM, y_pred_pM, labels = [0, 1, 2])
+matrix_pM_classes = ['M0', 'M1', 'MX']
+
+# IHQ
+y_true_IHQ = []
+for label_test_IHQ in test_labels_IHQ:
+    y_true_IHQ.append(np.argmax(label_test_IHQ))
+
+y_true_IHQ = np.array(y_true_IHQ)
+y_pred_IHQ = np.argmax(model.predict(test_tabular_data)[5], axis = 1)
+
+matrix_IHQ = confusion_matrix(y_true_IHQ, y_pred_IHQ, labels = [0, 1, 2, 3, 4]) # Calcula (pero no dibuja) la matriz de confusión
+matrix_IHQ_classes = ['Basal', 'Her2', 'Luminal A', 'Luminal B', 'Normal']
+
+""" Función para mostrar por pantalla la matriz de confusión multiclase con todas las clases de subtipos moleculares """
+def plot_confusion_matrix(cm, classes, normalize=False, title='Matriz de confusión', cmap = plt.cm.Blues):
+    """ Imprime y dibuja la matriz de confusión. Se puede normalizar escribiendo el parámetro `normalize=True`. """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        cm = cm.round(2)
+        #print("Normalized confusion matrix")
+    else:
+        cm=cm
+        #print('Confusion matrix, without normalization')
+
+    thresh = cm.max() / 2.
+    for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, il, cm[il, j], horizontalalignment="center", color="white" if cm[il, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('Clase verdadera')
+    plt.xlabel('Predicción')
+
+np.set_printoptions(precision=2)
+fig1 = plt.figure(figsize=(7,6))
+
+plot_confusion_matrix(matrix_tumor_type, classes = matrix_tumor_type_classes, title = 'Matriz de confusión del tipo '
+                                                                                      'histológico')
+plt.show()
+
+plot_confusion_matrix(matrix_STAGE, classes = matrix_STAGE_classes, title = 'Matriz de confusión del estadio '
+                                                                            'anatomopatológico')
+plt.show()
+
+plot_confusion_matrix(matrix_pT, classes = matrix_pT_classes, title = 'Matriz de confusión del parámetro "T"')
+plt.show()
+
+plot_confusion_matrix(matrix_pN, classes = matrix_pN_classes, title = 'Matriz de confusión del parámetro "N"')
+plt.show()
+
+plot_confusion_matrix(matrix_pM, classes = matrix_pM_classes, title = 'Matriz de confusión del parámetro "M"')
+plt.show()
+
+plot_confusion_matrix(matrix_IHQ, classes = matrix_IHQ_classes, title = 'Matriz de confusión del subtipo molecular')
+plt.show()
 
 #np.save('test_data', test_tabular_data)
-#np.save('test_labels_snv', test_labels_snv)
-#np.save('test_labels_cnv_a', test_labels_cnv_a)
-#np.save('test_labels_cnv_d', test_labels_cnv_d)
+#np.save('test_labels_tumor_type', test_labels_tumor_type)
+#np.save('test_labels_STAGE', test_labels_STAGE)
+#np.save('test_labels_pT', test_labels_pT)
+#np.save('test_labels_pN', test_labels_pN)
+#np.save('test_labels_pM', test_labels_pM)
+#np.save('test_labels_IHQ', test_labels_IHQ)
