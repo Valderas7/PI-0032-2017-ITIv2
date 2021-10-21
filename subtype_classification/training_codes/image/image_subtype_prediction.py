@@ -301,7 +301,8 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.TrueNegatives(name='tn'), keras.metrics.FalseNegatives(name='fn'),
            keras.metrics.Recall(name='recall'), # TP / (TP + FN)
            keras.metrics.Precision(name='precision'), # TP / (TP + FP)
-           keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
+           keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC-ROC'),
+           keras.metrics.AUC(curve = 'PR', name='AUC-PR')]
 
 model.compile(loss = 'categorical_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
               optimizer = keras.optimizers.Adam(learning_rate = 0.001),
@@ -356,12 +357,18 @@ especificadas en el proceso de entrenamiento. En este caso, se decide mostrar lo
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_image_data, test_labels, verbose = 0)
-print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
-      "Exactitud del conjunto de prueba: {:.2f} %\n" 
-      "El AUC-ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
-                                                               results[3]/(results[3]+results[2]), results[7] * 100,
-                                                               results[8]))
+print("\n'Loss' del subtipo molecular en el conjunto de prueba: {:.2f}\n""Sensibilidad del subtipo molecular en el "
+      "conjunto de prueba: {:.2f}\nPrecisión del subtipo molecular en el conjunto de prueba: {:.2f}\n""Especifidad del "
+      "subtipo molecular en el conjunto de prueba: {:.2f} \nExactitud del subtipo molecular en el conjunto de prueba: "
+      "{:.2f} %\nEl AUC-ROC del subtipo molecular en el conjunto de prueba es de: {:.2f}\nEl AUC-PR del subtipo "
+      "molecular en el conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
+                                                                results[3]/(results[3]+results[2]), results[7] * 100,
+                                                                results[8], results[9]))
+
+if results[5] > 0 or results[6] > 0:
+    print("Valor-F del subtipo molecular en el en el conjunto de prueba: {:.2f}".format((2 * results[5] * results[6]) /
+                                                                                (results[5] + results[6])))
+
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
 posteriormentes para dibujar la gráficas de la 'loss' del entrenamiento y validación de cada iteración."""
@@ -397,15 +404,15 @@ print("\n")
 
 """ Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
-#y_true = []
-#for label_test in test_labels:
- #   y_true.append(np.argmax(label_test))
+y_true = []
+for label_test in test_labels:
+    y_true.append(np.argmax(label_test))
 
-#y_true = np.array(y_true)
-#y_pred = np.argmax(model.predict(test_image_data), axis = 1)
+y_true = np.array(y_true)
+y_pred = np.argmax(model.predict(test_image_data), axis = 1)
 
-#matrix = confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
-matrix_classes = lb.classes_
+matrix = confusion_matrix(y_true, y_pred, labels = [0, 1, 2, 3, 4]) # Calcula (pero no dibuja) la matriz de confusión
+matrix_classes = ['Basal', 'Her-2', 'Luminal A', 'Luminal B', 'Normal']
 
 """ Función para mostrar por pantalla la matriz de confusión multiclase con todas las clases de subtipos moleculares """
 def plot_confusion_matrix(cm, classes, normalize=False, title='Matriz de confusión', cmap = plt.cm.Reds):
@@ -414,7 +421,7 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Matriz de confusi
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
+    plt.xticks(tick_marks, classes)
     plt.yticks(tick_marks, classes)
 
     if normalize:
@@ -433,9 +440,7 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Matriz de confusi
     plt.ylabel('Clase verdadera')
     plt.xlabel('Predicción')
 
-np.set_printoptions(precision=2)
-fig1 = plt.figure(figsize=(7,6))
-plot_confusion_matrix(matrix, classes = matrix_classes, title = 'Matriz de confusión multiclase')
+plot_confusion_matrix(matrix, classes = matrix_classes, title = 'Matriz de confusión del subtipo molecular')
 plt.show()
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
@@ -453,18 +458,6 @@ puntuación promedia ponderada (se calcula la puntuación de cada una de las cla
 ellas según el número de veces que aparezca en el conjunto de datos), que es la mejor puntuación en caso de conjuntos de
 datos no balanceados como el que se está analizando. """
 y_pred_prob = model.predict(test_image_data)
-
-micro_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
-                                     average="micro")
-weighted_roc_auc_ovr = roc_auc_score(test_labels, y_pred_prob, multi_class="ovr",
-                                     average="weighted")
-micro_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="micro")
-weighted_pr_auc_ovr = average_precision_score(test_labels, y_pred_prob, average="weighted")
-
-print("Puntuaciones AUC-ROC:\n{:.2f} (micro-promedio)\n{:.2f} (promedio ponderado)\n".format(micro_roc_auc_ovr,
-                                                                                             weighted_roc_auc_ovr))
-print("Puntuaciones AUC-PR:\n{:.2f} (micro-promedio)\n{:.2f} (promedio ponderado)".format(micro_pr_auc_ovr,
-                                                                                          weighted_pr_auc_ovr))
 
 """ Una vez calculadas las dos puntuaciones, se dibuja la curva micro-promedio. Esto es mejor que dibujar una curva para 
 cada una de las clases que hay en el problema. """
