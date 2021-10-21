@@ -8,6 +8,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import load_model
 from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
+import itertools
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
