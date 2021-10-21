@@ -63,7 +63,7 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge
                             (df_all_merge["path_n_stage"]!='N0 (MOL+)')]
 
 """ Directorios de imágenes con cáncer y sin cáncer: """
-image_dir = '/home/avalderas/Descargas/Imgs'
+image_dir = '/home/avalderas/Descargas/Imgspatients'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
 cancer_dir = glob.glob(image_dir + "/*") # 1702 imágenes con cáncer en total
@@ -106,7 +106,7 @@ canales = 3 # Imágenes a color (RGB) = 3
 brillo para mejorar el cálculo """
 # @StainNormalizer: Instancia para normalizar el color de la imagen mediante el metodo de normalizacion especificado
 normalizer = staintools.StainNormalizer(method = 'vahadane')
-target = staintools.read_image('/img_lotes/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
+target = staintools.read_image('/home/avalderas/img_slides/img_lotes/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
 target = staintools.LuminosityStandardizer.standardize(target)
 target = normalizer.fit(target)
 
@@ -124,13 +124,16 @@ for index_normal_merge, image_merge in enumerate(df_all_merge['img_path']):
     series_img = pd.Series(image_merge)
     series_img.index = series_img.str.extract(fr"({'|'.join(df_all_merge['ID'])})", expand=False) # Nombre ID
 
-    merge_image_resize = staintools.read_image(image_merge)
-    merge_image_resize = staintools.LuminosityStandardizer.standardize(merge_image_resize)
-    merge_image_resize = normalizer.transform(merge_image_resize)
-    merge_image_resize = cv2.resize(merge_image_resize, (ancho, alto), interpolation = cv2.INTER_CUBIC)
+    #merge_image_resize = staintools.read_image(image_merge)
+    #merge_image_resize = staintools.LuminosityStandardizer.standardize(merge_image_resize)
+    #merge_image_resize = normalizer.transform(merge_image_resize)
+    #merge_image_resize = cv2.resize(merge_image_resize, (ancho, alto), interpolation = cv2.INTER_CUBIC)
+    """ En caso de no querer normalizar las imagenes, se abren directamente y se redimensionan con OpenCV y se eliminan
+    las cuatro lineas anteriores"""
+    merge_image_resize = cv2.resize(cv2.imread(image_merge,cv2.IMREAD_COLOR),(ancho, alto),interpolation=cv2.INTER_CUBIC)
     merge_tiles = [merge_image_resize[x:x + 210, y:y + 210] for x in range(0, merge_image_resize.shape[0], 210) for y in
                    range(0, merge_image_resize.shape[1], 210)]
 
     for index_tile, merge_tile in enumerate(merge_tiles):
         print('tile_{}_img{}_n{}'.format(str(series_img.index.values[0]),index_normal_merge, index_tile))
-        cv2.imwrite('/home/avalderas/img_slides/tiles_TCGA-AO-A0J3/tile_{}_img{}_n{}.JPG'.format(str(series_img.index.values[0]),index_normal_merge, index_tile), merge_tile)
+        cv2.imwrite('/home/avalderas/img_slides/tiles_patients_unnormalized/tile_{}_img{}_n{}.JPG'.format(str(series_img.index.values[0]),index_normal_merge, index_tile), merge_tile)
