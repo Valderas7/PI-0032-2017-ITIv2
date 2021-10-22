@@ -262,7 +262,7 @@ neuronal convolucional. """
 --------------------------------------------------------------------------------------------------------------------"""
 """ En esta ocasión, se crea un modelo secuencial para la red neuronal convolucional que será la encargada de procesar
 todas las imágenes: """
-base_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = Input(shape=(alto, ancho, canales)),
+base_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = Input(shape=(210, 210, canales)),
                                               include_top = False, pooling = 'max')
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
