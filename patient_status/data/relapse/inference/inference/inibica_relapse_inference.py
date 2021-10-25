@@ -248,7 +248,7 @@ neuronal """
 test_data_inibica = np.asarray(data_inibica_relapse).astype('float32')
 inibica_labels = np.asarray(inibica_labels)
 
-relapse_model = load_model('/home/avalderas/img_slides/patient_status/data/relapse_status/inference/test_data&models/data_model_relapse_prediction.h5')
+relapse_model = load_model('/patient_status/data/relapse/inference/test_data&models/data_model_relapse_prediction.h5')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento """

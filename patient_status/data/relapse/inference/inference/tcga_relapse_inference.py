@@ -9,10 +9,10 @@ from tensorflow import keras
 from tensorflow.keras.models import load_model
 from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
 
-model = load_model('/home/avalderas/img_slides/patient_status/data/relapse_status/inference/test_data&models/data_model_relapse_prediction.h5')
+model = load_model('/patient_status/data/relapse/inference/test_data&models/data_model_relapse_prediction.h5')
 
-test_tabular_data = np.load('/home/avalderas/img_slides/patient_status/data/relapse_status/inference/test_data&models/test_data.npy')
-test_labels = np.load('/home/avalderas/img_slides/patient_status/data/relapse_status/inference/test_data&models/test_labels.npy')
+test_tabular_data = np.load('/patient_status/data/relapse/inference/test_data&models/test_data.npy')
+test_labels = np.load('/patient_status/data/relapse/inference/test_data&models/test_labels.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
