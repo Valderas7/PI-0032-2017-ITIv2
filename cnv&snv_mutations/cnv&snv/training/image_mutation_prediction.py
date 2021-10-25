@@ -493,13 +493,13 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
 
 model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentropy', 'cnv_normal': 'binary_crossentropy',
                       'cnv_d': 'binary_crossentropy'},
-              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.001),
               metrics = metrics)
 
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/cnv&snv_mutations/cnv&snv/inference/image/test_data&models/model_cnv_image_epoch{epoch:02d}.h5'
+checkpoint_path = '/home/avalderas/img_slides/cnv&snv_mutations/cnv&snv/inference/test_data&models/model_image_mutations.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True,
                            monitor = 'val_snv_loss + val_cnv_a_loss + val_cnv_d_loss', mode = 'min')
 
@@ -543,6 +543,7 @@ neural_network = model.fit(x = train_image_data, y = {'snv': train_labels_snv, '
                                                                                           'cnv_a': valid_labels_cnv_a,
                                                                                           'cnv_normal': valid_labels_cnv_normal,
                                                                                           'cnv_d': valid_labels_cnv_d}),
+                           # callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
