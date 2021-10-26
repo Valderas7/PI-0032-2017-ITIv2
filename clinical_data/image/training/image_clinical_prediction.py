@@ -262,8 +262,8 @@ model.compile(loss = {'survival': 'binary_crossentropy', 'relapse': 'binary_cros
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/cnv&snv_mutations/cnv&snv/inference/image/test_data&models/model_clinical_image.h5'
-mcp_save = ModelCheckpoint(filepath=checkpoint_path, save_best_only=True, monitor='val_loss', mode='max')
+checkpoint_path = '/home/avalderas/img_slides/clinical_data/image/inference/test_data&models/model_clinical_image.h5'
+mcp_save = ModelCheckpoint(filepath=checkpoint_path, save_best_only=True, monitor='val_loss', mode='min')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = {'survival': train_labels_survival, 'relapse': train_labels_relapse,
@@ -304,6 +304,7 @@ neural_network = model.fit(x = train_image_data, y = {'survival': train_labels_s
                                                                        {'survival': valid_labels_survival,
                                                                         'relapse': valid_labels_relapse,
                                                                         'metastasis': valid_labels_metastasis}),
+                           #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

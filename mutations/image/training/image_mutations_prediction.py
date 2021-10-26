@@ -498,7 +498,7 @@ model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentrop
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/cnv&snv_mutations/cnv&snv/inference/test_data&models/model_image_mutations.h5'
+checkpoint_path = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """
@@ -525,7 +525,7 @@ for layer in base_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentropy', 'cnv_normal': 'binary_crossentropy',
                       'cnv_d': 'binary_crossentropy'},
               metrics = metrics)
@@ -539,7 +539,7 @@ neural_network = model.fit(x = train_image_data, y = {'snv': train_labels_snv, '
                                                                                           'cnv_a': valid_labels_cnv_a,
                                                                                           'cnv_normal': valid_labels_cnv_normal,
                                                                                           'cnv_d': valid_labels_cnv_d}),
-                           # callbacks = mcp_save,
+                           #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
