@@ -15,10 +15,11 @@ from sklearn.preprocessing import MinMaxScaler # Para escalar valores
 from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
 from pytorch_grad_cam import GradCAM # Hace falta instalar pytorch, ttach, torchvision, tqdm y el propio GRAD-CAM
 
-model = load_model('/home/avalderas/img_slides/patient_status/data/distant_metastasis/inference/test_data&models/data_model_distant_metastasis_prediction.h5')
+model = load_model(
+    '/clinical_data/data/distant_metastasis/inference/test_data&models/data_model_distant_metastasis_prediction.h5')
 
-test_tabular_data = np.load('/home/avalderas/img_slides/patient_status/data/distant_metastasis/inference/test_data&models/test_data.npy')
-test_labels = np.load('/home/avalderas/img_slides/patient_status/data/distant_metastasis/inference/test_data&models/test_labels.npy')
+test_tabular_data = np.load('/clinical_data/data/distant_metastasis/inference/test_data&models/test_data.npy')
+test_labels = np.load('/clinical_data/data/distant_metastasis/inference/test_data&models/test_labels.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

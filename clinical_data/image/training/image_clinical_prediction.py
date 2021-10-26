@@ -97,10 +97,10 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.20)
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de teselas con cáncer normalizadas: """
-image_dir = '/split_images_into_tiles/TCGA_normalizadas_cáncer'
+image_dir = 'home/avalderas/img_slides/split_images_into_tiles/TCGA_normalizadas_cáncer/'
 
 """ Se seleccionan todas las rutas de las teselas: """
-cancer_dir = glob.glob(image_dir + "/img_lotes_tiles*/*")  # 34421
+cancer_dir = glob.glob(image_dir + "/img_lotes_tiles*/*") # 34421
 
 """ Se crea una serie sobre el directorio de las imágenes con cáncer que crea un array de 1-D (columna) en el que en 
 cada fila hay una ruta para cada una de las imágenes con cáncer. Posteriormente, se extrae el 'ID' de cada ruta de cada
@@ -171,9 +171,9 @@ test_image_data = np.array(test_image_data)
 
 """ Ya se puede eliminar de los subconjuntos la columna de imágenes, que no es útil puesto que ya han sido almacenadas 
 en un array de numpy: """
-train_data = train_data.drop(['img_path'], axis=1)
-valid_data = valid_data.drop(['img_path'], axis=1)
-test_data = test_data.drop(['img_path'], axis=1)
+train_data = train_data.drop(['img_path'], axis = 1)
+valid_data = valid_data.drop(['img_path'], axis = 1)
+test_data = test_data.drop(['img_path'], axis = 1)
 
 """ Se extraen los datos de salida para cada dato clínico """
 train_labels_survival = train_data.iloc[:, 2]
@@ -230,11 +230,12 @@ all_model = layers.Dense(512)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 all_model = layers.Dense(128)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
+
 survival = layers.Dense(1, activation = "sigmoid", name = 'survival')(all_model)
 relapse = layers.Dense(1, activation = "sigmoid", name = 'relapse')(all_model)
 metastasis = layers.Dense(1, activation = "sigmoid", name = 'metastasis')(all_model)
 
-model = Model(inputs=base_model.input, outputs=[survival, relapse, metastasis])
+model = Model(inputs = base_model.input, outputs = [survival, relapse, metastasis])
 
 """ Se congelan todas las capas convolucionales del modelo base """
 # A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
@@ -261,9 +262,8 @@ model.compile(loss = {'survival': 'binary_crossentropy', 'relapse': 'binary_cros
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/cnv&snv_mutations/cnv&snv/inference/image/test_data&models/model_cnv_image_epoch{epoch:02d}.h5'
-mcp_save = ModelCheckpoint(filepath=checkpoint_path, save_best_only=True,
-                           monitor='(2 * val_recall * val_precision) / (val_recall + val_precision)', mode='max')
+checkpoint_path = '/home/avalderas/img_slides/cnv&snv_mutations/cnv&snv/inference/image/test_data&models/model_clinical_image.h5'
+mcp_save = ModelCheckpoint(filepath=checkpoint_path, save_best_only=True, monitor='val_loss', mode='max')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = {'survival': train_labels_survival, 'relapse': train_labels_relapse,

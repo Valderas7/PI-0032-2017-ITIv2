@@ -20,9 +20,8 @@ from sklearn.metrics import multilabel_confusion_matrix, confusion_matrix # Para
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN DATOS TABULARES ------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-""" - Datos de entrada: Age, cancer_type, cancer_type_detailed, dfs_months, dfs_status, dss_months, dss_status,
-ethnicity, neoadjuvant, os_months, os_status, path_m_stage. path_n_stage, path_t_stage, sex, stage, subtype.
-    - Salida binaria: Presenta mutación o no en el gen 'X' (BRCA1 [ID: 672] en este caso). CNAs (CNV) y mutations (SNV). """
+# 1) Imágenes
+# 2) Datos de mutaciones: SNV, CNV-A, CNV-D.
 list_to_read = ['CNV_oncomine', 'age', 'all_oncomine', 'mutations_oncomine', 'cancer_type', 'cancer_type_detailed',
                 'dfs_months', 'dfs_status', 'dict_genes', 'dss_months', 'dss_status', 'ethnicity',
                 'full_length_oncomine', 'fusions_oncomine', 'muted_genes', 'CNA_genes', 'hotspot_oncomine', 'mutations',
@@ -467,6 +466,7 @@ all_model = layers.Dense(512)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 all_model = layers.Dense(256)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
+
 snv = layers.Dense(train_labels_snv.shape[1], activation = "sigmoid", name= 'snv')(all_model)
 cnv_a = layers.Dense(train_labels_cnv_a.shape[1], activation = "sigmoid", name = 'cnv_a')(all_model)
 cnv_normal = layers.Dense(train_labels_cnv_normal.shape[1], activation = "sigmoid", name = 'cnv_normal')(all_model)
@@ -495,13 +495,11 @@ model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentrop
                       'cnv_d': 'binary_crossentropy'},
               optimizer = keras.optimizers.Adam(learning_rate = 0.001),
               metrics = metrics)
-
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
 checkpoint_path = '/home/avalderas/img_slides/cnv&snv_mutations/cnv&snv/inference/test_data&models/model_image_mutations.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True,
-                           monitor = 'val_snv_loss + val_cnv_a_loss + val_cnv_d_loss', mode = 'min')
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = {'snv': train_labels_snv, 'cnv_a': train_labels_cnv_a,
@@ -513,11 +511,9 @@ model.fit(x = train_image_data, y = {'snv': train_labels_snv, 'cnv_a': train_lab
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
-""" Una vez el modelo ya ha sido entrenado, se resetean los generadores de data augmentation de los conjuntos de 
-entrenamiento y validacion y se descongelan algunas capas convolucionales del modelo base de la red para reeentrenar
-todo el modelo de principio a fin ('fine tuning'). Este es un último paso opcional que puede dar grandes mejoras o un 
-rápido sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo con las capas congeladas. 
-Para ello, primero se descongela el modelo base."""
+""" Una vez el modelo ya ha sido entrenado, se descongelan algunas capas convolucionales del modelo base de la red para 
+reeentrenar el modelo ('fine tuning'). Este es un último paso opcional que puede dar grandes mejoras o un rápido 
+sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo con las capas congeladas """
 set_trainable = 0
 
 for layer in base_model.layers:
@@ -539,7 +535,7 @@ model.summary()
 neural_network = model.fit(x = train_image_data, y = {'snv': train_labels_snv, 'cnv_a': train_labels_cnv_a,
                                                       'cnv_normal': train_labels_cnv_normal,
                                                       'cnv_d': train_labels_cnv_d},
-                           epochs = 1, verbose = 1, validation_data = (valid_image_data, {'snv': valid_labels_snv,
+                           epochs = 100, verbose = 1, validation_data = (valid_image_data, {'snv': valid_labels_snv,
                                                                                           'cnv_a': valid_labels_cnv_a,
                                                                                           'cnv_normal': valid_labels_cnv_normal,
                                                                                           'cnv_d': valid_labels_cnv_d}),

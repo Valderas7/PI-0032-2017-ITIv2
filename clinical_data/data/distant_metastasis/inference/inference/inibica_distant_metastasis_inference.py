@@ -218,7 +218,8 @@ neuronal """
 test_data_inibica = np.asarray(data_inibica_metastasis).astype('float32')
 inibica_labels = np.asarray(inibica_labels)
 
-metastasis_model = load_model('/home/avalderas/img_slides/patient_status/data/distant_metastasis/inference/test_data&models/data_model_distant_metastasis_prediction.h5')
+metastasis_model = load_model(
+    '/clinical_data/data/distant_metastasis/inference/test_data&models/data_model_distant_metastasis_prediction.h5')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento """
