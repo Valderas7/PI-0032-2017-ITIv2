@@ -493,7 +493,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
 
 model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentropy', 'cnv_normal': 'binary_crossentropy',
                       'cnv_d': 'binary_crossentropy'},
-              optimizer = keras.optimizers.Adam(learning_rate = 0.001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 model.summary()
 
