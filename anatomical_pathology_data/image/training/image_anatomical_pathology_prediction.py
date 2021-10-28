@@ -295,7 +295,7 @@ model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'catego
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
-checkpoint_path = '/anatomical_pathology_data/inference/image/test_data&models/model_image_anatomical_pathology.h5'
+checkpoint_path = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/test_data&models/model_image_anatomical_pathology.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """
@@ -315,7 +315,7 @@ sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
 set_trainable = 0
 
 for layer in base_model.layers:
-    if layer.name == 'block5a_expand_conv':
+    if layer.name == 'block4a_expand_conv':
         set_trainable = True
     if set_trainable:
         if not isinstance(layer, layers.BatchNormalization):

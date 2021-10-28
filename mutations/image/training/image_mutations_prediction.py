@@ -497,9 +497,11 @@ model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentrop
               metrics = metrics)
 model.summary()
 
-""" Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True, monitor = 'val_loss', mode = 'min')
+""" Se implementan varios callbacks para guardar el mejor modelo. """
+checkpoint_path_snv = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_snv.h5'
+mcp_save_snv = ModelCheckpoint(filepath = checkpoint_path_snv, save_best_only = True, monitor = 'val_snv_AUC-PR', mode = 'max')
+checkpoint_path_cnv_a = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_cnv_a.h5'
+mcp_save_cnv_a = ModelCheckpoint(filepath = checkpoint_path_cnv_a, save_best_only = True, monitor = 'val_cnv_a_AUC-PR', mode = 'max')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = {'snv': train_labels_snv, 'cnv_a': train_labels_cnv_a,
@@ -517,7 +519,7 @@ sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
 set_trainable = 0
 
 for layer in base_model.layers:
-    if layer.name == 'block5a_expand_conv':
+    if layer.name == 'block4a_expand_conv':
         set_trainable = True
     if set_trainable:
         if not isinstance(layer, layers.BatchNormalization):
@@ -539,7 +541,7 @@ neural_network = model.fit(x = train_image_data, y = {'snv': train_labels_snv, '
                                                                                           'cnv_a': valid_labels_cnv_a,
                                                                                           'cnv_normal': valid_labels_cnv_normal,
                                                                                           'cnv_d': valid_labels_cnv_d}),
-                           #callbacks = mcp_save,
+                           #callbacks = [mcp_save_snv, mcp_save_cnv_a],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
