@@ -38,7 +38,7 @@ funcion @read_region """
 scale = int(wsi.level_downsamples[best_level])
 tiles = []
 
-white_tiles = np.zeros(int(dim[1]/(alto*scale)), int(dim[0] / (ancho * scale)))
+white_tiles = np.zeros((int(dim[0]/(ancho * scale)), int(dim[1] / (alto * scale))))
 white_pixel = []
 
 """ Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x'. 
@@ -51,7 +51,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                                            (ancho, alto))
         sub_img = sub_img.convert('1') # Blanco y negro
         score = 1 - (np.count_nonzero(sub_img) / (ancho * alto))
-        white_tiles[alto_slide][ancho_slide] = 1 - (np.count_nonzero(sub_img) / (ancho * alto))
+        white_tiles[ancho_slide][alto_slide] = 1 - (np.count_nonzero(sub_img) / (ancho * alto))
         white_pixel.append(white_tiles)
 
         if score > 0.1:
