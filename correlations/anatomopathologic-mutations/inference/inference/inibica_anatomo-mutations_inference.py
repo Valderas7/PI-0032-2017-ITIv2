@@ -312,3 +312,41 @@ for matrix_gen_cnv_d in matrix_cnv_d:
     plt.show()
     plt.pause(0.1)
     index_cnv_d = index_cnv_d + 1
+
+""" En caso de querer curvas ROC individuales para un gen determinado se activa esta parte del codigo:
+#Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
+#documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
+#tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
+#Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva:
+# @ravel: Aplana el vector a 1D
+from sklearn.metrics import roc_curve, auc, precision_recall_curve
+
+y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_ERBB2_AMP')]
+y_pred_prob = model.predict(test_tabular_data)[1]
+y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_ERBB2_AMP')].ravel()
+fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
+auc_roc = auc(fpr, tpr)
+
+plt.figure(1)
+plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
+plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
+plt.xlabel('False positive rate')
+plt.ylabel('True positive rate')
+plt.title('AUC-ROC curve for CNV-A of ERBB2 gene')
+plt.legend(loc = 'best')
+plt.show()
+
+#Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
+#del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados.
+precision, recall, threshold = precision_recall_curve(y_true, y_pred_prob)
+auc_pr = auc(recall, precision)
+
+plt.figure(2)
+plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
+plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('AUC-PR curve for CNV-A of ERBB2 gene')
+plt.legend(loc = 'best')
+plt.show()
+"""

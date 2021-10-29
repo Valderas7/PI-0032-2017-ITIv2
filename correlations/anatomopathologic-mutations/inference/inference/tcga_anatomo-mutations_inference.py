@@ -67,7 +67,7 @@ y_pred_snv = np.round(model.predict(test_tabular_data)[0])
 matrix_snv = multilabel_confusion_matrix(y_true_snv, y_pred_snv)
 
 group_names = ['True Negatives', 'False Positives', 'False Negatives', 'True Positives']
-index_snv = 0
+
 classes_snv = ['SNV_AKT1', 'SNV_AKT2', 'SNV_AKT3', 'SNV_ALK', 'SNV_AR', 'SNV_ARAF', 'SNV_AXL', 'SNV_BRAF', 'SNV_BTK',
                'SNV_CBL', 'SNV_CCND1', 'SNV_CDK4', 'SNV_CDK6', 'SNV_CHEK2', 'SNV_CSF1R', 'SNV_CTNNB1', 'SNV_DDR2',
                'SNV_EGFR', 'SNV_ERBB2', 'SNV_ERBB3', 'SNV_ERBB4', 'SNV_ERCC2', 'SNV_ESR1', 'SNV_EZH2', 'SNV_FGFR1',
@@ -88,6 +88,26 @@ classes_snv = ['SNV_AKT1', 'SNV_AKT2', 'SNV_AKT3', 'SNV_ALK', 'SNV_AR', 'SNV_ARA
                'SNV_POLE', 'SNV_PTCH1', 'SNV_RAD50', 'SNV_RAD51', 'SNV_RAD51C', 'SNV_RAD51D', 'SNV_RNF43', 'SNV_SETD2',
                'SNV_SLX4', 'SNV_SMARCA4', 'SNV_SMARCB1', 'SNV_STK11', 'SNV_TP53', 'SNV_TSC1', 'SNV_TSC2']
 
+classes_cnv_a = ['CNV_AKT1_AMP', 'CNV_AKT2_AMP', 'CNV_AKT3_AMP', 'CNV_ALK_AMP', 'CNV_AR_AMP', 'CNV_AXL_AMP',
+                 'CNV_BRAF_AMP', 'CNV_CCND1_AMP', 'CNV_CCND2_AMP', 'CNV_CCND3_AMP', 'CNV_CCNE1_AMP', 'CNV_CDK2_AMP',
+                 'CNV_CDK4_AMP', 'CNV_CDK6_AMP', 'CNV_EGFR_AMP', 'CNV_ERBB2_AMP', 'CNV_ESR1_AMP', 'CNV_FGF19_AMP',
+                 'CNV_FGF3_AMP', 'CNV_FGFR1_AMP', 'CNV_FGFR2_AMP', 'CNV_FGFR3_AMP', 'CNV_FGFR4_AMP', 'CNV_FLT3_AMP',
+                 'CNV_IGF1R_AMP', 'CNV_KIT_AMP', 'CNV_KRAS_AMP', 'CNV_MDM2_AMP', 'CNV_MDM4_AMP', 'CNV_MET_AMP',
+                 'CNV_MYC_AMP', 'CNV_MYCL_AMP', 'CNV_MYCN_AMP', 'CNV_NTRK1_AMP', 'CNV_NTRK2_AMP', 'CNV_NTRK3_AMP',
+                 'CNV_PDGFRA_AMP', 'CNV_PDGFRB_AMP', 'CNV_PIK3CA_AMP', 'CNV_PIK3CB_AMP', 'CNV_PPARG_AMP',
+                 'CNV_RICTOR_AMP', 'CNV_TERT_AMP']
+
+classes_cnv_d = ['CNV_AKT1_DEL', 'CNV_AKT2_DEL', 'CNV_AKT3_DEL', 'CNV_ALK_DEL', 'CNV_AR_DEL', 'CNV_AXL_DEL',
+                 'CNV_BRAF_DEL', 'CNV_CCND1_DEL', 'CNV_CCND2_DEL', 'CNV_CCND3_DEL', 'CNV_CCNE1_DEL', 'CNV_CDK2_DEL',
+                 'CNV_CDK4_DEL', 'CNV_CDK6_DEL', 'CNV_EGFR_DEL', 'CNV_ERBB2_DEL', 'CNV_ESR1_DEL', 'CNV_FGF19_DEL',
+                 'CNV_FGF3_DEL', 'CNV_FGFR1_DEL', 'CNV_FGFR2_DEL', 'CNV_FGFR3_DEL', 'CNV_FGFR4_DEL', 'CNV_FLT3_DEL',
+                 'CNV_IGF1R_DEL', 'CNV_KIT_DEL', 'CNV_KRAS_DEL', 'CNV_MDM2_DEL', 'CNV_MDM4_DEL', 'CNV_MET_DEL',
+                 'CNV_MYC_DEL', 'CNV_MYCL_DEL', 'CNV_MYCN_DEL', 'CNV_NTRK1_DEL', 'CNV_NTRK2_DEL', 'CNV_NTRK3_DEL',
+                 'CNV_PDGFRA_DEL', 'CNV_PDGFRB_DEL', 'CNV_PIK3CA_DEL', 'CNV_PIK3CB_DEL', 'CNV_PPARG_DEL',
+                 'CNV_RICTOR_DEL', 'CNV_TERT_DEL']
+
+index_snv = 0
+
 for matrix_gen_snv in matrix_snv:
     group_counts = ['{0:0.0f}'.format(value) for value in matrix_gen_snv.flatten()]  # Cantidad de casos por grupo
     true_neg_pos_neg = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names, group_counts)]
@@ -105,14 +125,6 @@ y_pred_cnv_a = np.round(model.predict(test_tabular_data)[1])
 
 matrix_cnv_a = multilabel_confusion_matrix(y_true_cnv_a, y_pred_cnv_a) # Calcula (pero no dibuja) la matriz de confusión
 index_cnv_a = 0
-classes_cnv_a = ['CNV_AKT1_AMP', 'CNV_AKT2_AMP', 'CNV_AKT3_AMP', 'CNV_ALK_AMP', 'CNV_AR_AMP', 'CNV_AXL_AMP',
-                 'CNV_BRAF_AMP', 'CNV_CCND1_AMP', 'CNV_CCND2_AMP', 'CNV_CCND3_AMP', 'CNV_CCNE1_AMP', 'CNV_CDK2_AMP',
-                 'CNV_CDK4_AMP', 'CNV_CDK6_AMP', 'CNV_EGFR_AMP', 'CNV_ERBB2_AMP', 'CNV_ESR1_AMP', 'CNV_FGF19_AMP',
-                 'CNV_FGF3_AMP', 'CNV_FGFR1_AMP', 'CNV_FGFR2_AMP', 'CNV_FGFR3_AMP', 'CNV_FGFR4_AMP', 'CNV_FLT3_AMP',
-                 'CNV_IGF1R_AMP', 'CNV_KIT_AMP', 'CNV_KRAS_AMP', 'CNV_MDM2_AMP', 'CNV_MDM4_AMP', 'CNV_MET_AMP',
-                 'CNV_MYC_AMP', 'CNV_MYCL_AMP', 'CNV_MYCN_AMP', 'CNV_NTRK1_AMP', 'CNV_NTRK2_AMP', 'CNV_NTRK3_AMP',
-                 'CNV_PDGFRA_AMP', 'CNV_PDGFRB_AMP', 'CNV_PIK3CA_AMP', 'CNV_PIK3CB_AMP', 'CNV_PPARG_AMP',
-                 'CNV_RICTOR_AMP', 'CNV_TERT_AMP']
 
 for matrix_gen_cnv_a in matrix_cnv_a:
     group_counts = ['{0:0.0f}'.format(value) for value in matrix_gen_cnv_a.flatten()]  # Cantidad de casos por grupo
@@ -131,14 +143,6 @@ y_pred_cnv_d = np.round(model.predict(test_tabular_data)[2])
 
 matrix_cnv_d = multilabel_confusion_matrix(y_true_cnv_d, y_pred_cnv_d) # Calcula (pero no dibuja) la matriz de confusión
 index_cnv_d = 0
-classes_cnv_d = ['CNV_AKT1_DEL', 'CNV_AKT2_DEL', 'CNV_AKT3_DEL', 'CNV_ALK_DEL', 'CNV_AR_DEL', 'CNV_AXL_DEL',
-                 'CNV_BRAF_DEL', 'CNV_CCND1_DEL', 'CNV_CCND2_DEL', 'CNV_CCND3_DEL', 'CNV_CCNE1_DEL', 'CNV_CDK2_DEL',
-                 'CNV_CDK4_DEL', 'CNV_CDK6_DEL', 'CNV_EGFR_DEL', 'CNV_ERBB2_DEL', 'CNV_ESR1_DEL', 'CNV_FGF19_DEL',
-                 'CNV_FGF3_DEL', 'CNV_FGFR1_DEL', 'CNV_FGFR2_DEL', 'CNV_FGFR3_DEL', 'CNV_FGFR4_DEL', 'CNV_FLT3_DEL',
-                 'CNV_IGF1R_DEL', 'CNV_KIT_DEL', 'CNV_KRAS_DEL', 'CNV_MDM2_DEL', 'CNV_MDM4_DEL', 'CNV_MET_DEL',
-                 'CNV_MYC_DEL', 'CNV_MYCL_DEL', 'CNV_MYCN_DEL', 'CNV_NTRK1_DEL', 'CNV_NTRK2_DEL', 'CNV_NTRK3_DEL',
-                 'CNV_PDGFRA_DEL', 'CNV_PDGFRB_DEL', 'CNV_PIK3CA_DEL', 'CNV_PIK3CB_DEL', 'CNV_PPARG_DEL',
-                 'CNV_RICTOR_DEL', 'CNV_TERT_DEL']
 
 for matrix_gen_cnv_d in matrix_cnv_d:
     group_counts = ['{0:0.0f}'.format(value) for value in matrix_gen_cnv_d.flatten()]  # Cantidad de casos por grupo
@@ -150,3 +154,41 @@ for matrix_gen_cnv_d in matrix_cnv_d:
     plt.show()
     plt.pause(0.1)
     index_cnv_d = index_cnv_d + 1
+
+""" En caso de querer curvas ROC individuales para un gen determinado se activa esta parte del codigo:
+#Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
+#documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
+#tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
+#Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva:
+# @ravel: Aplana el vector a 1D
+from sklearn.metrics import roc_curve, auc, precision_recall_curve
+
+y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_ERBB2_AMP')]
+y_pred_prob = model.predict(test_tabular_data)[1]
+y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_ERBB2_AMP')].ravel()
+fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
+auc_roc = auc(fpr, tpr)
+
+plt.figure(1)
+plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
+plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
+plt.xlabel('False positive rate')
+plt.ylabel('True positive rate')
+plt.title('AUC-ROC curve for CNV-A of ERBB2 gene')
+plt.legend(loc = 'best')
+plt.show()
+
+#Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
+#del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados.
+precision, recall, threshold = precision_recall_curve(y_true, y_pred_prob)
+auc_pr = auc(recall, precision)
+
+plt.figure(2)
+plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
+plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('AUC-PR curve for CNV-A of ERBB2 gene')
+plt.legend(loc = 'best')
+plt.show()
+"""
