@@ -63,7 +63,7 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge
                             (df_all_merge["path_n_stage"]!='N0 (MOL+)')]
 
 """ Directorios de imágenes con cáncer y sin cáncer: """
-image_dir = '/home/avalderas/img_slides/img_lotes'
+image_dir = '/images'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
 cancer_dir = glob.glob(image_dir + "/img_lote*_cancer/*") # 1702 imágenes con cáncer en total

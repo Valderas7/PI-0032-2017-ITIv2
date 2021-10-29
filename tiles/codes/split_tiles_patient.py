@@ -106,7 +106,7 @@ canales = 3 # Imágenes a color (RGB) = 3
 brillo para mejorar el cálculo """
 # @StainNormalizer: Instancia para normalizar el color de la imagen mediante el metodo de normalizacion especificado
 normalizer = staintools.StainNormalizer(method = 'vahadane')
-target = staintools.read_image('/home/avalderas/img_slides/img_lotes/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
+target = staintools.read_image('/images/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
 target = staintools.LuminosityStandardizer.standardize(target)
 target = normalizer.fit(target)
 

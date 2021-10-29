@@ -14,10 +14,10 @@ En este repositorio se encuentran datos, archivos y códigos desarrollados para 
 
 - **excel_genesOCA&inibica_patients**: En esta carpeta se encuentran dos documentos en `Excel`. Uno de ellos muestra cuales son los distintos genes del `panel OCA` y en qué categorías entran; y el otro muestra información de distintas variables clínicas, anatomopatológicas y de inmunohistoquímica de cada uno de todos los pacientes de `INiBICA` a los que se les realiza la inferencia de los distintos códigos desarrollados.
 
-- **img_lotes**: Aquí se encuentran todas las imágenes estáticas a las que se les ha realizado una captura de pantalla para entrenar las redes neuronales convolucionales.
+- **images**: Aquí se encuentran todas las imágenes estáticas a las que se les ha realizado una captura de pantalla para entrenar posteriormente sus teselas en las redes neuronales convolucionales.
 
 - **mutations**: En esta carpeta se encuentran los códigos de entrenamiento e inferencia de predicciones de mutaciones `SNV` y de mutaciones `CNV-A` y `CNV-D`.
 
 - **screenshots**: En esta carpeta se recopilan capturas de pantalla que muestran distintos resultados (matriz de confusión, métricas, etc.) de las distintas redes neuronales realizadas.
 
-- **split_image_into_tiles**: Aquí se almacenan tanto los códigos para dividir las imágenes de la carpeta `img_lotes` en teselas, como las propias teselas.
+- **tiles**: Aquí se almacenan tanto los códigos para dividir en teselas las imágenes de la carpeta `images`, como las propias teselas.
