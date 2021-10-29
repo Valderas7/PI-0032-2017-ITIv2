@@ -310,7 +310,7 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.20)
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de teselas con cáncer normalizadas: """
-image_dir = '/home/avalderas/img_slides/split_images_into_tiles/TCGA_normalizadas_cáncer'
+image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
 
 """ Se seleccionan todas las rutas de las teselas: """
 cancer_dir = glob.glob(image_dir + "/img_lotes_tiles*/*") # 34421
@@ -493,14 +493,16 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
 
 model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentropy', 'cnv_normal': 'binary_crossentropy',
                       'cnv_d': 'binary_crossentropy'},
-              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 model.summary()
 
 """ Se implementan varios callbacks para guardar el mejor modelo. """
-checkpoint_path_snv = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_snv.h5'
+checkpoint_path = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_1e-6.h5'
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True, monitor = 'val_loss', mode = 'min')
+checkpoint_path_snv = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_snv1e-6.h5'
 mcp_save_snv = ModelCheckpoint(filepath = checkpoint_path_snv, save_best_only = True, monitor = 'val_snv_AUC-PR', mode = 'max')
-checkpoint_path_cnv_a = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_cnv_a.h5'
+checkpoint_path_cnv_a = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_cnv_a1e-6.h5'
 mcp_save_cnv_a = ModelCheckpoint(filepath = checkpoint_path_cnv_a, save_best_only = True, monitor = 'val_cnv_a_AUC-PR', mode = 'max')
 
 """ Una vez definido el modelo, se entrena: """
@@ -527,7 +529,7 @@ for layer in base_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
               loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentropy', 'cnv_normal': 'binary_crossentropy',
                       'cnv_d': 'binary_crossentropy'},
               metrics = metrics)
@@ -541,7 +543,7 @@ neural_network = model.fit(x = train_image_data, y = {'snv': train_labels_snv, '
                                                                                           'cnv_a': valid_labels_cnv_a,
                                                                                           'cnv_normal': valid_labels_cnv_normal,
                                                                                           'cnv_d': valid_labels_cnv_d}),
-                           #callbacks = [mcp_save_snv, mcp_save_cnv_a],
+                           #callbacks = [mcp_save, mcp_save_snv, mcp_save_cnv_a],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

@@ -8,7 +8,7 @@ import glob
 import shutil
 
 """ Directorios de teselas con cancer """
-image_dir = '/home/avalderas/img_slides/split_images_into_tiles/TCGA_no_normalizadas_cáncer'
+image_dir = '/tiles/TCGA_no_normalizadas_cáncer'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
 cancer_dir = glob.glob(image_dir + "/*.JPG")
