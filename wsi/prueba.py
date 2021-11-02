@@ -26,24 +26,25 @@ canales = 3
 path_wsi = '/home/avalderas/img_slides/wsi/397W_HE_40x.tiff'
 wsi = openslide.OpenSlide(path_wsi)
 
-""" Se averigua cual es el mejor nivel para mostrar el factor de reduccion deseado"""
-best_level = wsi.get_best_level_for_downsample(10) # factor de reducción deseado
-
-'''@dimensions: Método que devuelve la (anchura, altura) del nivel de resolución '0' (máxima resolución) de la imagen'''
+"""" Se hallan las dimensiones (anchura, altura) del nivel de resolución '0' (máxima resolución) de la WSI """
 dim = wsi.dimensions
 
-""" Se averigua cual es el factor de reduccion del nivel que mejor representa las imagenes entrenadas. Se multiplica 
-este factor de reduccion por las dimensiones del nivel de resolucion maximo, que es el nivel de referencia para la 
-funcion @read_region """
+""" Se averigua cual es el mejor nivel de resolución de la WSI para mostrar el factor de reduccion deseado """
+best_level = wsi.get_best_level_for_downsample(10) # factor de reducción deseado
+
+""" Se averigua cual es el factor de reducción de dicho nivel para usarlo posteriormente al multiplicar las dimensiones
+en la función @read_region"""
 scale = int(wsi.level_downsamples[best_level])
 tiles = []
 
 white_tiles = np.zeros((int(dim[0]/(ancho * scale)), int(dim[1] / (alto * scale))))
+print(white_tiles.shape)
+quit()
 white_pixel = []
 
 """ Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x'. 
 Se comprueban las teselas vacias (en blanco) convirtiendo la tesela en blanco (0) y negro (1) y comparando la cantidad 
-de valores que no son cero con respecto las dimensioens de las teselas (210x210). Si dicha comparacion supera el umbral 
+de valores que no son cero con respecto las dimensiones de las teselas (210x210). Si dicha comparacion supera el umbral 
 de 0.1, la tesela no esta vacia y se añade a la lista de teselas a las que realizarle la inferencia. """
 for alto_slide in range(int(dim[1]/(alto*scale))):
     for ancho_slide in range(int(dim[0] / (ancho * scale))):
@@ -54,7 +55,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         white_tiles[ancho_slide][alto_slide] = 1 - (np.count_nonzero(sub_img) / (ancho * alto))
         white_pixel.append(white_tiles)
 
-        if score > 0.1:
+        if score > 0.1: # Teselas que no son blancas y no contienen nada
             sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
             sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)

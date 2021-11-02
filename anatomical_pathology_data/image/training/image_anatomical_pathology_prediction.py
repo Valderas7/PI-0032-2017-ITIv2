@@ -101,7 +101,7 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.20)
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de imágenes con cáncer y sin cáncer: """
-image_dir = '/tiles/TCGA_normalizadas_cáncer'
+image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
 #image_dir = 'C:\\Users\\valde\Desktop\Datos_repositorio\img_slides\img_lotes'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
@@ -290,7 +290,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
 model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'categorical_crossentropy',
                       'pT': 'categorical_crossentropy', 'pN': 'categorical_crossentropy',
                       'pM': 'categorical_crossentropy', 'IHQ': 'categorical_crossentropy'},
-              optimizer = keras.optimizers.Adam(learning_rate = 0.001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 model.summary()
 
@@ -326,7 +326,7 @@ se tomen en cuenta """
 model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'categorical_crossentropy',
                       'pT': 'categorical_crossentropy', 'pN': 'categorical_crossentropy',
                       'pM': 'categorical_crossentropy', 'IHQ': 'categorical_crossentropy'},
-              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 model.summary()
 
@@ -334,7 +334,7 @@ model.summary()
 neural_network = model.fit(x = train_image_data, y = {'tumor_type': train_labels_tumor_type, 'STAGE': train_labels_STAGE, 
                                                       'pT': train_labels_pT, 'pN': train_labels_pN, 
                                                       'pM': train_labels_pM, 'IHQ': train_labels_IHQ}, 
-                           epochs = 100, verbose = 1, validation_data = (valid_image_data, 
+                           epochs = 150, verbose = 1, validation_data = (valid_image_data,
                                                                          {'tumor_type': valid_labels_tumor_type, 
                                                                           'STAGE': valid_labels_STAGE, 
                                                                           'pT': valid_labels_pT, 'pN': valid_labels_pN, 
