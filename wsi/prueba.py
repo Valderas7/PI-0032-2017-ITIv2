@@ -22,6 +22,9 @@ ancho = 210
 alto = 210
 canales = 3
 
+""" Se carga el modelo de la red neuronal """
+model = load_model('/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations.h5')
+
 """ Se abre WSI especificada """
 path_wsi = '/home/avalderas/img_slides/wsi/397W_HE_40x.tiff'
 wsi = openslide.OpenSlide(path_wsi)
@@ -37,8 +40,10 @@ en la función @read_region"""
 scale = int(wsi.level_downsamples[best_level])
 score_tiles = []
 
-all_tiles = np.zeros((int(dim[0]/(ancho * scale)), int(dim[1] / (alto * scale)))) # (120,81) = 9720 teselas en nivel 1
+all_tiles = np.zeros((int(dim[0]/(ancho * scale)), int(dim[1] / (alto * scale)))) # (120,81)
 white_pixel = []
+cnv_a = []
+cnv_a_scores = []
 
 """ Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x'. 
 Se comprueban las teselas vacias (en blanco) convirtiendo la tesela en blanco (0) y negro (1) y comparando la cantidad 
@@ -57,34 +62,28 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
             sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
+            tile = np.expand_dims(sub_img, axis = 0)
+            cnv_a.append(model.predict(tile)[1])
+            cnv_a_scores.append(np.sum(model.predict(tile)[1], axis=1))
             #plt.title('Imagen RGBA de la región especificada')
             #plt.imshow(sub_img)
             #plt.show()
             #cv2.imshow('tesela', sub_img)
             #cv2.waitKey(0)
-            score_tiles.append(sub_img)
 
-score_tiles = np.array(score_tiles) # 4377, 210, 210, 3
+""" Se dibuja un mapa de calor segun las predicciones """
+grid = white_pixel[0] # Forma (
+sns.set(style="white")
+plt.subplots(figsize=(grid.shape[0]/5, grid.shape[1]/5))
 
-# Generate a heatmap
-#grid = white_pixel[0]
-#sns.set(style="white")
-#plt.subplots(figsize=(grid.shape[0]/5, grid.shape[1]/5))
-
-#mask = np.zeros_like(grid)
-#mask[np.where(grid < 0.1)] = True #Mask blank tiles
+mask = np.zeros_like(grid)
+mask[np.where(grid < 0.1)] = True #Mask blank tiles
 
 #sns.heatmap(grid.T, square=True, linewidths=.5, mask=mask.T, cbar=False, vmin=0, vmax=1, cmap="Reds")
 #plt.show()
 
 #grid = None
 #white_pixel = None
-
-""" Se carga el modelo """
-model = load_model('/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations.h5')
-
-cnv_a = []
-cnv_a_scores = []
 
 """ Se realiza la prediccion de los 43 genes CNV-A para cada una de las teselas de la imagen y se añaden dichas
 predicciones a una lista. """
