@@ -35,11 +35,9 @@ best_level = wsi.get_best_level_for_downsample(10) # factor de reducción desead
 """ Se averigua cual es el factor de reducción de dicho nivel para usarlo posteriormente al multiplicar las dimensiones
 en la función @read_region"""
 scale = int(wsi.level_downsamples[best_level])
-tiles = []
+score_tiles = []
 
-white_tiles = np.zeros((int(dim[0]/(ancho * scale)), int(dim[1] / (alto * scale))))
-print(white_tiles.shape)
-quit()
+white_tiles = np.zeros((int(dim[0]/(ancho * scale)), int(dim[1] / (alto * scale)))) # (120,81) = 9720
 white_pixel = []
 
 """ Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x'. 
@@ -64,9 +62,11 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             #plt.show()
             #cv2.imshow('tesela', sub_img)
             #cv2.waitKey(0)
-            tiles.append(sub_img)
+            score_tiles.append(sub_img)
 
-tiles = np.array(tiles)
+score_tiles = np.array(score_tiles)
+print(score_tiles.shape)
+quit()
 
 # Generate a heatmap
 grid = white_pixel[0]
