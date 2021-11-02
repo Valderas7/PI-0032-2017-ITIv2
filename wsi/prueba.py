@@ -37,7 +37,7 @@ en la función @read_region"""
 scale = int(wsi.level_downsamples[best_level])
 score_tiles = []
 
-white_tiles = np.zeros((int(dim[0]/(ancho * scale)), int(dim[1] / (alto * scale)))) # (120,81) = 9720
+all_tiles = np.zeros((int(dim[0]/(ancho * scale)), int(dim[1] / (alto * scale)))) # (120,81) = 9720 teselas en nivel 1
 white_pixel = []
 
 """ Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x'. 
@@ -50,10 +50,10 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                                            (ancho, alto))
         sub_img = sub_img.convert('1') # Blanco y negro
         score = 1 - (np.count_nonzero(sub_img) / (ancho * alto))
-        white_tiles[ancho_slide][alto_slide] = 1 - (np.count_nonzero(sub_img) / (ancho * alto))
-        white_pixel.append(white_tiles)
+        all_tiles[ancho_slide][alto_slide] = 1 - (np.count_nonzero(sub_img) / (ancho * alto)) # Puntuacion (0 - 1)
+        white_pixel.append(all_tiles) # Lista de 9720 teselas. Cada una con forma (120, 81)
 
-        if score > 0.1: # Teselas que no son blancas y no contienen nada
+        if score > 0.1: # Teselas que no son blancas y contienen algo en la imagen (puntuacion > 0.1)
             sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
             sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
@@ -64,9 +64,48 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             #cv2.waitKey(0)
             score_tiles.append(sub_img)
 
-score_tiles = np.array(score_tiles)
-print(score_tiles.shape)
-quit()
+score_tiles = np.array(score_tiles) # 4377, 210, 210, 3
+
+# Generate a heatmap
+#grid = white_pixel[0]
+#sns.set(style="white")
+#plt.subplots(figsize=(grid.shape[0]/5, grid.shape[1]/5))
+
+#mask = np.zeros_like(grid)
+#mask[np.where(grid < 0.1)] = True #Mask blank tiles
+
+#sns.heatmap(grid.T, square=True, linewidths=.5, mask=mask.T, cbar=False, vmin=0, vmax=1, cmap="Reds")
+#plt.show()
+
+#grid = None
+#white_pixel = None
+
+""" Se carga el modelo """
+model = load_model('/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations.h5')
+
+cnv_a = []
+cnv_a_scores = []
+
+""" Se realiza la prediccion de los 43 genes CNV-A para cada una de las teselas de la imagen y se añaden dichas
+predicciones a una lista. """
+for tile in score_tiles:
+    tile = np.expand_dims(tile, axis = 0)
+    cnv_a.append(model.predict(tile)[1])
+    cnv_a_scores.append(np.sum(model.predict(tile)[1], axis = 1))
+
+""" Se realiza la suma para cada una de las columnas de la lista de predicciones. Como resultado, se obtiene una lista
+de 43 columnas y 1 sola fila, ya que se han sumado las predicciones de todas las teselas para cada gen. """
+#cnv_a = np.concatenate(cnv_a)
+#cnv_a_sum_columns = cnv_a.sum(axis = 0)
+
+""" Se ordenan los indices de la lista resultante ordenador de mayor a menor valor, mostrando solo el resultado con
+mayor valor, que sera el de la mutacion CNV-A mas probable """
+#mpm_cnv_a = np.argsort(cnv_a_sum_columns)[::-1]
+
+#for (i, j) in enumerate(mpm_cnv_a):
+    #label_cnv_a = "\nLa mutación CNV-A más probable es del gen {}: {:.2f}%".format(classes_cnv_a[j].split('_')[1],
+                                                                                   #proba[j] * 100)
+    #print(label_cnv_a)
 
 # Generate a heatmap
 grid = white_pixel[0]
@@ -74,38 +113,11 @@ sns.set(style="white")
 plt.subplots(figsize=(grid.shape[0]/5, grid.shape[1]/5))
 
 mask = np.zeros_like(grid)
-mask[np.where(grid < 0.1)] = True #Mask blank tiles
+mask[np.where(grid < 0.1)] = True # Enmascara las teselas blancas
 
-sns.heatmap(grid.T, square=True, linewidths=.5, mask=mask.T, cbar=False, vmin=0, vmax=1, cmap="Reds")
+sns.heatmap(np.array(cnv_a_scores).T, square = True, linewidths = .5, mask = mask.T, cbar = True, vmin = 0, vmax = 1,
+            cmap = "Reds")
 plt.show()
-print('Not-blank tiles:', np.count_nonzero(grid), 'on', grid.size, 'total tiles')
-grid = None
-white_pixel = None
-
-""" Se carga el modelo """
-model = load_model('/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations.h5')
-
-cnv_a = []
-
-""" Se realiza la prediccion de los 43 genes CNV-A para cada una de las teselas de la imagen y se añaden dichas
-predicciones a una lista. """
-for tile in tiles:
-    tile = np.expand_dims(tile, axis = 0)
-    cnv_a.append(model.predict(tile)[1])
-
-""" Se realiza la suma para cada una de las columnas de la lista de predicciones. Como resultado, se obtiene una lista
-de 43 columnas y 1 sola fila, ya que se han sumado las predicciones de todas las teselas para cada gen. """
-cnv_a = np.concatenate(cnv_a)
-cnv_a_sum_columns = cnv_a.sum(axis = 0)
-
-""" Se ordenan los indices de la lista resultante ordenador de mayor a menor valor, mostrando solo el resultado con
-mayor valor, que sera el de la mutacion CNV-A mas probable """
-mpm_cnv_a = np.argsort(cnv_a_sum_columns)[::-1]
-
-for (i, j) in enumerate(mpm_cnv_a):
-    label_cnv_a = "\nLa mutación CNV-A más probable es del gen {}: {:.2f}%".format(classes_cnv_a[j].split('_')[1],
-                                                                                   proba[j] * 100)
-    print(label_cnv_a)
 
 results = model.evaluate(test_image_data, [test_labels_snv, test_labels_cnv_a, test_labels_cnv_normal,
                                            test_labels_cnv_d], verbose = 0)
