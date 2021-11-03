@@ -40,57 +40,70 @@ en la función @read_region"""
 scale = int(wsi.level_downsamples[best_level])
 score_tiles = []
 
-all_tiles = np.zeros((int(dim[0]/(ancho * scale)), int(dim[1] / (alto * scale)))) # (120,81)
-white_pixel = []
+""" Se crea un 'array' con forma (81, 120), que son el número de filas y el número de columnas, respectivamente, en el 
+que se divide la WSI al dividirla en teselas de 210x210 para recopilar asi las puntuaciones de cada tesela """
+tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
+
+""" Se crea también una lista para recopilar las puntuaciones de cada tesela """
+tiles_scores_list = []
+
+""" Listas para recopilar las predicciones y las puntuaciones de las mutaciones CNV-A"""
 cnv_a = []
 cnv_a_scores = []
 
-""" Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x'. 
-Se comprueban las teselas vacias (en blanco) convirtiendo la tesela en blanco (0) y negro (1) y comparando la cantidad 
-de valores que no son cero con respecto las dimensiones de las teselas (210x210). Si dicha comparacion supera el umbral 
-de 0.1, la tesela no esta vacia y se añade a la lista de teselas a las que realizarle la inferencia. """
+""" Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x' """
+#@ancho_slide itera de (0-119) [columnas] y @alto_slide de (0-80) [filas]
 for alto_slide in range(int(dim[1]/(alto*scale))):
     for ancho_slide in range(int(dim[0] / (ancho * scale))):
         sub_img = wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                            (ancho, alto))
+
+        """ Se comprueban las teselas vacías (en blanco) convirtiendo la tesela en blanco (0) y negro (1) y comparando
+        la cantidad de píxeles que no son 0 (blanco) con respecto las dimensiones de las teselas (210x210). Si dicha
+        comparación supera el umbral de 0.1, la tesela no está vacía y se añade a la lista de teselas a las que
+        realizarle la inferencia. """
         sub_img = sub_img.convert('1') # Blanco y negro
         score = 1 - (np.count_nonzero(sub_img) / (ancho * alto))
-        all_tiles[ancho_slide][alto_slide] = 1 - (np.count_nonzero(sub_img) / (ancho * alto)) # Puntuacion (0 - 1)
-        white_pixel.append(all_tiles) # Lista de 9720 teselas. Cada una con forma (120, 81)
 
-        if score > 0.1: # Teselas que no son blancas y contienen algo en la imagen (puntuacion > 0.1)
-            sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
-                                               (ancho, alto)))
-            sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-            tile = np.expand_dims(sub_img, axis = 0)
-            cnv_a.append(model.predict(tile)[1])
-            cnv_a_scores.append(np.sum(model.predict(tile)[1], axis=1))
+        """ Puntuación para cada tesela: 'tiles_scores_array' es una matriz de (120, 81) donde se recogen todas las 
+        puntuaciones para cada tesela colocadas correctamente según su fila y columna. De esta forma, 
+        'tiles_scores_array' imprime el array de 2D de las puntuaciones de todas las teselas; y 
+        'tiles_scores_array[alto_slide][ancho_slide]' imprime la puntuación de una tesela en la fila [alto_slide] y en 
+        la columna [ancho_slide] """
+        tiles_scores_array[alto_slide][ancho_slide] = 1 - (np.count_nonzero(sub_img) / (ancho * alto))
+
+""" La lista 'tiles_scores_list' es una lista 3D donde se almacenan las puntuaciones de las teselas. En esta ocasion, la 
+lista tiene una forma de (1, 81, 120), es decir, hay 1 matriz con las puntuaciones de las teselas en forma de lista, 
+siendo ésta 81 filas y 120 columnas. """
+tiles_scores_list.append(tiles_scores_array)
+
+        #if score > 0.1: # Teselas que no son blancas y contienen algo en la imagen (puntuacion > 0.1)
+            #sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
+                                               #(ancho, alto)))
+            #sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
+            #tile = np.expand_dims(sub_img, axis = 0)
+            #cnv_a.append(model.predict(tile)[1])
+            #cnv_a_scores.append(np.sum(model.predict(tile)[1], axis=1))
             #plt.title('Imagen RGBA de la región especificada')
             #plt.imshow(sub_img)
             #plt.show()
             #cv2.imshow('tesela', sub_img)
             #cv2.waitKey(0)
 
-""" Se dibuja un mapa de calor segun las predicciones """
-grid = white_pixel[0] # Forma (
+""" Se dibuja un mapa de calor segun las predicciones (los datos de entrada deben estar en 2D) """
+grid = tiles_scores_list[0] # (81, 120)
 sns.set(style="white")
-plt.subplots(figsize=(grid.shape[0]/5, grid.shape[1]/5))
+plt.plot()
 
 mask = np.zeros_like(grid)
 mask[np.where(grid < 0.1)] = True #Mask blank tiles
 
-#sns.heatmap(grid.T, square=True, linewidths=.5, mask=mask.T, cbar=False, vmin=0, vmax=1, cmap="Reds")
-#plt.show()
+sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, vmin = 0, vmax = 1, cmap = "Reds")
+plt.show()
 
 #grid = None
 #white_pixel = None
 
-""" Se realiza la prediccion de los 43 genes CNV-A para cada una de las teselas de la imagen y se añaden dichas
-predicciones a una lista. """
-for tile in score_tiles:
-    tile = np.expand_dims(tile, axis = 0)
-    cnv_a.append(model.predict(tile)[1])
-    cnv_a_scores.append(np.sum(model.predict(tile)[1], axis = 1))
 
 """ Se realiza la suma para cada una de las columnas de la lista de predicciones. Como resultado, se obtiene una lista
 de 43 columnas y 1 sola fila, ya que se han sumado las predicciones de todas las teselas para cada gen. """
@@ -107,16 +120,7 @@ mayor valor, que sera el de la mutacion CNV-A mas probable """
     #print(label_cnv_a)
 
 # Generate a heatmap
-grid = white_pixel[0]
-sns.set(style="white")
-plt.subplots(figsize=(grid.shape[0]/5, grid.shape[1]/5))
 
-mask = np.zeros_like(grid)
-mask[np.where(grid < 0.1)] = True # Enmascara las teselas blancas
-
-sns.heatmap(np.array(cnv_a_scores).T, square = True, linewidths = .5, mask = mask.T, cbar = True, vmin = 0, vmax = 1,
-            cmap = "Reds")
-plt.show()
 
 results = model.evaluate(test_image_data, [test_labels_snv, test_labels_cnv_a, test_labels_cnv_normal,
                                            test_labels_cnv_d], verbose = 0)
