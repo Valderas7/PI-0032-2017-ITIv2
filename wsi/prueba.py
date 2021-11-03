@@ -47,7 +47,7 @@ tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho *
 """ Se crea también una lista para recopilar las puntuaciones de cada tesela """
 tiles_scores_list = []
 
-""" Listas para recopilar las predicciones y las puntuaciones de las mutaciones CNV-A"""
+""" Listas para recopilar las predicciones y las puntuaciones de las mutaciones CNV-A """
 cnv_a = []
 cnv_a_scores = []
 
@@ -72,6 +72,14 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = 1 - (np.count_nonzero(sub_img) / (ancho * alto))
 
+        if tiles_scores_array[alto_slide][ancho_slide] > 0.1:
+            sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
+                                               (ancho, alto)))
+            sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
+            tile = np.expand_dims(sub_img, axis = 0)
+            cnv_a.append(model.predict(tile)[1])
+            cnv_a_scores.append(np.sum(model.predict(tile)[1], axis = 1))
+
 """ La lista 'tiles_scores_list' es una lista 3D donde se almacenan las puntuaciones de las teselas. En esta ocasion, la 
 lista tiene una forma de (1, 81, 120), es decir, hay 1 matriz con las puntuaciones de las teselas en forma de lista, 
 siendo ésta 81 filas y 120 columnas. """
@@ -90,13 +98,15 @@ tiles_scores_list.append(tiles_scores_array)
             #cv2.imshow('tesela', sub_img)
             #cv2.waitKey(0)
 
-""" Se dibuja un mapa de calor segun las predicciones (los datos de entrada deben estar en 2D) """
-grid = tiles_scores_list[0] # (81, 120)
+""" Se dibuja un mapa de calor según las predicciones (los datos de entrada deben estar en 2D) """
+grid = cnv_a_scores # (81, 120). Tambien valdría 'tiles_score_array'
 sns.set(style="white")
-plt.plot()
+plt.subplots(figsize = (grid.shape[1]/5, grid.shape[0]/5))
 
+""" Se crea una máscara para las puntuaciones menores de 0.1, de forma que no es pasan datos en aquellas celdas donde no
+se alcanza dicha puntuación """
 mask = np.zeros_like(grid)
-mask[np.where(grid < 0.1)] = True #Mask blank tiles
+mask[np.where(tiles_scores_list[0] < 0.1)] = True
 
 sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, vmin = 0, vmax = 1, cmap = "Reds")
 plt.show()

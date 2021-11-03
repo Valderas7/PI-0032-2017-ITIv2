@@ -97,7 +97,7 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.20)
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de teselas con cáncer normalizadas: """
-image_dir = 'home/avalderas/img_slides/split_images_into_tiles/TCGA_normalizadas_cáncer/'
+image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
 
 """ Se seleccionan todas las rutas de las teselas: """
 cancer_dir = glob.glob(image_dir + "/img_lotes_tiles*/*") # 34421
@@ -261,9 +261,15 @@ model.compile(loss = {'survival': 'binary_crossentropy', 'relapse': 'binary_cros
 
 model.summary()
 
-""" Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
+""" Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
 checkpoint_path = '/home/avalderas/img_slides/clinical_data/image/inference/test_data&models/model_clinical_image.h5'
 mcp_save = ModelCheckpoint(filepath=checkpoint_path, save_best_only=True, monitor='val_loss', mode='min')
+checkpoint_survival = '/home/avalderas/img_slides/clinical_data/image/inference/test_data&models/model_survival_image.h5'
+mcp_save_survival = ModelCheckpoint(filepath=checkpoint_survival, save_best_only=True, monitor='val_survival_recall', mode='max')
+checkpoint_relapse = '/home/avalderas/img_slides/clinical_data/image/inference/test_data&models/model_relapse_image.h5'
+mcp_save_relapse = ModelCheckpoint(filepath=checkpoint_relapse, save_best_only=True, monitor='val_relapse_recall', mode='max')
+checkpoint_metastasis = '/home/avalderas/img_slides/clinical_data/image/inference/test_data&models/model_metastasis_image.h5'
+mcp_save_metastasis = ModelCheckpoint(filepath=checkpoint_metastasis, save_best_only=True, monitor='val_metastasis_recall', mode='max')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = {'survival': train_labels_survival, 'relapse': train_labels_relapse,
@@ -282,7 +288,7 @@ Para ello, primero se descongela el modelo base."""
 set_trainable = 0
 
 for layer in base_model.layers:
-    if layer.name == 'block5a_expand_conv':
+    if layer.name == 'block4a_expand_conv':
         set_trainable = True
     if set_trainable:
         if not isinstance(layer, layers.BatchNormalization):
@@ -290,9 +296,9 @@ for layer in base_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer=keras.optimizers.Adam(learning_rate = 0.0001),
-              loss={'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentropy', 'cnv_normal': 'binary_crossentropy',
-                    'cnv_d': 'binary_crossentropy'},
+model.compile(optimizer=keras.optimizers.Adam(learning_rate = 0.00001),
+              loss={'survival': 'binary_crossentropy', 'relapse': 'binary_crossentropy',
+                    'metastasis': 'binary_crossentropy'},
               metrics=metrics)
 model.summary()
 
@@ -300,11 +306,11 @@ model.summary()
 neural_network = model.fit(x = train_image_data, y = {'survival': train_labels_survival,
                                                       'relapse': train_labels_relapse,
                                                       'metastasis': train_labels_metastasis},
-                           epochs = 1, verbose = 1, validation_data = (valid_image_data,
+                           epochs = 100, verbose = 1, validation_data = (valid_image_data,
                                                                        {'survival': valid_labels_survival,
                                                                         'relapse': valid_labels_relapse,
                                                                         'metastasis': valid_labels_metastasis}),
-                           #callbacks = mcp_save,
+                           #callbacks = [mcp_save, mcp_save_survival, mcp_save_relapse, mcp_save_metastasis],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
