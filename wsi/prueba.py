@@ -49,7 +49,7 @@ tiles_scores_list = []
 
 """ Listas para recopilar las predicciones y las puntuaciones de las mutaciones CNV-A """
 cnv_a = []
-cnv_a_scores = []
+cnv_a_scores = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
 """ Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x' """
 #@ancho_slide itera de (0-119) [columnas] y @alto_slide de (0-80) [filas]
@@ -70,37 +70,25 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         'tiles_scores_array' imprime el array de 2D de las puntuaciones de todas las teselas; y 
         'tiles_scores_array[alto_slide][ancho_slide]' imprime la puntuación de una tesela en la fila [alto_slide] y en 
         la columna [ancho_slide] """
-        tiles_scores_array[alto_slide][ancho_slide] = 1 - (np.count_nonzero(sub_img) / (ancho * alto))
+        tiles_scores_array[alto_slide][ancho_slide] = score
 
-        if tiles_scores_array[alto_slide][ancho_slide] > 0.1:
-            sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
-                                               (ancho, alto)))
-            sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-            tile = np.expand_dims(sub_img, axis = 0)
-            cnv_a.append(model.predict(tile)[1])
-            cnv_a_scores.append(np.sum(model.predict(tile)[1], axis = 1))
+        #if tiles_scores_array[alto_slide][ancho_slide] > 0.1:
+            #sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
+                                               #(ancho, alto)))
+            #sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
+            #tile = np.expand_dims(sub_img, axis = 0)
+            #cnv_a.append(model.predict(tile)[1])
+            #cnv_a_scores[alto_slide][ancho_slide] = (np.sum(model.predict(tile)[1], axis = 1))
 
 """ La lista 'tiles_scores_list' es una lista 3D donde se almacenan las puntuaciones de las teselas. En esta ocasion, la 
 lista tiene una forma de (1, 81, 120), es decir, hay 1 matriz con las puntuaciones de las teselas en forma de lista, 
 siendo ésta 81 filas y 120 columnas. """
 tiles_scores_list.append(tiles_scores_array)
 
-        #if score > 0.1: # Teselas que no son blancas y contienen algo en la imagen (puntuacion > 0.1)
-            #sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
-                                               #(ancho, alto)))
-            #sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-            #tile = np.expand_dims(sub_img, axis = 0)
-            #cnv_a.append(model.predict(tile)[1])
-            #cnv_a_scores.append(np.sum(model.predict(tile)[1], axis=1))
-            #plt.title('Imagen RGBA de la región especificada')
-            #plt.imshow(sub_img)
-            #plt.show()
-            #cv2.imshow('tesela', sub_img)
-            #cv2.waitKey(0)
-
 """ Se dibuja un mapa de calor según las predicciones (los datos de entrada deben estar en 2D) """
-grid = cnv_a_scores # (81, 120). Tambien valdría 'tiles_score_array'
+grid = tiles_scores_list[0] # (81, 120).
 sns.set(style="white")
+plt.tight_layout()
 plt.subplots(figsize = (grid.shape[1]/5, grid.shape[0]/5))
 
 """ Se crea una máscara para las puntuaciones menores de 0.1, de forma que no es pasan datos en aquellas celdas donde no
@@ -108,9 +96,26 @@ se alcanza dicha puntuación """
 mask = np.zeros_like(grid)
 mask[np.where(tiles_scores_list[0] < 0.1)] = True
 
-sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, vmin = 0, vmax = 1, cmap = "Reds")
+""" Se dibuja el mapa de calor """
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds")
+#plt.figure()
+#plt.imshow(heatmap)
 plt.show()
 
+""" Hay que aplicar ese mapa de calor sobre la imagen """
+image_wsi_min_resolution = np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1]))
+image_wsi_min_resolution = cv2.cvtColor(image_wsi_min_resolution, cv2.COLOR_RGBA2RGB)
+heatmap_array = cv2.mat(heatmap)
+plt.figure()
+#plt.imshow(heatmap_array)
+plt.show()
+
+merge = cv2.addWeighted(src1 = image_wsi_min_resolution, alpha = 0.7, src2 = heatmap_array, beta = 0.3, gamma = 0.0)
+plt.figure()
+plt.imshow(merge)
+plt.show()
+cv2.imshow('result', merge)
+cv2.waitKey(0)
 #grid = None
 #white_pixel = None
 

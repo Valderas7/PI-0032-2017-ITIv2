@@ -256,7 +256,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
 
 model.compile(loss = {'survival': 'binary_crossentropy', 'relapse': 'binary_crossentropy',
                       'metastasis': 'binary_crossentropy'},
-              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 
 model.summary()
@@ -296,7 +296,7 @@ for layer in base_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer=keras.optimizers.Adam(learning_rate = 0.00001),
+model.compile(optimizer=keras.optimizers.Adam(learning_rate = 0.000001),
               loss={'survival': 'binary_crossentropy', 'relapse': 'binary_crossentropy',
                     'metastasis': 'binary_crossentropy'},
               metrics=metrics)
