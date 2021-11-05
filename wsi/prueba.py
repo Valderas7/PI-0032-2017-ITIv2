@@ -98,6 +98,8 @@ pixeles_x = slide.shape[1]
 pixeles_y = slide.shape[0]
 dpi = 96
 
+""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
+resolución del WSI """
 sns.set(style = "white", rc = {'figure.dpi': dpi})
 plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
@@ -111,29 +113,13 @@ mask[np.where(tiles_scores_list[0] < 0.1)] = True
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2)
 
-""" Se adapta la imagen del WSI a las dimensiones del mapa de calor """
+""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
+redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])),
                aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1)
 #plt.figure()
 plt.show()
 quit()
-""" Hay que aplicar ese mapa de calor sobre la imagen """
-image_wsi_min_resolution = np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1]))
-image_wsi_min_resolution = cv2.cvtColor(image_wsi_min_resolution, cv2.COLOR_RGBA2RGB)
-heatmap_array = cv2.mat(heatmap)
-plt.figure()
-#plt.imshow(heatmap_array)
-plt.show()
-
-merge = cv2.addWeighted(src1 = image_wsi_min_resolution, alpha = 0.7, src2 = heatmap_array, beta = 0.3, gamma = 0.0)
-plt.figure()
-plt.imshow(merge)
-plt.show()
-cv2.imshow('result', merge)
-cv2.waitKey(0)
-#grid = None
-#white_pixel = None
-
 
 """ Se realiza la suma para cada una de las columnas de la lista de predicciones. Como resultado, se obtiene una lista
 de 43 columnas y 1 sola fila, ya que se han sumado las predicciones de todas las teselas para cada gen. """
