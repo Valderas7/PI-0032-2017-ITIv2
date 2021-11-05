@@ -72,10 +72,10 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = score
 
-        #if tiles_scores_array[alto_slide][ancho_slide] > 0.1:
-            #sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
-                                               #(ancho, alto)))
-            #sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
+        if tiles_scores_array[alto_slide][ancho_slide] > 0.1:
+            sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
+                                               (ancho, alto)))
+            sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
             #tile = np.expand_dims(sub_img, axis = 0)
             #cnv_a.append(model.predict(tile)[1])
             #cnv_a_scores[alto_slide][ancho_slide] = (np.sum(model.predict(tile)[1], axis = 1))
@@ -86,10 +86,21 @@ siendo ésta 81 filas y 120 columnas. """
 tiles_scores_list.append(tiles_scores_array)
 
 """ Se dibuja un mapa de calor según las predicciones (los datos de entrada deben estar en 2D) """
-grid = tiles_scores_list[0] # (81, 120).
-sns.set(style="white")
+grid = tiles_scores_list[0] # (81, 120)
+slide = np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1]))
+slide = cv2.cvtColor(slide, cv2.COLOR_RGBA2RGB)
+
+""" El tamaño de las figuras en Python se establece en pulgadas (inches). La fórmula para convertir de píxeles a 
+pulgadas es (píxeles / dpi = pulgadas). La cantidad de píxeles permanece invariable porque depende de la imagen de menor
+resolucion de la WSI. Por lo tanto, para convertir a pulgadas, hay que variar el DPI (puntos por pulgada) y las propias
+pulgadas. """
+pixeles_x = slide.shape[1]
+pixeles_y = slide.shape[0]
+dpi = 96
+
+sns.set(style = "white", rc = {'figure.dpi': dpi})
+plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
-plt.subplots(figsize = (grid.shape[1]/5, grid.shape[0]/5))
 
 """ Se crea una máscara para las puntuaciones menores de 0.1, de forma que no es pasan datos en aquellas celdas donde no
 se alcanza dicha puntuación """
@@ -97,11 +108,15 @@ mask = np.zeros_like(grid)
 mask[np.where(tiles_scores_list[0] < 0.1)] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds")
-#plt.figure()
-#plt.imshow(heatmap)
-plt.show()
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
+                      zorder = 2)
 
+""" Se adapta la imagen del WSI a las dimensiones del mapa de calor """
+heatmap.imshow(np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])),
+               aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1)
+#plt.figure()
+plt.show()
+quit()
 """ Hay que aplicar ese mapa de calor sobre la imagen """
 image_wsi_min_resolution = np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1]))
 image_wsi_min_resolution = cv2.cvtColor(image_wsi_min_resolution, cv2.COLOR_RGBA2RGB)
