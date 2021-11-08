@@ -26,7 +26,7 @@ canales = 3
 model = load_model('/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations.h5')
 
 """ Se abre WSI especificada """
-path_wsi = '/home/avalderas/img_slides/wsi/397W_HE_40x.tiff'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P203-HE-353-A3.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 
 """" Se hallan las dimensiones (anchura, altura) del nivel de resolución '0' (máxima resolución) de la WSI """
@@ -52,18 +52,17 @@ cnv_a = []
 cnv_a_scores = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
 """ Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x' """
-#@ancho_slide itera de (0-119) [columnas] y @alto_slide de (0-80) [filas]
+#@ancho_slide itera de (0- nºcolumnas) [columnas] y @alto_slide de (0- nºfilas) [filas]
 for alto_slide in range(int(dim[1]/(alto*scale))):
     for ancho_slide in range(int(dim[0] / (ancho * scale))):
-        sub_img = wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
-                                           (ancho, alto))
+        sub_img = wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level, (ancho, alto))
 
         """ Se comprueban las teselas vacías (en blanco) convirtiendo la tesela en blanco (0) y negro (1) y comparando
         la cantidad de píxeles que no son 0 (blanco) con respecto las dimensiones de las teselas (210x210). Si dicha
         comparación supera el umbral de 0.1, la tesela no está vacía y se añade a la lista de teselas a las que
         realizarle la inferencia. """
-        sub_img = sub_img.convert('1') # Blanco y negro
-        score = 1 - (np.count_nonzero(sub_img) / (ancho * alto))
+        sub_img_black_white = sub_img.convert('1') # Blanco y negro
+        score = 1 - (np.count_nonzero(sub_img_black_white) / (ancho * alto))
 
         """ Puntuación para cada tesela: 'tiles_scores_array' es una matriz de (120, 81) donde se recogen todas las 
         puntuaciones para cada tesela colocadas correctamente según su fila y columna. De esta forma, 
@@ -72,10 +71,21 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = score
 
-        if tiles_scores_array[alto_slide][ancho_slide] > 0.1:
-            sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
-                                               (ancho, alto)))
-            sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
+        if 0.1 < tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+            sub_img_array = cv2.cvtColor(np.array(sub_img), cv2.COLOR_RGBA2RGB)
+            for row in sub_img_array[:, :, 0]: # Para cada fila
+                print(row.shape)
+                print(sub_img_array[:, :, 0].shape) # R
+                print(sub_img_array[:, :, 1].shape) # G
+                print(sub_img_array[:, :, 2].shape) # B
+                quit()
+            if not np.any(np.sum(row) == 0):
+                sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
+                                    (ancho, alto)))
+                sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
+                    #cv2.imshow('sdfsdf', sub_img)
+                    #cv2.waitKey(0)
+            quit()
             #tile = np.expand_dims(sub_img, axis = 0)
             #cnv_a.append(model.predict(tile)[1])
             #cnv_a_scores[alto_slide][ancho_slide] = (np.sum(model.predict(tile)[1], axis = 1))
@@ -85,9 +95,10 @@ lista tiene una forma de (1, 81, 120), es decir, hay 1 matriz con las puntuacion
 siendo ésta 81 filas y 120 columnas. """
 tiles_scores_list.append(tiles_scores_array)
 
-""" Se dibuja un mapa de calor según las predicciones (los datos de entrada deben estar en 2D) """
+""" Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle despues el mapa de calor. """
 grid = tiles_scores_list[0] # (81, 120)
-slide = np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1]))
+#slide = np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])) # TIFF
+slide = np.array(wsi.read_region((0, 0), wsi.level_count - 6, wsi.level_dimensions[wsi.level_count - 6])) # MRXS
 slide = cv2.cvtColor(slide, cv2.COLOR_RGBA2RGB)
 
 """ El tamaño de las figuras en Python se establece en pulgadas (inches). La fórmula para convertir de píxeles a 
@@ -104,20 +115,21 @@ sns.set(style = "white", rc = {'figure.dpi': dpi})
 plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
-""" Se crea una máscara para las puntuaciones menores de 0.1, de forma que no es pasan datos en aquellas celdas donde no
-se alcanza dicha puntuación """
+""" Se crea una máscara para las puntuaciones menores de 0.1 y mayores de 0.8, de forma que no se pasan datos en 
+aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(grid)
-mask[np.where(tiles_scores_list[0] < 0.1)] = True
+mask[np.where(tiles_scores_list[0] < 0.1) and np.where(tiles_scores_list[0] > 0.8)] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.4,
                       zorder = 2)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])),
-               aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1)
-#plt.figure()
+#heatmap.imshow(np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])),
+               #aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # TIFF
+heatmap.imshow(np.array(wsi.read_region((0, 0), wsi.level_count - 6, wsi.level_dimensions[wsi.level_count - 6])),
+               aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
 plt.show()
 quit()
 
