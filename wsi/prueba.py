@@ -72,20 +72,33 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         tiles_scores_array[alto_slide][ancho_slide] = score
 
         if 0.1 < tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+            """ Primero se intenta hallar si hay una línea recta negra que dura todo el ancho de la tesela. Para ello se
+            itera sobre todas las filas de los tres canales RGB de la tesela para saber si en algún momento la suma de 
+            tres filas correspodientes en los tres canales de la tesela es cero, lo que indicaría que hay una fila 
+            entera en la tesela de color negro, y por tanto, se hace que su puntuacion sea cero. """
             sub_img_array = cv2.cvtColor(np.array(sub_img), cv2.COLOR_RGBA2RGB)
-            for row in sub_img_array[:, :, 0]: # Para cada fila
-                print(row.shape)
-                print(sub_img_array[:, :, 0].shape) # R
-                print(sub_img_array[:, :, 1].shape) # G
-                print(sub_img_array[:, :, 2].shape) # B
-                quit()
-            if not np.any(np.sum(row) == 0):
-                sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
-                                    (ancho, alto)))
-                sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-                    #cv2.imshow('sdfsdf', sub_img)
-                    #cv2.waitKey(0)
-            quit()
+            r = 1; g = 2; b = 3
+            for index in range(210):
+                r = np.sum(sub_img_array[index, :, 0])
+                g = np.sum(sub_img_array[index, :, 1])
+                b = np.sum(sub_img_array[index, :, 2])
+                if r + g + b == 0:
+                    tiles_scores_array[alto_slide][ancho_slide] = 0
+                    break
+                """ Se realiza lo mismo que se ha realizado con las filas, pero esta vez con las columnas """
+                r = np.sum(sub_img_array[:, index, 0])
+                g = np.sum(sub_img_array[:, index, 1])
+                b = np.sum(sub_img_array[:, index, 2])
+                if r + g + b == 0:
+                    tiles_scores_array[alto_slide][ancho_slide] = 0
+                    break
+            """ Aunque estas imágenes que tienen líneas enteramente negras, ya sea horizontalmente o verticalmente, son
+            leídas, al realizar la máscara del mapa de calor van a ser ocultadas, puesto que se les ha hecho que su
+            puntuación sea cero. """
+            sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
+                                               (ancho, alto)))
+            sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
+
             #tile = np.expand_dims(sub_img, axis = 0)
             #cnv_a.append(model.predict(tile)[1])
             #cnv_a_scores[alto_slide][ancho_slide] = (np.sum(model.predict(tile)[1], axis = 1))
@@ -118,10 +131,10 @@ plt.tight_layout()
 """ Se crea una máscara para las puntuaciones menores de 0.1 y mayores de 0.8, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(grid)
-mask[np.where(tiles_scores_list[0] < 0.1) and np.where(tiles_scores_list[0] > 0.8)] = True
+mask[np.where(tiles_scores_list[0] < 0.1) and np.where(tiles_scores_list[0] > 0.9)] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.4,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
