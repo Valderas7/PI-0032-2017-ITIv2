@@ -26,7 +26,7 @@ canales = 3
 model = load_model('/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations.h5')
 
 """ Se abre WSI especificada """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P203-HE-353-A3.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P001-HE-014-2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 
 """" Se hallan las dimensiones (anchura, altura) del nivel de resolución '0' (máxima resolución) de la WSI """
@@ -36,12 +36,29 @@ dim = wsi.dimensions
 best_level = wsi.get_best_level_for_downsample(10) # factor de reducción deseado
 
 """ Se averigua cual es el factor de reducción de dicho nivel para usarlo posteriormente al multiplicar las dimensiones
-en la función @read_region"""
+en la función @read_region """
 scale = int(wsi.level_downsamples[best_level])
 score_tiles = []
 
-""" Se crea un 'array' con forma (81, 120), que son el número de filas y el número de columnas, respectivamente, en el 
-que se divide la WSI al dividirla en teselas de 210x210 para recopilar asi las puntuaciones de cada tesela """
+""" Para saber en que nivel es mejor mostrar posteriormente el mapa de calor, hace falta saber cuántos niveles hay en la
+WSI """
+levels = wsi.level_count
+
+""" Una vez se sabe el número de niveles de resolución, hay que encontrar un nivel lo suficientemente grande que tenga 
+unas dimensiones lo suficientemente grandes para crear un mapa de calor con gran resolución, y que al mismo tiempo sea
+lo suficientemente pequeño para que el software pueda realizar la computación de dichos niveles """
+dimensions_map = 0
+level_map = 0
+
+for level in range(levels):
+    if wsi.level_dimensions[level][1] <= 6666:
+        dimensions_map = wsi.level_dimensions[level]
+        level_map = level
+        break
+
+""" Se crea un 'array' con forma (alto, ancho), que son el número de filas y el número de columnas, respectivamente, en 
+el que se divide la WSI al dividirla en teselas de 210x210 en el nivel de resolucion máximo, para recopilar asi las 
+puntuaciones de cada tesela """
 tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
 """ Se crea también una lista para recopilar las puntuaciones de cada tesela """
@@ -71,7 +88,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = score
 
-        if 0.1 < tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+        if 0.2 < tiles_scores_array[alto_slide][ancho_slide] < 0.9:
             """ Primero se intenta hallar si hay una línea recta negra que dura todo el ancho de la tesela. Para ello se
             itera sobre todas las filas de los tres canales RGB de la tesela para saber si en algún momento la suma de 
             tres filas correspodientes en los tres canales de la tesela es cero, lo que indicaría que hay una fila 
@@ -84,34 +101,35 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 b = np.sum(sub_img_array[index, :, 2])
                 if r + g + b == 0:
                     tiles_scores_array[alto_slide][ancho_slide] = 0
-                    break
+                    break # Comienza un nuevo valor de @ancho_slide
                 """ Se realiza lo mismo que se ha realizado con las filas, pero esta vez con las columnas """
                 r = np.sum(sub_img_array[:, index, 0])
                 g = np.sum(sub_img_array[:, index, 1])
                 b = np.sum(sub_img_array[:, index, 2])
                 if r + g + b == 0:
                     tiles_scores_array[alto_slide][ancho_slide] = 0
-                    break
+                    break # Comienza un nuevo valor de @ancho_slide
             """ Aunque estas imágenes que tienen líneas enteramente negras, ya sea horizontalmente o verticalmente, son
             leídas, al realizar la máscara del mapa de calor van a ser ocultadas, puesto que se les ha hecho que su
             puntuación sea cero. """
             sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
             sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-
-            #tile = np.expand_dims(sub_img, axis = 0)
-            #cnv_a.append(model.predict(tile)[1])
+            tile = np.expand_dims(sub_img, axis = 0)
+            cnv_a.append(model.predict(tile)[1])
+            cnv_a_scores[alto_slide][ancho_slide] = model.predict(tile)[1][:, classes_cnv_a.index('CNV_ERBB2_AMP')]
             #cnv_a_scores[alto_slide][ancho_slide] = (np.sum(model.predict(tile)[1], axis = 1))
 
-""" La lista 'tiles_scores_list' es una lista 3D donde se almacenan las puntuaciones de las teselas. En esta ocasion, la 
-lista tiene una forma de (1, 81, 120), es decir, hay 1 matriz con las puntuaciones de las teselas en forma de lista, 
-siendo ésta 81 filas y 120 columnas. """
+""" La lista 'tiles_scores_list' es una lista 3D donde se almacenan las puntuaciones de las teselas. En esta ocasión, la 
+lista tiene una forma de (1, alto, ancho), es decir, hay 1 matriz con las puntuaciones de las teselas en forma de lista, 
+siendo ésta de nº filas y nº columnas. """
 tiles_scores_list.append(tiles_scores_array)
 
-""" Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle despues el mapa de calor. """
-grid = tiles_scores_list[0] # (81, 120)
+""" Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle despues el mapa de calor y lo 
+suficientemente alto para que tenga un buen nivel de resolución """
+grid = cnv_a_scores # (nº filas, nº columnas)
 #slide = np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])) # TIFF
-slide = np.array(wsi.read_region((0, 0), wsi.level_count - 6, wsi.level_dimensions[wsi.level_count - 6])) # MRXS
+slide = np.array(wsi.read_region((0, 0), level_map, dimensions_map)) # MRXS
 slide = cv2.cvtColor(slide, cv2.COLOR_RGBA2RGB)
 
 """ El tamaño de las figuras en Python se establece en pulgadas (inches). La fórmula para convertir de píxeles a 
@@ -120,7 +138,7 @@ resolucion de la WSI. Por lo tanto, para convertir a pulgadas, hay que variar el
 pulgadas. """
 pixeles_x = slide.shape[1]
 pixeles_y = slide.shape[0]
-dpi = 96
+dpi = 100
 
 """ Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
 resolución del WSI """
@@ -130,19 +148,20 @@ plt.tight_layout()
 
 """ Se crea una máscara para las puntuaciones menores de 0.1 y mayores de 0.8, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
-mask = np.zeros_like(grid)
-mask[np.where(tiles_scores_list[0] < 0.1) and np.where(tiles_scores_list[0] > 0.9)] = True
+mask = np.zeros_like(tiles_scores_list[0])
+mask[np.where(tiles_scores_list[0] < 0.2) and np.where(tiles_scores_list[0] > 0.9)] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2)
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.7,
+                      zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 #heatmap.imshow(np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])),
                #aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # TIFF
-heatmap.imshow(np.array(wsi.read_region((0, 0), wsi.level_count - 6, wsi.level_dimensions[wsi.level_count - 6])),
-               aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
+heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
+               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
+plt.savefig('prueba_errb2_a.png')
 plt.show()
 quit()
 
@@ -159,9 +178,6 @@ mayor valor, que sera el de la mutacion CNV-A mas probable """
     #label_cnv_a = "\nLa mutación CNV-A más probable es del gen {}: {:.2f}%".format(classes_cnv_a[j].split('_')[1],
                                                                                    #proba[j] * 100)
     #print(label_cnv_a)
-
-# Generate a heatmap
-
 
 results = model.evaluate(test_image_data, [test_labels_snv, test_labels_cnv_a, test_labels_cnv_normal,
                                            test_labels_cnv_d], verbose = 0)
