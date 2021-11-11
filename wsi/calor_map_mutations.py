@@ -7,13 +7,22 @@ import os
 from tensorflow.keras.models import load_model
 import seaborn as sns
 
-""" Se carga el Excel de INiBICA y se recopilan las salidas de los genes CNV-A """
+""" Se carga el Excel de INiBICA y se recopilan las salidas de los genes para cada tipo de mutación """
 data_inibica = pd.read_excel('/home/avalderas/img_slides/excel_genesOCA&inibica_patients/inference_inibica.xlsx',
                               engine='openpyxl')
 
+# SNV
+test_labels_snv = data_inibica.iloc[:, 16:167]
+
+#CNV-A
 test_labels_cnv_a = data_inibica.iloc[:, 167::3]
 
 """ Ademas se recopilan los nombres de las columnas para usarlos posteriormente """
+# SNV
+test_columns_snv = test_labels_snv.columns.values
+classes_snv = test_columns_snv.tolist()
+
+#CNV-A
 test_columns_cnv_a = test_labels_cnv_a.columns.values
 classes_cnv_a = test_columns_cnv_a.tolist()
 
@@ -58,11 +67,17 @@ for level in range(levels):
 
 """ Se crea un 'array' con forma (alto, ancho), que son el número de filas y el número de columnas, respectivamente, en 
 el que se divide la WSI al dividirla en teselas de 210x210 en el nivel de resolucion máximo, para recopilar asi las 
-puntuaciones de cada tesela """
+puntuaciones de color de cada tesela """
 tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
-""" Se crea también una lista para recopilar las puntuaciones de cada tesela """
-tiles_scores_list = []
+#""" Se crea también una lista para recopilar las puntuaciones de cada tesela """
+#tiles_scores_list = []
+
+""" Se crea una lista para recopilar las predicciones de las mutaciones SNV y un 'array' en 3D para recopilar las 
+puntuaciones de las distintas mutaciones de los genes. """
+snv = []
+snv_genes = 7 # PIK3CA, TP53, AKT1, PTEN, ERBB2, EGFR, MTOR.
+snv_scores = np.zeros((snv_genes, int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
 """ Se crea una lista para recopilar las predicciones de las mutaciones CNV-A y un 'array' en 3D para recopilar las 
 puntuaciones de las distintas mutaciones de los genes. """
@@ -123,37 +138,58 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
             tile = np.expand_dims(sub_img, axis = 0)
 
-            """ Se va guardando la predicción para cada tesela de todos los genes en una lista. Además, para cada una de 
-            ellas se guarda la puntuación de las predicciones de los genes CNV-A que interesan en el 'array' 
-            correspondiente del 'array' 3D definido anteriormente, para así poder realizar despues los mapas de calor de 
-            todos esos genes """
-            prediction_cnv_a = model.predict(tile)[1]
+            """ Se va guardando la predicción SNV, CNV-A y CNV-D de todos los genes para cada tesela en su lista 
+            correspondiente. Además, para cada una de las teselas, se guarda la puntuación de las predicciones de las
+            mutaciones SNV, CNV-A y CNV-D de los genes que se quieren estudiar. Estas puntuaciones para cada gen se 
+            guardan dentro del 'array' correspondiente del 'array' 3D definido para cada tipo de mutación, para así 
+            poder realizar después los mapas de calor de todos esos genes que interesa estudiar """
+            prediction_snv = model.predict(tile)[0]     # SNV
+            prediction_cnv_a = model.predict(tile)[1]   # CNV-A
+
+            snv.append(prediction_snv)
             cnv_a.append(prediction_cnv_a)
+
+            snv_scores[0][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_PIK3CA')]
+            snv_scores[1][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_TP53')]
+            snv_scores[2][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_AKT1')]
+            snv_scores[3][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_PTEN')]
+            snv_scores[4][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_ERBB2')]
+            snv_scores[5][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_EGFR')]
+            snv_scores[6][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_MTOR')]
+            
             cnv_a_scores[0][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_MYC_AMP')]
             cnv_a_scores[1][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_CCND1_AMP')]
             cnv_a_scores[2][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_FGF19_AMP')]
             cnv_a_scores[3][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_ERBB2_AMP')]
             cnv_a_scores[4][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_FGF3_AMP')]
 
-""" La lista 'tiles_scores_list' es una lista 3D donde se almacenan las puntuaciones del color de las teselas. En esta 
-ocasión, la lista tiene una forma de (1, alto, ancho), es decir, hay 1 matriz con las puntuaciones de las teselas en 
-forma de lista, siendo ésta de nº filas y nº columnas. """
-tiles_scores_list.append(tiles_scores_array)
-
 """ Se realiza la suma para cada una de las columnas de la lista de predicciones. Como resultado, se obtiene una lista
-de 43 columnas y 1 sola fila, ya que se han sumado las predicciones de todas las teselas para cada gen. """
+de (genes) columnas y 1 sola fila, ya que se han sumado las predicciones de todas las teselas para cada gen. """
+# SNV
+snv = np.concatenate(snv)
+snv_sum_columns = snv.sum(axis = 0)
+
+# CNV-A
 cnv_a = np.concatenate(cnv_a)
 cnv_a_sum_columns = cnv_a.sum(axis = 0)
 
 """ Se ordenan los índices de la lista resultante ordenador de mayor a menor valor, mostrando los resultados con mayor 
-valor, que serán los de los genes con mayor probabilidad de mutación CNV-A """
-mpm_cnv_a = np.argsort(cnv_a_sum_columns)[::-1][:5]
+valor, que serán los de los genes con mayor probabilidad de mutación """
+# SNV
+max_snv = np.argsort(snv_sum_columns)[::-1][:5]
 
-for (index_cnv_a, index_sort) in enumerate(mpm_cnv_a):
-    label_cnv_a = "\nLa mutación CNV-A más probable es del gen {}".format(classes_cnv_a[index_sort].split('_')[1])
+for (index, sorted_index) in enumerate(max_snv):
+    label_snv = "La mutación SNV más probable es del gen {}".format(classes_snv[sorted_index].split('_')[1])
+    print(label_snv)
+
+# CNV-A
+max_cnv_a = np.argsort(cnv_a_sum_columns)[::-1][:5]
+
+for (index, sorted_index) in enumerate(max_cnv_a):
+    label_cnv_a = "\nLa mutación CNV-A más probable es del gen {}".format(classes_cnv_a[sorted_index].split('_')[1])
     print(label_cnv_a)
 
-""" Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle despues el mapa de calor y lo 
+""" Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle después el mapa de calor y lo 
 suficientemente alto para que tenga un buen nivel de resolución """
 #slide = np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])) # TIFF
 slide = np.array(wsi.read_region((0, 0), level_map, dimensions_map)) # MRXS
@@ -163,12 +199,13 @@ slide = cv2.cvtColor(slide, cv2.COLOR_RGBA2RGB)
 pulgadas es (píxeles / dpi = pulgadas). La cantidad de píxeles permanece invariable porque depende de la imagen de menor
 resolucion de la WSI. Por lo tanto, para convertir a pulgadas, hay que variar el DPI (puntos por pulgada) y las propias
 pulgadas. """
-
-""" --------------------------------------------------- Gen MYC ---------------------------------------------------- """
-grid = cnv_a_scores[0] # (nº filas, nº columnas)
 pixeles_x = slide.shape[1]
 pixeles_y = slide.shape[0]
 dpi = 100
+
+""" --------------------------------------------------- SNV -------------------------------------------------------- """
+""" -------------------------------------------------- PIK3CA ------------------------------------------------------ """
+grid = snv_scores[0] # (nº filas, nº columnas)
 
 """ Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
 resolución del WSI """
@@ -178,8 +215,8 @@ plt.tight_layout()
 
 """ Se crea una máscara para las puntuaciones menores de 0.1 y mayores de 0.8, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
-mask = np.zeros_like(tiles_scores_list[0])
-mask[np.where(tiles_scores_list[0] < 0.2) and np.where(tiles_scores_list[0] > 0.9)] = True
+mask = np.zeros_like(tiles_scores_array)
+mask[np.where(tiles_scores_array < 0.2) and np.where(tiles_scores_array > 0.9)] = True
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
@@ -191,8 +228,85 @@ redimensionado a las dimensiones de la imagen de mínima resolución del WSI) ""
                #aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # TIFF
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_a_MYC.png')
+plt.savefig('snv_PIK3CA.png')
 #plt.show()
+
+""" --------------------------------------------------- TP53 ------------------------------------------------------- """
+grid = snv_scores[1] # (nº filas, nº columnas)
+
+""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
+resolución del WSI """
+sns.set(style = "white", rc = {'figure.dpi': dpi})
+plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
+plt.tight_layout()
+
+""" Se dibuja el mapa de calor """
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+                      zorder = 2, vmin = 0.0, vmax = 1.0)
+
+""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
+redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
+heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
+               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
+plt.savefig('snv_TP53.png')
+
+""" --------------------------------------------------- AKT1 ------------------------------------------------------- """
+grid = snv_scores[2] # (nº filas, nº columnas)
+
+""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
+resolución del WSI """
+sns.set(style = "white", rc = {'figure.dpi': dpi})
+plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
+plt.tight_layout()
+
+""" Se dibuja el mapa de calor """
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+                      zorder = 2, vmin = 0.0, vmax = 1.0)
+
+""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
+redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
+heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
+               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
+plt.savefig('snv_AKT1.png')
+
+""" ------------------------------------------------- PTEN --------------------------------------------------------- """
+grid = snv_scores[3] # (nº filas, nº columnas)
+
+""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
+resolución del WSI """
+sns.set(style = "white", rc = {'figure.dpi': dpi})
+plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
+plt.tight_layout()
+
+""" Se dibuja el mapa de calor """
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+                      zorder = 2, vmin = 0.0, vmax = 1.0)
+
+""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
+redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
+heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
+               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
+plt.savefig('snv_PTEN.png')
+
+""" --------------------------------------------------- CNV-A ------------------------------------------------------ """
+""" -------------------------------------------------- Gen MYC ----------------------------------------------------- """
+grid = cnv_a_scores[0] # (nº filas, nº columnas)
+
+""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
+resolución del WSI """
+sns.set(style = "white", rc = {'figure.dpi': dpi})
+plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
+plt.tight_layout()
+
+""" Se dibuja el mapa de calor """
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+                      zorder = 2, vmin = 0.0, vmax = 1.0)
+
+""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
+redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
+heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
+               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
+plt.savefig('cnv_a_MYC.png')
 
 """ -------------------------------------------- Gen CCND1 --------------------------------------------------------- """
 grid = cnv_a_scores[1] # (nº filas, nº columnas)
