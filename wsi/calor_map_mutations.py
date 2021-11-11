@@ -64,9 +64,11 @@ tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho *
 """ Se crea también una lista para recopilar las puntuaciones de cada tesela """
 tiles_scores_list = []
 
-""" Listas para recopilar las predicciones y las puntuaciones de las mutaciones CNV-A """
+""" Se crea una lista para recopilar las predicciones de las mutaciones CNV-A y un 'array' en 3D para recopilar las 
+puntuaciones de las distintas mutaciones de los genes. """
 cnv_a = []
-cnv_a_scores = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
+cnv_a_genes = 5 # MYC, CCND1, FGF19, ERBB2, FGF3. CDKN1B NO ESTA EN EL PANEL OCA.
+cnv_a_scores = np.zeros((cnv_a_genes, int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
 """ Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x' """
 #@ancho_slide itera de (0- nºcolumnas) [columnas] y @alto_slide de (0- nºfilas) [filas]
@@ -109,25 +111,50 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 if r + g + b == 0:
                     tiles_scores_array[alto_slide][ancho_slide] = 0
                     break # Comienza un nuevo valor de @ancho_slide
-            """ Aunque estas imágenes que tienen líneas enteramente negras, ya sea horizontalmente o verticalmente, son
+            """ Aunque estas imágenes que tienen líneas enteramente negras (ya sea horizontalmente o verticalmente) son
             leídas, al realizar la máscara del mapa de calor van a ser ocultadas, puesto que se les ha hecho que su
             puntuación sea cero. """
+
+            """ Ahora se lee de nuevo cada tesela de 210x210, convirtiéndolas en un array para pasarlas de formato RGBA 
+            a formato RGB con OpenCV. A partir de aquí, se expande la dimensión de la tesela para poder realizarle la
+            predicción """
             sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
             sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
             tile = np.expand_dims(sub_img, axis = 0)
-            cnv_a.append(model.predict(tile)[1])
-            cnv_a_scores[alto_slide][ancho_slide] = model.predict(tile)[1][:, classes_cnv_a.index('CNV_ERBB2_AMP')]
-            #cnv_a_scores[alto_slide][ancho_slide] = (np.sum(model.predict(tile)[1], axis = 1))
 
-""" La lista 'tiles_scores_list' es una lista 3D donde se almacenan las puntuaciones de las teselas. En esta ocasión, la 
-lista tiene una forma de (1, alto, ancho), es decir, hay 1 matriz con las puntuaciones de las teselas en forma de lista, 
-siendo ésta de nº filas y nº columnas. """
+            """ Se va guardando la predicción para cada tesela de todos los genes en una lista. Además, para cada una de 
+            ellas se guarda la puntuación de las predicciones de los genes CNV-A que interesan en el 'array' 
+            correspondiente del 'array' 3D definido anteriormente, para así poder realizar despues los mapas de calor de 
+            todos esos genes """
+            prediction_cnv_a = model.predict(tile)[1]
+            cnv_a.append(prediction_cnv_a)
+            cnv_a_scores[0][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_MYC_AMP')]
+            cnv_a_scores[1][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_CCND1_AMP')]
+            cnv_a_scores[2][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_FGF19_AMP')]
+            cnv_a_scores[3][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_ERBB2_AMP')]
+            cnv_a_scores[4][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_FGF3_AMP')]
+
+""" La lista 'tiles_scores_list' es una lista 3D donde se almacenan las puntuaciones del color de las teselas. En esta 
+ocasión, la lista tiene una forma de (1, alto, ancho), es decir, hay 1 matriz con las puntuaciones de las teselas en 
+forma de lista, siendo ésta de nº filas y nº columnas. """
 tiles_scores_list.append(tiles_scores_array)
+
+""" Se realiza la suma para cada una de las columnas de la lista de predicciones. Como resultado, se obtiene una lista
+de 43 columnas y 1 sola fila, ya que se han sumado las predicciones de todas las teselas para cada gen. """
+cnv_a = np.concatenate(cnv_a)
+cnv_a_sum_columns = cnv_a.sum(axis = 0)
+
+""" Se ordenan los índices de la lista resultante ordenador de mayor a menor valor, mostrando los resultados con mayor 
+valor, que serán los de los genes con mayor probabilidad de mutación CNV-A """
+mpm_cnv_a = np.argsort(cnv_a_sum_columns)[::-1][:5]
+
+for (index_cnv_a, index_sort) in enumerate(mpm_cnv_a):
+    label_cnv_a = "\nLa mutación CNV-A más probable es del gen {}".format(classes_cnv_a[index_sort].split('_')[1])
+    print(label_cnv_a)
 
 """ Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle despues el mapa de calor y lo 
 suficientemente alto para que tenga un buen nivel de resolución """
-grid = cnv_a_scores # (nº filas, nº columnas)
 #slide = np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])) # TIFF
 slide = np.array(wsi.read_region((0, 0), level_map, dimensions_map)) # MRXS
 slide = cv2.cvtColor(slide, cv2.COLOR_RGBA2RGB)
@@ -136,6 +163,9 @@ slide = cv2.cvtColor(slide, cv2.COLOR_RGBA2RGB)
 pulgadas es (píxeles / dpi = pulgadas). La cantidad de píxeles permanece invariable porque depende de la imagen de menor
 resolucion de la WSI. Por lo tanto, para convertir a pulgadas, hay que variar el DPI (puntos por pulgada) y las propias
 pulgadas. """
+
+""" --------------------------------------------------- Gen MYC ---------------------------------------------------- """
+grid = cnv_a_scores[0] # (nº filas, nº columnas)
 pixeles_x = slide.shape[1]
 pixeles_y = slide.shape[0]
 dpi = 100
@@ -152,7 +182,7 @@ mask = np.zeros_like(tiles_scores_list[0])
 mask[np.where(tiles_scores_list[0] < 0.2) and np.where(tiles_scores_list[0] > 0.9)] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.7,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -161,23 +191,81 @@ redimensionado a las dimensiones de la imagen de mínima resolución del WSI) ""
                #aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # TIFF
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('prueba_errb2_a.png')
-plt.show()
-quit()
+plt.savefig('cnv_a_MYC.png')
+#plt.show()
 
-""" Se realiza la suma para cada una de las columnas de la lista de predicciones. Como resultado, se obtiene una lista
-de 43 columnas y 1 sola fila, ya que se han sumado las predicciones de todas las teselas para cada gen. """
-#cnv_a = np.concatenate(cnv_a)
-#cnv_a_sum_columns = cnv_a.sum(axis = 0)
+""" -------------------------------------------- Gen CCND1 --------------------------------------------------------- """
+grid = cnv_a_scores[1] # (nº filas, nº columnas)
 
-""" Se ordenan los indices de la lista resultante ordenador de mayor a menor valor, mostrando solo el resultado con
-mayor valor, que sera el de la mutacion CNV-A mas probable """
-#mpm_cnv_a = np.argsort(cnv_a_sum_columns)[::-1]
+""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
+resolución del WSI """
+sns.set(style = "white", rc = {'figure.dpi': dpi})
+plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
+plt.tight_layout()
 
-#for (i, j) in enumerate(mpm_cnv_a):
-    #label_cnv_a = "\nLa mutación CNV-A más probable es del gen {}: {:.2f}%".format(classes_cnv_a[j].split('_')[1],
-                                                                                   #proba[j] * 100)
-    #print(label_cnv_a)
+""" Se dibuja el mapa de calor """
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+                      zorder = 2, vmin = 0.0, vmax = 1.0)
 
-results = model.evaluate(test_image_data, [test_labels_snv, test_labels_cnv_a, test_labels_cnv_normal,
-                                           test_labels_cnv_d], verbose = 0)
+""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
+redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
+heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
+               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
+plt.savefig('cnv_a_CCND1.png')
+
+""" ---------------------------------------------- Gen FGF19 ------------------------------------------------------- """
+grid = cnv_a_scores[2] # (nº filas, nº columnas)
+
+""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
+resolución del WSI """
+sns.set(style = "white", rc = {'figure.dpi': dpi})
+plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
+plt.tight_layout()
+
+""" Se dibuja el mapa de calor """
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+                      zorder = 2, vmin = 0.0, vmax = 1.0)
+
+""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
+redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
+heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
+               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
+plt.savefig('cnv_a_FGF19.png')
+
+""" --------------------------------------------- Gen ERBB2 -------------------------------------------------------- """
+grid = cnv_a_scores[3] # (nº filas, nº columnas)
+
+""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
+resolución del WSI """
+sns.set(style = "white", rc = {'figure.dpi': dpi})
+plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
+plt.tight_layout()
+
+""" Se dibuja el mapa de calor """
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+                      zorder = 2, vmin = 0.0, vmax = 1.0)
+
+""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
+redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
+heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
+               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
+plt.savefig('cnv_a_ERBB2.png')
+
+""" --------------------------------------------- Gen FGF3 -------------------------------------------------------- """
+grid = cnv_a_scores[4] # (nº filas, nº columnas)
+
+""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
+resolución del WSI """
+sns.set(style = "white", rc = {'figure.dpi': dpi})
+plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
+plt.tight_layout()
+
+""" Se dibuja el mapa de calor """
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+                      zorder = 2, vmin = 0.0, vmax = 1.0)
+
+""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
+redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
+heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
+               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
+plt.savefig('cnv_a_FGF3.png')
