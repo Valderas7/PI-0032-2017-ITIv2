@@ -260,7 +260,7 @@ redimensionado a las dimensiones de la imagen de mínima resolución del WSI) ""
                #aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # TIFF
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('snv_PIK3CA.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_PIK3CA.png')
 #plt.show()
 
 """ --------------------------------------------------- TP53 ------------------------------------------------------- """
@@ -280,7 +280,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('snv_TP53.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_TP53.png')
 
 """ --------------------------------------------------- AKT1 ------------------------------------------------------- """
 grid = snv_scores[2] # (nº filas, nº columnas)
@@ -299,7 +299,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('snv_AKT1.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_AKT1.png')
 
 """ ------------------------------------------------- PTEN --------------------------------------------------------- """
 grid = snv_scores[3] # (nº filas, nº columnas)
@@ -318,7 +318,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('snv_PTEN.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_PTEN.png')
 
 """ ------------------------------------------------- ERBB2 --------------------------------------------------------- """
 grid = snv_scores[4] # (nº filas, nº columnas)
@@ -337,7 +337,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('snv_ERBB2.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_ERBB2.png')
 
 """ ------------------------------------------------- EGFR --------------------------------------------------------- """
 grid = snv_scores[5] # (nº filas, nº columnas)
@@ -356,7 +356,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('snv_EGFR.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_EGFR.png')
 
 """ ------------------------------------------------- MTOR --------------------------------------------------------- """
 grid = snv_scores[6] # (nº filas, nº columnas)
@@ -375,7 +375,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('snv_MTOR.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_MTOR.png')
 
 
 """ ------------------------------------------------- CNV-A -------------------------------------------------------- 
@@ -398,7 +398,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_a_MYC.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_MYC.png')
 
 """ ----------------------------------------------- CCND1 ---------------------------------------------------------- """
 grid = cnv_a_scores[1] # (nº filas, nº columnas)
@@ -417,7 +417,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_a_CCND1.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_CCND1.png')
 
 """ ----------------------------------------------- CDKN1B --------------------------------------------------------- """
 grid = cnv_a_scores[2] # (nº filas, nº columnas)
@@ -436,7 +436,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_a_CDKN1B.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_CDKN1B.png')
 
 """ ------------------------------------------------ FGF19 --------------------------------------------------------- """
 grid = cnv_a_scores[3] # (nº filas, nº columnas)
@@ -455,7 +455,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_a_FGF19.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_FGF19.png')
 
 """ --------------------------------------------- ERBB2 ------------------------------------------------------------ """
 grid = cnv_a_scores[4] # (nº filas, nº columnas)
@@ -474,7 +474,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_a_ERBB2.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_ERBB2.png')
 
 """ ------------------------------------------------ FGF3 ---------------------------------------------------------- """
 grid = cnv_a_scores[5] # (nº filas, nº columnas)
@@ -486,14 +486,14 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_a_FGF3.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_FGF3.png')
 
 """ ------------------------------------------------- CNV-D -------------------------------------------------------- 
 -------------------------------------------------------------------------------------------------------------------- """
@@ -515,7 +515,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_d_BRCA1.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_BRCA1.png')
 
 """ ----------------------------------------------- BRCA2 ---------------------------------------------------------- """
 grid = cnv_d_scores[1] # (nº filas, nº columnas)
@@ -534,7 +534,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_d_BRCA2.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_BRCA2.png')
 
 """ ----------------------------------------------- KDR ----------------------------------------------------------- """
 grid = cnv_d_scores[2] # (nº filas, nº columnas)
@@ -553,7 +553,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_d_KDR.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_KDR.png')
 
 """ ------------------------------------------------ CHEK1 --------------------------------------------------------- """
 grid = cnv_d_scores[3] # (nº filas, nº columnas)
@@ -572,7 +572,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_d_CHEK1.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_CHEK1.png')
 
 """ ---------------------------------------------- FGF3 ------------------------------------------------------------ """
 grid = cnv_d_scores[4] # (nº filas, nº columnas)
@@ -591,7 +591,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_d_FGF3.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_FGF3.png')
 
 """ ------------------------------------------------ FANCA --------------------------------------------------------- """
 grid = cnv_d_scores[5] # (nº filas, nº columnas)
@@ -610,4 +610,4 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('cnv_d_FANCA.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_FANCA.png')
