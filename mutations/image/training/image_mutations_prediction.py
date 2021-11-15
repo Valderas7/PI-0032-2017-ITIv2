@@ -498,12 +498,12 @@ model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentrop
 model.summary()
 
 """ Se implementan varios callbacks para guardar el mejor modelo. """
-checkpoint_path = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_1e-6.h5'
+checkpoint_path = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True, monitor = 'val_loss', mode = 'min')
-checkpoint_path_snv = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_snv1e-6.h5'
-mcp_save_snv = ModelCheckpoint(filepath = checkpoint_path_snv, save_best_only = True, monitor = 'val_snv_AUC-PR', mode = 'max')
-checkpoint_path_cnv_a = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_cnv_a1e-6.h5'
-mcp_save_cnv_a = ModelCheckpoint(filepath = checkpoint_path_cnv_a, save_best_only = True, monitor = 'val_cnv_a_AUC-PR', mode = 'max')
+checkpoint_path_snv = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_snv.h5'
+mcp_save_snv = ModelCheckpoint(filepath = checkpoint_path_snv, save_best_only = True, monitor = 'val_snv_AUC-ROC', mode = 'max')
+checkpoint_path_cnv_a = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_cnv.h5'
+mcp_save_cnv_a = ModelCheckpoint(filepath = checkpoint_path_cnv_a, save_best_only = True, monitor = 'val_cnv_a_AUC-ROC', mode = 'max')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = {'snv': train_labels_snv, 'cnv_a': train_labels_cnv_a,
@@ -529,7 +529,7 @@ for layer in base_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentropy', 'cnv_normal': 'binary_crossentropy',
                       'cnv_d': 'binary_crossentropy'},
               metrics = metrics)
