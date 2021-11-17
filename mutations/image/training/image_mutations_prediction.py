@@ -304,7 +304,7 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_data, test_data = train_test_split(df_all_merge, test_size = 0.20)
-train_data, valid_data = train_test_split(train_data, test_size = 0.20)
+train_data, valid_data = train_test_split(train_data, test_size = 0.15)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -498,17 +498,13 @@ model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentrop
 model.summary()
 
 """ Se implementan varios callbacks para guardar el mejor modelo. """
-checkpoint_path = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True, monitor = 'val_loss', mode = 'min')
-checkpoint_path_snv = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_snv.h5'
-mcp_save_snv = ModelCheckpoint(filepath = checkpoint_path_snv, save_best_only = True, monitor = 'val_snv_AUC-ROC', mode = 'max')
-checkpoint_path_cnv_a = '/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations_cnv.h5'
-mcp_save_cnv_a = ModelCheckpoint(filepath = checkpoint_path_cnv_a, save_best_only = True, monitor = 'val_cnv_a_AUC-ROC', mode = 'max')
+checkpoint_path = '/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_{epoch:02d}_{val_loss:.2f}.h5'
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = {'snv': train_labels_snv, 'cnv_a': train_labels_cnv_a,
                                      'cnv_normal': train_labels_cnv_normal, 'cnv_d': train_labels_cnv_d},
-          epochs = 1, verbose = 1, validation_data = (valid_image_data, {'snv': valid_labels_snv,
+          epochs = 2, verbose = 1, validation_data = (valid_image_data, {'snv': valid_labels_snv,
                                                                          'cnv_a': valid_labels_cnv_a,
                                                                          'cnv_normal': valid_labels_cnv_normal,
                                                                          'cnv_d': valid_labels_cnv_d}),
@@ -521,7 +517,7 @@ sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
 set_trainable = 0
 
 for layer in base_model.layers:
-    if layer.name == 'block4a_expand_conv':
+    if layer.name == 'block3a_expand_conv':
         set_trainable = True
     if set_trainable:
         if not isinstance(layer, layers.BatchNormalization):
@@ -543,7 +539,7 @@ neural_network = model.fit(x = train_image_data, y = {'snv': train_labels_snv, '
                                                                                           'cnv_a': valid_labels_cnv_a,
                                                                                           'cnv_normal': valid_labels_cnv_normal,
                                                                                           'cnv_d': valid_labels_cnv_d}),
-                           #callbacks = [mcp_save, mcp_save_snv, mcp_save_cnv_a],
+                           callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

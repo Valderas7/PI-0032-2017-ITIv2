@@ -39,10 +39,10 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-model = load_model('/home/avalderas/img_slides/mutations/image/inference/test_data&models/model_image_mutations.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_04_0.28.h5')
 
 """ Se abre WSI especificada """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P001-HE-014-2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 
 """" Se hallan las dimensiones (anchura, altura) del nivel de resolución '0' (máxima resolución) de la WSI """
@@ -114,7 +114,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = score
 
-        if 0.2 < tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+        if 0.1 < tiles_scores_array[alto_slide][ancho_slide] < 0.9:
             """ Primero se intenta hallar si hay una línea recta negra que dura todo el ancho de la tesela. Para ello se
             itera sobre todas las filas de los tres canales RGB de la tesela para saber si en algún momento la suma de 
             tres filas correspodientes en los tres canales de la tesela es cero, lo que indicaría que hay una fila 
@@ -126,15 +126,15 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 g = np.sum(sub_img_array[index, :, 1])
                 b = np.sum(sub_img_array[index, :, 2])
                 if r + g + b == 0:
-                    tiles_scores_array[alto_slide][ancho_slide] = 0
-                    break # Comienza un nuevo valor de @ancho_slide
+                    tiles_scores_array[alto_slide][ancho_slide] = 1.0
+                    break
                 """ Se realiza lo mismo que se ha realizado con las filas, pero esta vez con las columnas """
                 r = np.sum(sub_img_array[:, index, 0])
                 g = np.sum(sub_img_array[:, index, 1])
                 b = np.sum(sub_img_array[:, index, 2])
                 if r + g + b == 0:
-                    tiles_scores_array[alto_slide][ancho_slide] = 0
-                    break # Comienza un nuevo valor de @ancho_slide
+                    tiles_scores_array[alto_slide][ancho_slide] = 1.0
+                    break
             """ Aunque estas imágenes que tienen líneas enteramente negras (ya sea horizontalmente o verticalmente) son
             leídas, al realizar la máscara del mapa de calor van a ser ocultadas, puesto que se les ha hecho que su
             puntuación sea cero. """
@@ -142,45 +142,48 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             """ Ahora se lee de nuevo cada tesela de 210x210, convirtiéndolas en un array para pasarlas de formato RGBA 
             a formato RGB con OpenCV. A partir de aquí, se expande la dimensión de la tesela para poder realizarle la
             predicción """
-            sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
+            if 0.1 < tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+                sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
-            sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-            tile = np.expand_dims(sub_img, axis = 0)
+                sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
+                #cv2.imshow('sdfsdf', sub_img)
+                #cv2.waitKey(0)
+                tile = np.expand_dims(sub_img, axis = 0)
 
-            """ Se va guardando la predicción SNV, CNV-A y CNV-D de todos los genes para cada tesela en su lista 
-            correspondiente. Además, para cada una de las teselas, se guarda la puntuación de las predicciones de las
-            mutaciones SNV, CNV-A y CNV-D de los genes que se quieren estudiar. Estas puntuaciones para cada gen se 
-            guardan dentro del 'array' correspondiente del 'array' 3D definido para cada tipo de mutación, para así 
-            poder realizar después los mapas de calor de todos esos genes que interesa estudiar """
-            prediction_snv = model.predict(tile)[0]     # SNV
-            prediction_cnv_a = model.predict(tile)[1]   # CNV-A
-            prediction_cnv_d = model.predict(tile)[3]   # CNV-D
+                """ Se va guardando la predicción SNV, CNV-A y CNV-D de todos los genes para cada tesela en su lista 
+                correspondiente. Además, para cada una de las teselas, se guarda la puntuación de las predicciones de las
+                mutaciones SNV, CNV-A y CNV-D de los genes que se quieren estudiar. Estas puntuaciones para cada gen se 
+                guardan dentro del 'array' correspondiente del 'array' 3D definido para cada tipo de mutación, para así 
+                poder realizar después los mapas de calor de todos esos genes que interesa estudiar """
+                prediction_snv = model.predict(tile)[0]     # SNV
+                prediction_cnv_a = model.predict(tile)[1]   # CNV-A
+                prediction_cnv_d = model.predict(tile)[3]   # CNV-D
 
-            snv.append(prediction_snv)
-            cnv_a.append(prediction_cnv_a)
-            cnv_d.append(prediction_cnv_d)
+                snv.append(prediction_snv)
+                cnv_a.append(prediction_cnv_a)
+                cnv_d.append(prediction_cnv_d)
 
-            snv_scores[0][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_PIK3CA')]
-            snv_scores[1][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_TP53')]
-            snv_scores[2][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_AKT1')]
-            snv_scores[3][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_PTEN')]
-            snv_scores[4][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_ERBB2')]
-            snv_scores[5][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_EGFR')]
-            snv_scores[6][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_MTOR')]
+                snv_scores[0][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_PIK3CA')]
+                snv_scores[1][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_TP53')]
+                snv_scores[2][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_AKT1')]
+                snv_scores[3][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_PTEN')]
+                snv_scores[4][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_ERBB2')]
+                snv_scores[5][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_EGFR')]
+                snv_scores[6][alto_slide][ancho_slide] = prediction_snv[:, classes_snv.index('SNV_MTOR')]
 
-            cnv_a_scores[0][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_MYC_AMP')]
-            cnv_a_scores[1][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_CCND1_AMP')]
-            cnv_a_scores[2][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_CDKN1B_AMP')]
-            cnv_a_scores[3][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_FGF19_AMP')]
-            cnv_a_scores[4][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_ERBB2_AMP')]
-            cnv_a_scores[5][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_FGF3_AMP')]
+                cnv_a_scores[0][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_MYC_AMP')]
+                cnv_a_scores[1][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_CCND1_AMP')]
+                cnv_a_scores[2][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_CDKN1B_AMP')]
+                cnv_a_scores[3][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_FGF19_AMP')]
+                cnv_a_scores[4][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_ERBB2_AMP')]
+                cnv_a_scores[5][alto_slide][ancho_slide] = prediction_cnv_a[:, classes_cnv_a.index('CNV_FGF3_AMP')]
 
-            cnv_d_scores[0][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_BRCA1_DEL')]
-            cnv_d_scores[1][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_BRCA2_DEL')]
-            cnv_d_scores[2][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_KDR_DEL')]
-            cnv_d_scores[3][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_CHEK1_DEL')]
-            cnv_d_scores[4][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_FGF3_DEL')]
-            cnv_d_scores[5][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_FANCA_DEL')]
+                cnv_d_scores[0][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_BRCA1_DEL')]
+                cnv_d_scores[1][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_BRCA2_DEL')]
+                cnv_d_scores[2][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_KDR_DEL')]
+                cnv_d_scores[3][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_CHEK1_DEL')]
+                cnv_d_scores[4][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_FGF3_DEL')]
+                cnv_d_scores[5][alto_slide][ancho_slide] = prediction_cnv_d[:, classes_cnv_d.index('CNV_FANCA_DEL')]
 
 """ Se realiza la suma para cada una de las columnas de la lista de predicciones. Como resultado, se obtiene una lista
 de (genes) columnas y 1 sola fila, ya que se han sumado las predicciones de todas las teselas para cada gen. """
@@ -248,11 +251,11 @@ plt.tight_layout()
 """ Se crea una máscara para las puntuaciones menores de 0.1 y mayores de 0.8, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
-mask[np.where(tiles_scores_array < 0.2) and np.where(tiles_scores_array > 0.9)] = True
+mask[np.where((tiles_scores_array < 0.1) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
+                      zorder = 2, vmin = 0.0, vmax = 1.0, annot = True)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
@@ -273,8 +276,8 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
+                      zorder = 2, vmin = 0.0, vmax = 1.0, annot = True)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
@@ -292,7 +295,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.7,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -311,7 +314,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -330,7 +333,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -349,7 +352,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -368,7 +371,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -391,7 +394,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -410,7 +413,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -429,7 +432,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -448,7 +451,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -467,7 +470,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -508,7 +511,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -527,7 +530,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -546,7 +549,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -565,7 +568,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -584,7 +587,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -603,7 +606,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.8,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
