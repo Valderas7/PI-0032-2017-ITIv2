@@ -1,3 +1,22 @@
+""" Programa para hacer una clasificación por teselas de las WSI (.mrxs) del proyecto. Se predice cuales son las
+mutaciones más frecuentes para cada uno de los tipos de mutación (SNV, CNV-A y CNV-D), y se crean mapas de calor con las
+predicciones para cada uno de los genes genes más repetidos en el estudio que ha realizado Irene con los pacientes del
+proyecto de INiBICA:
+
+Table 2. Mutations samples in TCGA dataset with lymph node patients (552 patients) by gen
+
+|       SNVs        |       CNVs-A         |      CNVs-D         |
+|  Gene  | Samples ||   Gene  |   Samples ||    Gene  | Samples |
+PIK3CA      171         MYC         81          BRCA2       5
+TP53        168         CCND1       84          BRCA1       3
+AKT1        13          CDKN1B      1           KDR         1
+PTEN        31          FGF19       80          CHEK1       5
+ERBB2       12          ERBB2       79          FGF3        0
+EGFR        4           FGF3        81          FANCA       12
+MTOR        9
+"""
+
+""" Se importan librerías """
 import openslide
 import matplotlib.pyplot as plt
 import numpy as np
@@ -39,7 +58,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-model = load_model('/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_04_0.28.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_25_0.41.h5')
 
 """ Se abre WSI especificada """
 path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
@@ -114,7 +133,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = score
 
-        if 0.1 < tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+        if 0.09 < tiles_scores_array[alto_slide][ancho_slide] < 0.9:
             """ Primero se intenta hallar si hay una línea recta negra que dura todo el ancho de la tesela. Para ello se
             itera sobre todas las filas de los tres canales RGB de la tesela para saber si en algún momento la suma de 
             tres filas correspodientes en los tres canales de la tesela es cero, lo que indicaría que hay una fila 
@@ -127,27 +146,25 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 b = np.sum(sub_img_array[index, :, 2])
                 if r + g + b == 0:
                     tiles_scores_array[alto_slide][ancho_slide] = 1.0
-                    break
+                    break # Salta a la línea #164
                 """ Se realiza lo mismo que se ha realizado con las filas, pero esta vez con las columnas """
                 r = np.sum(sub_img_array[:, index, 0])
                 g = np.sum(sub_img_array[:, index, 1])
                 b = np.sum(sub_img_array[:, index, 2])
                 if r + g + b == 0:
                     tiles_scores_array[alto_slide][ancho_slide] = 1.0
-                    break
+                    break # Salta a la línea #164
             """ Aunque estas imágenes que tienen líneas enteramente negras (ya sea horizontalmente o verticalmente) son
             leídas, al realizar la máscara del mapa de calor van a ser ocultadas, puesto que se les ha hecho que su
-            puntuación sea cero. """
+            puntuación sea uno. """
 
             """ Ahora se lee de nuevo cada tesela de 210x210, convirtiéndolas en un array para pasarlas de formato RGBA 
             a formato RGB con OpenCV. A partir de aquí, se expande la dimensión de la tesela para poder realizarle la
             predicción """
-            if 0.1 < tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+            if 0.09 < tiles_scores_array[alto_slide][ancho_slide] < 0.9:
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-                #cv2.imshow('sdfsdf', sub_img)
-                #cv2.waitKey(0)
                 tile = np.expand_dims(sub_img, axis = 0)
 
                 """ Se va guardando la predicción SNV, CNV-A y CNV-D de todos los genes para cada tesela en su lista 
@@ -204,22 +221,22 @@ valor, que serán los de los genes con mayor probabilidad de mutación """
 # SNV
 max_snv = np.argsort(snv_sum_columns)[::-1][:1]
 
-for (index, sorted_index) in enumerate(max_snv):
-    label_snv = "La mutación SNV más probable es del gen {}".format(classes_snv[sorted_index].split('_')[1])
+for (index, sorted_index_snv) in enumerate(max_snv):
+    label_snv = "La mutación SNV más probable es del gen {}".format(classes_snv[sorted_index_snv].split('_')[1])
     print(label_snv)
 
 # CNV-A
 max_cnv_a = np.argsort(cnv_a_sum_columns)[::-1][:1]
 
-for (index, sorted_index) in enumerate(max_cnv_a):
-    label_cnv_a = "La mutación CNV-A más probable es del gen {}".format(classes_cnv_a[sorted_index].split('_')[1])
+for (index, sorted_index_cnv_a) in enumerate(max_cnv_a):
+    label_cnv_a = "La mutación CNV-A más probable es del gen {}".format(classes_cnv_a[sorted_index_cnv_a].split('_')[1])
     print(label_cnv_a)
 
 # CNV-D
-max_cnv_d = np.argsort(cnv_a_sum_columns)[::-1][:1]
+max_cnv_d = np.argsort(cnv_d_sum_columns)[::-1][:1]
 
-for (index, sorted_index) in enumerate(max_cnv_d):
-    label_cnv_d = "La mutación CNV-D más probable es del gen {}".format(classes_cnv_d[sorted_index].split('_')[1])
+for (index, sorted_index_cnv_d) in enumerate(max_cnv_d):
+    label_cnv_d = "La mutación CNV-D más probable es del gen {}".format(classes_cnv_d[sorted_index_cnv_d].split('_')[1])
     print(label_cnv_d)
 
 """ Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle después el mapa de calor y lo 
@@ -248,10 +265,10 @@ sns.set(style = "white", rc = {'figure.dpi': dpi})
 plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
-""" Se crea una máscara para las puntuaciones menores de 0.1 y mayores de 0.8, de forma que no se pasan datos en 
+""" Se crea una máscara para las puntuaciones menores de 0.09 y mayores de 0.9, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
-mask[np.where((tiles_scores_array < 0.1) | (tiles_scores_array > 0.9))] = True
+mask[np.where((tiles_scores_array < 0.09) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
