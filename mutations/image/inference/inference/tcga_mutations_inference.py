@@ -125,66 +125,12 @@ classes_cnv_d = ['CNV_AKT1_DEL', 'CNV_AKT2_DEL', 'CNV_AKT3_DEL', 'CNV_ALK_DEL', 
                  'CNV_PDGFRA_DEL', 'CNV_PDGFRB_DEL', 'CNV_PIK3CA_DEL', 'CNV_PIK3CB_DEL', 'CNV_PPARG_DEL',
                  'CNV_RICTOR_DEL', 'CNV_TERT_DEL']
 
-""" Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
-red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
-"""
-# SNV
-y_true_snv = test_labels_snv
-y_pred_snv = np.round(model.predict(test_image_data)[0])
 
-matrix_snv = multilabel_confusion_matrix(y_true_snv, y_pred_snv)
+""" Códigos para calcular las curvas AUC-ROC y AUC-PR micro de todos los subconjuntos de mutaciones para todos los genes
 
-group_names = ['True Negatives', 'False Positives', 'False Negatives', 'True Positives']
-index_snv = 0
-
-for matrix_gen_snv in matrix_snv:
-    group_counts = ['{0:0.0f}'.format(value) for value in matrix_gen_snv.flatten()]  # Cantidad de casos por grupo
-    true_neg_pos_neg = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names, group_counts)]
-    true_neg_pos_neg = np.asarray(true_neg_pos_neg).reshape(2, 2)
-    sns.heatmap(matrix_gen_snv, annot=true_neg_pos_neg, fmt='', cmap='Blues')
-    plt.title('Mutación SNV del gen {}'.format(classes_snv[index_snv].split('_')[1]))
-    plt.show()
-    plt.pause(0.2)
-    index_snv = index_snv + 1
-
-# CNV-A
-y_true_cnv_a = test_labels_cnv_a
-y_pred_cnv_a = np.round(model.predict(test_image_data)[1])
-
-matrix_cnv_a = multilabel_confusion_matrix(y_true_cnv_a, y_pred_cnv_a) # Calcula (pero no dibuja) la matriz de confusión
-index_cnv_a = 0
-
-for matrix_gen_cnv_a in matrix_cnv_a:
-    group_counts = ['{0:0.0f}'.format(value) for value in matrix_gen_cnv_a.flatten()]  # Cantidad de casos por grupo
-    true_neg_pos_neg = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names, group_counts)]
-    true_neg_pos_neg = np.asarray(true_neg_pos_neg).reshape(2, 2)
-    sns.heatmap(matrix_gen_cnv_a, annot=true_neg_pos_neg, fmt='', cmap='Blues')
-    plt.title('Mutación CNV-A del gen {}'.format(classes_cnv_a[index_cnv_a].split('_')[1]))
-    plt.show()
-    plt.pause(0.2)
-    index_cnv_a = index_cnv_a + 1
-
-# CNV-D
-y_true_cnv_d = test_labels_cnv_d
-y_pred_cnv_d = np.round(model.predict(test_image_data)[3])
-
-matrix_cnv_d = multilabel_confusion_matrix(y_true_cnv_d, y_pred_cnv_d) # Calcula (pero no dibuja) la matriz de confusión
-index_cnv_d = 0
-
-for matrix_gen_cnv_d in matrix_cnv_d:
-    group_counts = ['{0:0.0f}'.format(value) for value in matrix_gen_cnv_d.flatten()]  # Cantidad de casos por grupo
-    true_neg_pos_neg = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names, group_counts)]
-    true_neg_pos_neg = np.asarray(true_neg_pos_neg).reshape(2, 2)
-    sns.heatmap(matrix_gen_cnv_d, annot=true_neg_pos_neg, fmt='', cmap='Blues')
-    plt.title('Mutación CNV-D del gen {}'.format(classes_cnv_d[index_cnv_d].split('_')[1]))
-    plt.show()
-    plt.pause(0.2)
-    index_cnv_d = index_cnv_d + 1
-
-#Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
-#documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
-#tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
-#Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva:
+#Para finalizar, se dibuja el área bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
+#documento gráfico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
+#tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases:
 # @ravel: Aplana el vector a 1D
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
 from scipy import interp
@@ -365,24 +311,28 @@ plt.legend(loc = 'best')
 plt.show()
 """
 
-""" Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
-documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
-tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
-Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: 
-Además tambien se dibuja el área bajo la la curva PR (precision-recall), para tener un documento grafico del rendimiento 
-del clasificador en cuanto a la sensibilidad y la precision de resultados """
+""" Para finalizar, se dibuja el área bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
+documento gráfico del rendimiento del clasificador binario de los genes sobre los que se van a realizar posteriormente
+los mapas de calor. Esta curva representa la tasa de verdaderos positivos y la tasa de falsos positivos, por lo que 
+resume el comportamiento general del clasificador para diferenciar clases. También se dibuja el área bajo la la curva PR 
+(precision-recall), para tener un documento gráfico del rendimiento del clasificador en cuanto a la sensibilidad y la 
+precisión de resultados.
+ 
+Para terminar, se calculan las métricas específicas (sensibilidad, precisión, eficacia y especificidad) de estos genes
+sobre los que se van a realizar los mapas de calor. """
 # @ravel: Aplana el vector a 1D
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, classification_report
+
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------ SNV -------------------------------------------------------------  
 ------------------------------------------------------------------------------------------------------------------------ """
-# PIK3CA
+""" ------------------------------------------------- PIK3CA ----------------------------------------------------------- """
+# AUC-ROC
 y_true = test_labels_snv[:, classes_snv.index('SNV_PIK3CA')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_PIK3CA')].ravel()
 fpr, tpr, thresholds_snv_pik3ca = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -392,9 +342,9 @@ plt.title('AUC-ROC curve for SNV of PIK3CA gene')
 plt.legend(loc = 'best')
 plt.show()
 
+# AUC-PR
 precision, recall, threshold_snv_pik3ca = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -404,17 +354,23 @@ plt.title('AUC-PR curve for SNV of PIK3CA gene')
 plt.legend(loc = 'best')
 plt.show()
 
+# Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-print(tn, fp, fn, tp)
-quit()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones SNV del gen PIK3CA: {:.2f}\n""Precisión de las mutaciones SNV del gen PIK3CA: "
+     "{:.2f}\n""Especifidad de las mutaciones SNV del gen PIK3CA: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
+     "PIK3CA: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
 
-# TP53
+""" -------------------------------------------------- TP53 ------------------------------------------------------------ """
+# AUC-ROC
 y_true = test_labels_snv[:, classes_snv.index('SNV_TP53')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_TP53')].ravel()
 fpr, tpr, thresholds_snv_tp53 = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -424,9 +380,9 @@ plt.title('AUC-ROC curve for SNV of TP53 gene')
 plt.legend(loc = 'best')
 plt.show()
 
+# AUC-PR
 precision, recall, threshold_snv_tp53 = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -436,13 +392,23 @@ plt.title('AUC-PR curve for SNV of TP53 gene')
 plt.legend(loc = 'best')
 plt.show()
 
-# AKT1
+# Métricas
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones SNV del gen TP53: {:.2f}\n""Precisión de las mutaciones SNV del gen TP53: "
+     "{:.2f}\n""Especifidad de las mutaciones SNV del gen TP53: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
+     "TP53: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
+""" -------------------------------------------------- AKT1 ------------------------------------------------------------ """
+# AUC-ROC
 y_true = test_labels_snv[:, classes_snv.index('SNV_AKT1')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_AKT1')].ravel()
 fpr, tpr, thresholds_snv_akt1 = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -452,9 +418,9 @@ plt.title('AUC-ROC curve for SNV of AKT1 gene')
 plt.legend(loc = 'best')
 plt.show()
 
+# AUC-PR
 precision, recall, threshold_snv_akt1 = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -464,13 +430,23 @@ plt.title('AUC-PR curve for SNV of AKT1 gene')
 plt.legend(loc = 'best')
 plt.show()
 
-# PTEN
+# Métricas
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones SNV del gen AKT1: {:.2f}\n""Precisión de las mutaciones SNV del gen AKT1: "
+     "{:.2f}\n""Especifidad de las mutaciones SNV del gen AKT1: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
+     "AKT1: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
+""" -------------------------------------------------- PTEN ------------------------------------------------------------ """
+# AUC-ROC
 y_true = test_labels_snv[:, classes_snv.index('SNV_PTEN')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_PTEN')].ravel()
 fpr, tpr, thresholds_snv_pten = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -480,9 +456,9 @@ plt.title('AUC-ROC curve for SNV of PTEN gene')
 plt.legend(loc = 'best')
 plt.show()
 
+# AUC-PR
 precision, recall, threshold_snv_pten = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -492,13 +468,23 @@ plt.title('AUC-PR curve for SNV of PTEN gene')
 plt.legend(loc = 'best')
 plt.show()
 
-# ERBB2
+# Métricas
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones SNV del gen PTEN: {:.2f}\n""Precisión de las mutaciones SNV del gen PTEN: "
+     "{:.2f}\n""Especifidad de las mutaciones SNV del gen PTEN: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
+     "PTEN: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
+""" --------------------------------------------------- ERBB2 ---------------------------------------------------------- """
+# AUC-ROC
 y_true = test_labels_snv[:, classes_snv.index('SNV_ERBB2')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_ERBB2')].ravel()
 fpr, tpr, thresholds_snv_erbb2 = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -508,9 +494,9 @@ plt.title('AUC-ROC curve for SNV of ERBB2 gene')
 plt.legend(loc = 'best')
 plt.show()
 
+# AUC-PR
 precision, recall, threshold_snv_erbb2 = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -520,13 +506,23 @@ plt.title('AUC-PR curve for SNV of ERBB2 gene')
 plt.legend(loc = 'best')
 plt.show()
 
-# EGFR
+# Métricas
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones SNV del gen ERBB2: {:.2f}\n""Precisión de las mutaciones SNV del gen ERBB2: "
+     "{:.2f}\n""Especifidad de las mutaciones SNV del gen ERBB2: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
+     "ERBB2: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
+""" --------------------------------------------------- EGFR ---------------------------------------------------------- """
+# AUC-ROC
 y_true = test_labels_snv[:, classes_snv.index('SNV_EGFR')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_EGFR')].ravel()
 fpr, tpr, thresholds_snv_egfr = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -536,9 +532,9 @@ plt.title('AUC-ROC curve for SNV of EGFR gene')
 plt.legend(loc = 'best')
 plt.show()
 
+# AUC-PR
 precision, recall, threshold_snv_egfr = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -548,13 +544,23 @@ plt.title('AUC-PR curve for SNV of EGFR gene')
 plt.legend(loc = 'best')
 plt.show()
 
-# MTOR
+# Métricas
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones SNV del gen EGFR: {:.2f}\n""Precisión de las mutaciones SNV del gen EGFR: "
+     "{:.2f}\n""Especifidad de las mutaciones SNV del gen EGFR: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
+     "EGFR: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
+""" --------------------------------------------------- MTOR ---------------------------------------------------------- """
+# AUC-ROC
 y_true = test_labels_snv[:, classes_snv.index('SNV_MTOR')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_MTOR')].ravel()
 fpr, tpr, thresholds_snv_mtor = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -564,9 +570,9 @@ plt.title('AUC-ROC curve for SNV of MTOR gene')
 plt.legend(loc = 'best')
 plt.show()
 
+# AUC-PR
 precision, recall, threshold_snv_mtor = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -576,16 +582,26 @@ plt.title('AUC-PR curve for SNV of MTOR gene')
 plt.legend(loc = 'best')
 plt.show()
 
+# Métricas
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones SNV del gen MTOR: {:.2f}\n""Precisión de las mutaciones SNV del gen MTOR: "
+     "{:.2f}\n""Especifidad de las mutaciones SNV del gen MTOR: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
+     "MTOR: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------ CNV-A -----------------------------------------------------------  
 ------------------------------------------------------------------------------------------------------------------------ """
+""" --------------------------------------------------- MYC ---------------------------------------------------------- """
 # MYC
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_MYC_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_MYC_AMP')].ravel()
 fpr, tpr, thresholds_cnv_a_myc = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -597,7 +613,6 @@ plt.show()
 
 precision, recall, threshold_cnv_a_myc = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -607,13 +622,19 @@ plt.title('AUC-PR curve for CNV-A of MYC gene')
 plt.legend(loc = 'best')
 plt.show()
 
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fp)
+print(recall, precision, specifity, accuracy)
+
 # CCND1
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_CCND1_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_CCND1_AMP')].ravel()
 fpr, tpr, thresholds_cnv_a_ccnd1 = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -625,7 +646,6 @@ plt.show()
 
 precision, recall, threshold_cnv_a_ccnd1 = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -635,13 +655,21 @@ plt.title('AUC-PR curve for CNV-A of CCND1 gene')
 plt.legend(loc = 'best')
 plt.show()
 
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones CNV-A del gen CCND1: {:.2f}\n""Precisión de las mutaciones CNV-A del gen CCND1: "
+     "{:.2f}\n""Especifidad de las mutaciones CNV-A del gen CCND1: {:.2f}\n""Exactitud de las mutaciones CNV-A del gen "
+     "CCND1: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
 # CDKN1B
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_CDKN1B_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_CDKN1B_AMP')].ravel()
 fpr, tpr, thresholds_cnv_a_cdkn1b = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -653,7 +681,6 @@ plt.show()
 
 precision, recall, threshold_cnv_a_cdkn1b = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -663,13 +690,21 @@ plt.title('AUC-PR curve for CNV-A of CDKN1B gene')
 plt.legend(loc = 'best')
 plt.show()
 
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones CNV-A del gen CDKN1B: {:.2f}\n""Precisión de las mutaciones CNV-A del gen CDKN1B: "
+     "{:.2f}\n""Especifidad de las mutaciones CNV-A del gen CDKN1B: {:.2f}\n""Exactitud de las mutaciones CNV-A del gen "
+     "CDKN1B: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
 # FGF19
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_FGF19_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_FGF19_AMP')].ravel()
 fpr, tpr, thresholds_cnv_a_fgf19 = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -681,7 +716,6 @@ plt.show()
 
 precision, recall, threshold_cnv_a_fgf19 = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -691,13 +725,21 @@ plt.title('AUC-PR curve for CNV-A of FGF19 gene')
 plt.legend(loc = 'best')
 plt.show()
 
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones CNV-A del gen FGF19: {:.2f}\n""Precisión de las mutaciones CNV-A del gen FGF19: "
+     "{:.2f}\n""Especifidad de las mutaciones CNV-A del gen FGF19: {:.2f}\n""Exactitud de las mutaciones CNV-A del gen "
+     "FGF19: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
 # ERBB2
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_ERBB2_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_ERBB2_AMP')].ravel()
 fpr, tpr, thresholds_cnv_a_erbb2 = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -709,7 +751,6 @@ plt.show()
 
 precision, recall, threshold_cnv_a_erbb2 = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -719,13 +760,21 @@ plt.title('AUC-PR curve for CNV-A of ERBB2 gene')
 plt.legend(loc = 'best')
 plt.show()
 
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones CNV-A del gen ERBB2: {:.2f}\n""Precisión de las mutaciones CNV-A del gen ERBB2: "
+     "{:.2f}\n""Especifidad de las mutaciones CNV-A del gen ERBB2: {:.2f}\n""Exactitud de las mutaciones CNV-A del gen "
+     "ERBB2: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
 # FGF3
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_FGF3_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_FGF3_AMP')].ravel()
 fpr, tpr, thresholds_cnv_a_fgf3 = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -737,7 +786,6 @@ plt.show()
 
 precision, recall, threshold_cnv_a_fgf3 = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -746,6 +794,15 @@ plt.ylabel('Precision')
 plt.title('AUC-PR curve for CNV-A of FGF3 gene')
 plt.legend(loc = 'best')
 plt.show()
+
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones CNV-A del gen FGF3: {:.2f}\n""Precisión de las mutaciones CNV-A del gen FGF3: "
+     "{:.2f}\n""Especifidad de las mutaciones CNV-A del gen FGF3: {:.2f}\n""Exactitud de las mutaciones CNV-A del gen "
+     "FGF3: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
 
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------ CNV-D -----------------------------------------------------------  
@@ -756,7 +813,6 @@ y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_BRCA1_DEL')].ravel()
 fpr, tpr, thresholds_cnv_d_brca1 = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -768,7 +824,6 @@ plt.show()
 
 precision, recall, threshold_cnv_d_brca1 = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -778,13 +833,21 @@ plt.title('AUC-PR curve for CNV-D of BRCA1 gene')
 plt.legend(loc = 'best')
 plt.show()
 
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones CNV-D del gen BRCA1: {:.2f}\n""Precisión de las mutaciones CNV-D del gen BRCA1: "
+     "{:.2f}\n""Especifidad de las mutaciones CNV-D del gen BRCA1: {:.2f}\n""Exactitud de las mutaciones CNV-D del gen "
+     "BRCA1: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
 # BRCA2
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_BRCA2_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_BRCA2_DEL')].ravel()
 fpr, tpr, thresholds_cnv_d_brca2 = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -796,7 +859,6 @@ plt.show()
 
 precision, recall, threshold_cnv_d_brca2 = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -806,13 +868,21 @@ plt.title('AUC-PR curve for CNV-D of BRCA2 gene')
 plt.legend(loc = 'best')
 plt.show()
 
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones CNV-D del gen BRCA2: {:.2f}\n""Precisión de las mutaciones CNV-D del gen BRCA2: "
+     "{:.2f}\n""Especifidad de las mutaciones CNV-D del gen BRCA2: {:.2f}\n""Exactitud de las mutaciones CNV-D del gen "
+     "BRCA2: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
 # KDR
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_KDR_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_KDR_DEL')].ravel()
 fpr, tpr, thresholds_cnv_d_kdr = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -824,7 +894,6 @@ plt.show()
 
 precision, recall, threshold_cnv_d_kdr = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -834,13 +903,21 @@ plt.title('AUC-PR curve for CNV-D of KDR gene')
 plt.legend(loc = 'best')
 plt.show()
 
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones CNV-D del gen KDR: {:.2f}\n""Precisión de las mutaciones CNV-D del gen KDR: "
+     "{:.2f}\n""Especifidad de las mutaciones CNV-D del gen KDR: {:.2f}\n""Exactitud de las mutaciones CNV-D del gen "
+     "KDR: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
 # CHEK1
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_CHEK1_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_CHEK1_DEL')].ravel()
 fpr, tpr, thresholds_cnv_d_chek1 = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -852,7 +929,6 @@ plt.show()
 
 precision, recall, threshold_cnv_d_chek1 = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -862,6 +938,15 @@ plt.title('AUC-PR curve for CNV-D of CHEK1 gene')
 plt.legend(loc = 'best')
 plt.show()
 
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones CNV-D del gen CHEK1: {:.2f}\n""Precisión de las mutaciones CNV-D del gen CHEK1: "
+     "{:.2f}\n""Especifidad de las mutaciones CNV-D del gen CHEK1: {:.2f}\n""Exactitud de las mutaciones CNV-D del gen "
+     "CHEK1: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
 # FGF3
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_FGF3_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
@@ -869,7 +954,6 @@ y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_FGF3_DEL')].ravel()
 if(len(np.unique(y_true))) > 1:
     fpr, tpr, thresholds_cnv_d_fgf3 = roc_curve(y_true, y_pred_prob)
     auc_roc = auc(fpr, tpr)
-
     plt.figure(1)
     plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
     plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -881,7 +965,6 @@ if(len(np.unique(y_true))) > 1:
 
     precision, recall, threshold_cnv_d_fgf3 = precision_recall_curve(y_true, y_pred_prob)
     auc_pr = auc(recall, precision)
-
     plt.figure(2)
     plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
     plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -891,13 +974,21 @@ if(len(np.unique(y_true))) > 1:
     plt.legend(loc = 'best')
     plt.show()
 
+    tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+    recall = tp / (tp + fn)
+    precision = tp / (tp + fp)
+    specifity = tn / (tn + fp)
+    accuracy = (tp + tn) / (tp + fp + tn + fn)
+    print("\nSensibilidad de las mutaciones CNV-D del gen FGF3: {:.2f}\n""Precisión de las mutaciones CNV-D del gen "
+          "FGF3: {:.2f}\n""Especifidad de las mutaciones CNV-D del gen FGF3: {:.2f}\n""Exactitud de las mutaciones CNV-D "
+          "del gen FGF3: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+
 # FANCA
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_FANCA_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_FANCA_DEL')].ravel()
 fpr, tpr, thresholds_cnv_d_fanca = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
-
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
@@ -909,7 +1000,6 @@ plt.show()
 
 precision, recall, threshold_cnv_d_fanca = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
-
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
@@ -918,3 +1008,12 @@ plt.ylabel('Precision')
 plt.title('AUC-PR curve for CNV-D of FANCA gene')
 plt.legend(loc = 'best')
 plt.show()
+
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+recall = tp / (tp + fn)
+precision = tp / (tp + fp)
+specifity = tn / (tn + fp)
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("\nSensibilidad de las mutaciones CNV-D del gen FANCA: {:.2f}\n""Precisión de las mutaciones CNV-D del gen FANCA: "
+     "{:.2f}\n""Especifidad de las mutaciones CNV-D del gen FANCA: {:.2f}\n""Exactitud de las mutaciones CNV-D del gen "
+     "FANCA: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
