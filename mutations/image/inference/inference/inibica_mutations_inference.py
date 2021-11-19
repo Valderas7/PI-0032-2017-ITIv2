@@ -5,7 +5,7 @@ proyecto de INiBICA:
 
 Table 2. Mutations samples in TCGA dataset with lymph node patients (552 patients) by gen
 
-|       SNVs        |       CNVs-A         |      CNVs-D         |
+|       SNVs        |       CNVs-A         |        CNVs-D      |
 |  Gene  | Samples ||   Gene  |   Samples ||    Gene  | Samples |
 PIK3CA      171         MYC         81          BRCA2       5
 TP53        168         CCND1       84          BRCA1       3
@@ -272,7 +272,7 @@ mask[np.where((tiles_scores_array < 0.09) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0, annot = True)
+                      zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
@@ -294,7 +294,7 @@ plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0, annot = True)
+                      zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
@@ -312,7 +312,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.7,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue

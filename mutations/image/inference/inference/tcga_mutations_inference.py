@@ -26,7 +26,7 @@ import glob
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import load_model
-from sklearn.metrics import multilabel_confusion_matrix # Para realizar la matriz de confusión
+from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
@@ -372,13 +372,11 @@ Para implementarlas, se importan los paquetes necesarios, se definen las variabl
 Además tambien se dibuja el área bajo la la curva PR (precision-recall), para tener un documento grafico del rendimiento 
 del clasificador en cuanto a la sensibilidad y la precision de resultados """
 # @ravel: Aplana el vector a 1D
-
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, classification_report
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------ SNV -------------------------------------------------------------  
 ------------------------------------------------------------------------------------------------------------------------ """
 # PIK3CA
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_snv[:, classes_snv.index('SNV_PIK3CA')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_PIK3CA')].ravel()
@@ -406,9 +404,11 @@ plt.title('AUC-PR curve for SNV of PIK3CA gene')
 plt.legend(loc = 'best')
 plt.show()
 
-# TP53
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+print(tn, fp, fn, tp)
+quit()
 
+# TP53
 y_true = test_labels_snv[:, classes_snv.index('SNV_TP53')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_TP53')].ravel()
@@ -437,8 +437,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # AKT1
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_snv[:, classes_snv.index('SNV_AKT1')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_AKT1')].ravel()
@@ -467,8 +465,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # PTEN
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_snv[:, classes_snv.index('SNV_PTEN')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_PTEN')].ravel()
@@ -497,8 +493,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # ERBB2
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_snv[:, classes_snv.index('SNV_ERBB2')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_ERBB2')].ravel()
@@ -527,8 +521,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # EGFR
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_snv[:, classes_snv.index('SNV_EGFR')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_EGFR')].ravel()
@@ -557,8 +549,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # MTOR
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_snv[:, classes_snv.index('SNV_MTOR')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_MTOR')].ravel()
@@ -590,8 +580,6 @@ plt.show()
 ------------------------------------------------------ CNV-A -----------------------------------------------------------  
 ------------------------------------------------------------------------------------------------------------------------ """
 # MYC
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_MYC_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_MYC_AMP')].ravel()
@@ -620,8 +608,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # CCND1
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_CCND1_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_CCND1_AMP')].ravel()
@@ -650,8 +636,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # CDKN1B
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_CDKN1B_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_CDKN1B_AMP')].ravel()
@@ -680,8 +664,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # FGF19
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_FGF19_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_FGF19_AMP')].ravel()
@@ -710,8 +692,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # ERBB2
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_ERBB2_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_ERBB2_AMP')].ravel()
@@ -740,8 +720,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # FGF3
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_FGF3_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_FGF3_AMP')].ravel()
@@ -773,8 +751,6 @@ plt.show()
 ------------------------------------------------------ CNV-D -----------------------------------------------------------  
 ------------------------------------------------------------------------------------------------------------------------ """
 # BRCA1
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_BRCA1_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_BRCA1_DEL')].ravel()
@@ -803,8 +779,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # BRCA2
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_BRCA2_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_BRCA2_DEL')].ravel()
@@ -833,8 +807,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # KDR
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_KDR_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_KDR_DEL')].ravel()
@@ -863,8 +835,6 @@ plt.legend(loc = 'best')
 plt.show()
 
 # CHEK1
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_CHEK1_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_CHEK1_DEL')].ravel()
@@ -893,38 +863,35 @@ plt.legend(loc = 'best')
 plt.show()
 
 # FGF3
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_FGF3_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_FGF3_DEL')].ravel()
-fpr, tpr, thresholds_cnv_d_fgf3 = roc_curve(y_true, y_pred_prob)
-auc_roc = auc(fpr, tpr)
+if(len(np.unique(y_true))) > 1:
+    fpr, tpr, thresholds_cnv_d_fgf3 = roc_curve(y_true, y_pred_prob)
+    auc_roc = auc(fpr, tpr)
 
-plt.figure(1)
-plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
-plt.xlabel('False positive rate')
-plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve for CNV-D of FGF3 gene')
-plt.legend(loc = 'best')
-plt.show()
+    plt.figure(1)
+    plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
+    plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
+    plt.xlabel('False positive rate')
+    plt.ylabel('True positive rate')
+    plt.title('AUC-ROC curve for CNV-D of FGF3 gene')
+    plt.legend(loc = 'best')
+    plt.show()
 
-precision, recall, threshold_cnv_d_fgf3 = precision_recall_curve(y_true, y_pred_prob)
-auc_pr = auc(recall, precision)
+    precision, recall, threshold_cnv_d_fgf3 = precision_recall_curve(y_true, y_pred_prob)
+    auc_pr = auc(recall, precision)
 
-plt.figure(2)
-plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
-plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('AUC-PR curve for CNV-D of FGF3 gene')
-plt.legend(loc = 'best')
-plt.show()
+    plt.figure(2)
+    plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
+    plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('AUC-PR curve for CNV-D of FGF3 gene')
+    plt.legend(loc = 'best')
+    plt.show()
 
 # FANCA
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_FANCA_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_FANCA_DEL')].ravel()
