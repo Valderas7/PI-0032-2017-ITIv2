@@ -30,7 +30,7 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_24_0.42.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_25_0.41.h5')
 
 test_image_data = np.load('/home/avalderas/img_slides/mutations/image/inference/test_data/test_image.npy')
 
@@ -45,7 +45,7 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_image_data, [test_labels_snv, test_labels_cnv_a, test_labels_cnv_normal,
                                            test_labels_cnv_d], verbose = 0)
-
+"""
 print("\n'Loss' de las mutaciones SNV del panel OCA en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
       "SNV del panel OCA en el conjunto de prueba: {:.2f}\n""Precisión de las mutaciones SNV del panel OCA en el "
       "conjunto de prueba: {:.2f}\n""Especifidad de las mutaciones SNV del panel OCA en el conjunto de prueba: {:.2f} \n"
@@ -80,7 +80,7 @@ print("\n'Loss' de las mutaciones CNV-D del panel OCA en el conjunto de prueba: 
 if results[36] > 0 or results[37] > 0:
     print("Valor-F de las mutaciones CNV-D del panel OCA en el conjunto de prueba: {:.2f}".format((2 * results[36] * results[37]) /
                                                                                                   (results[36] + results[37])))
-
+"""
 """ -------------------------------------------------------------------------------------------------------------------
 ------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
@@ -356,13 +356,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones SNV del gen PIK3CA: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones SNV del gen PIK3CA: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones SNV del gen PIK3CA: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones SNV del gen PIK3CA: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones SNV del gen PIK3CA: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones SNV del gen PIK3CA: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones SNV del gen PIK3CA: {:.2f}\n""Precisión de las mutaciones SNV del gen PIK3CA: "
-     "{:.2f}\n""Especifidad de las mutaciones SNV del gen PIK3CA: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
-     "PIK3CA: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones SNV del gen PIK3CA: {:.2f}%".format(accuracy * 100))
 
 """ -------------------------------------------------- TP53 ------------------------------------------------------------ """
 # AUC-ROC
@@ -394,13 +407,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones SNV del gen TP53: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones SNV del gen TP53: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones SNV del gen TP53: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones SNV del gen TP53: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones SNV del gen TP53: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones SNV del gen TP53: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones SNV del gen TP53: {:.2f}\n""Precisión de las mutaciones SNV del gen TP53: "
-     "{:.2f}\n""Especifidad de las mutaciones SNV del gen TP53: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
-     "TP53: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones SNV del gen TP53: {:.2f}%".format(accuracy * 100))
 
 """ -------------------------------------------------- AKT1 ------------------------------------------------------------ """
 # AUC-ROC
@@ -432,13 +458,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones SNV del gen AKT1: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones SNV del gen AKT1: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones SNV del gen AKT1: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones SNV del gen AKT1: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones SNV del gen AKT1: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones SNV del gen AKT1: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones SNV del gen AKT1: {:.2f}\n""Precisión de las mutaciones SNV del gen AKT1: "
-     "{:.2f}\n""Especifidad de las mutaciones SNV del gen AKT1: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
-     "AKT1: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones SNV del gen AKT1: {:.2f}%".format(accuracy * 100))
 
 """ -------------------------------------------------- PTEN ------------------------------------------------------------ """
 # AUC-ROC
@@ -470,13 +509,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones SNV del gen PTEN: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones SNV del gen PTEN: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones SNV del gen PTEN: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones SNV del gen PTEN: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones SNV del gen PTEN: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones SNV del gen PTEN: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones SNV del gen PTEN: {:.2f}\n""Precisión de las mutaciones SNV del gen PTEN: "
-     "{:.2f}\n""Especifidad de las mutaciones SNV del gen PTEN: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
-     "PTEN: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones SNV del gen PTEN: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- ERBB2 ---------------------------------------------------------- """
 # AUC-ROC
@@ -508,13 +560,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones SNV del gen ERBB2: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones SNV del gen ERBB2: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones SNV del gen ERBB2: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones SNV del gen ERBB2: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones SNV del gen ERBB2: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones SNV del gen ERBB2: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones SNV del gen ERBB2: {:.2f}\n""Precisión de las mutaciones SNV del gen ERBB2: "
-     "{:.2f}\n""Especifidad de las mutaciones SNV del gen ERBB2: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
-     "ERBB2: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones SNV del gen ERBB2: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- EGFR ---------------------------------------------------------- """
 # AUC-ROC
@@ -546,13 +611,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones SNV del gen EGFR: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones SNV del gen EGFR: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones SNV del gen EGFR: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones SNV del gen EGFR: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones SNV del gen EGFR: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones SNV del gen EGFR: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones SNV del gen EGFR: {:.2f}\n""Precisión de las mutaciones SNV del gen EGFR: "
-     "{:.2f}\n""Especifidad de las mutaciones SNV del gen EGFR: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
-     "EGFR: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones SNV del gen EGFR: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- MTOR ---------------------------------------------------------- """
 # AUC-ROC
@@ -584,13 +662,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones SNV del gen MTOR: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones SNV del gen MTOR: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones SNV del gen MTOR: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones SNV del gen MTOR: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones SNV del gen MTOR: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones SNV del gen MTOR: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones SNV del gen MTOR: {:.2f}\n""Precisión de las mutaciones SNV del gen MTOR: "
-     "{:.2f}\n""Especifidad de las mutaciones SNV del gen MTOR: {:.2f}\n""Exactitud de las mutaciones SNV del gen "
-     "MTOR: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones SNV del gen MTOR: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------ CNV-A -----------------------------------------------------------  
@@ -625,13 +716,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-A del gen MYC: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-A del gen MYC: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-A del gen MYC: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-A del gen MYC: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones CNV-A del gen MYC: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-A del gen MYC: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones CNV-A del gen MYC: {:.2f}\n""Precisión de las mutaciones CNV-A del gen MYC: "
-     "{:.2f}\n""Especifidad de las mutaciones CNV-A del gen MYC: {:.2f}\n""Exactitud de las mutaciones CNV-A del gen "
-     "MYC: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones CNV-A del gen MYC: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- CCND1 ---------------------------------------------------------- """
 # AUC-ROC
@@ -663,13 +767,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-A del gen CCND1: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-A del gen CCND1: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-A del gen CCND1: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-A del gen CCND1: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones CNV-A del gen CCND1: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-A del gen CCND1: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones CNV-A del gen CCND1: {:.2f}\n""Precisión de las mutaciones CNV-A del gen CCND1: "
-     "{:.2f}\n""Especifidad de las mutaciones CNV-A del gen CCND1: {:.2f}\n""Exactitud de las mutaciones CNV-A del gen "
-     "CCND1: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones CNV-A del gen CCND1: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- CDKN1B --------------------------------------------------------- """
 # AUC-ROC
@@ -701,13 +818,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-A del gen CDKN1B: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-A del gen CDKN1B: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-A del gen CDKN1B: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-A del gen CDKN1B: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones CNV-A del gen CDKN1B: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-A del gen CDKN1B: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones CNV-A del gen CDKN1B: {:.2f}\n""Precisión de las mutaciones CNV-A del gen CDKN1B: "
-     "{:.2f}\n""Especifidad de las mutaciones CNV-A del gen CDKN1B: {:.2f}\n""Exactitud de las mutaciones CNV-A del gen "
-     "CDKN1B: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones CNV-A del gen CDKN1B: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- FGF19 ---------------------------------------------------------- """
 # AUC-ROC
@@ -739,13 +869,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-A del gen FGF19: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-A del gen FGF19: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-A del gen FGF19: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-A del gen FGF19: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones CNV-A del gen FGF19: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-A del gen FGF19: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones CNV-A del gen FGF19: {:.2f}\n""Precisión de las mutaciones CNV-A del gen FGF19: "
-     "{:.2f}\n""Especifidad de las mutaciones CNV-A del gen FGF19: {:.2f}\n""Exactitud de las mutaciones CNV-A del gen "
-     "FGF19: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones CNV-A del gen FGF19: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- ERBB2 ---------------------------------------------------------- """
 # AUC-ROC
@@ -777,13 +920,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-A del gen ERBB2: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-A del gen ERBB2: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-A del gen ERBB2: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-A del gen ERBB2: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones CNV-A del gen ERBB2: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-A del gen ERBB2: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones CNV-A del gen ERBB2: {:.2f}\n""Precisión de las mutaciones CNV-A del gen ERBB2: "
-     "{:.2f}\n""Especifidad de las mutaciones CNV-A del gen ERBB2: {:.2f}\n""Exactitud de las mutaciones CNV-A del gen "
-     "ERBB2: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones CNV-A del gen ERBB2: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- FGF3 ---------------------------------------------------------- """
 # AUC-ROC
@@ -815,13 +971,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-A del gen FGF3: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-A del gen FGF3: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-A del gen FGF3: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-A del gen FGF3: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones CNV-A del gen FGF3: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-A del gen FGF3: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones CNV-A del gen FGF3: {:.2f}\n""Precisión de las mutaciones CNV-A del gen FGF3: "
-     "{:.2f}\n""Especifidad de las mutaciones CNV-A del gen FGF3: {:.2f}\n""Exactitud de las mutaciones CNV-A del gen "
-     "FGF3: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones CNV-A del gen FGF3: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------- CNV-D ----------------------------------------------------------  
@@ -856,13 +1025,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-D del gen BRCA1: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-D del gen BRCA1: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-D del gen BRCA1: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-D del gen BRCA1: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones CNV-D del gen BRCA1: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-D del gen BRCA1: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones CNV-D del gen BRCA1: {:.2f}\n""Precisión de las mutaciones CNV-D del gen BRCA1: "
-     "{:.2f}\n""Especifidad de las mutaciones CNV-D del gen BRCA1: {:.2f}\n""Exactitud de las mutaciones CNV-D del gen "
-     "BRCA1: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones CNV-D del gen BRCA1: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- BRCA2 ---------------------------------------------------------- """
 # AUC-ROC
@@ -894,13 +1076,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-D del gen BRCA2: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-D del gen BRCA2: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-D del gen BRCA2: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-D del gen BRCA2: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones CNV-D del gen BRCA2: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-D del gen BRCA2: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones CNV-D del gen BRCA2: {:.2f}\n""Precisión de las mutaciones CNV-D del gen BRCA2: "
-     "{:.2f}\n""Especifidad de las mutaciones CNV-D del gen BRCA2: {:.2f}\n""Exactitud de las mutaciones CNV-D del gen "
-     "BRCA2: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones CNV-D del gen BRCA2: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- KDR ------------------------------------------------------------ """
 # AUC-ROC
@@ -932,13 +1127,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-D del gen KDR: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-D del gen KDR: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-D del gen KDR: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-D del gen KDR: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones CNV-D del gen KDR: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-D del gen KDR: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones CNV-D del gen KDR: {:.2f}\n""Precisión de las mutaciones CNV-D del gen KDR: "
-     "{:.2f}\n""Especifidad de las mutaciones CNV-D del gen KDR: {:.2f}\n""Exactitud de las mutaciones CNV-D del gen "
-     "KDR: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones CNV-D del gen KDR: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- CHEK1 ---------------------------------------------------------- """
 # AUC-ROC
@@ -970,13 +1178,26 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-D del gen CHEK1: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-D del gen CHEK1: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-D del gen CHEK1: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-D del gen CHEK1: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones CNV-D del gen CHEK1: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-D del gen CHEK1: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones CNV-D del gen CHEK1: {:.2f}\n""Precisión de las mutaciones CNV-D del gen CHEK1: "
-     "{:.2f}\n""Especifidad de las mutaciones CNV-D del gen CHEK1: {:.2f}\n""Exactitud de las mutaciones CNV-D del gen "
-     "CHEK1: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones CNV-D del gen CHEK1: {:.2f}%".format(accuracy * 100))
 
 """ --------------------------------------------------- FGF3 ---------------------------------------------------------- """
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_FGF3_DEL')]
@@ -1007,15 +1228,28 @@ if(len(np.unique(y_true))) > 1:
     plt.legend(loc = 'best')
     plt.show()
     
-    # Métricas
-    tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+# Métricas
+tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
+if tp + fn > 0:
     recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-D del gen FGF3: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-D del gen FGF3: {}".format(recall))
+if tp + fp > 0:
     precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-D del gen FGF3: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-D del gen FGF3: {}".format(precision))
+if tn + fp > 0:
     specifity = tn / (tn + fp)
-    accuracy = (tp + tn) / (tp + fp + tn + fn)
-    print("\nSensibilidad de las mutaciones CNV-D del gen FGF3: {:.2f}\n""Precisión de las mutaciones CNV-D del gen "
-          "FGF3: {:.2f}\n""Especifidad de las mutaciones CNV-D del gen FGF3: {:.2f}\n""Exactitud de las mutaciones CNV-D "
-          "del gen FGF3: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+    print("Especifidad de las mutaciones CNV-D del gen FGF3: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-D del gen FGF3: {}".format(specifity))
+accuracy = (tp + tn) / (tp + fp + tn + fn)
+print("Exactitud de las mutaciones CNV-D del gen FGF3: {:.2f}%".format(accuracy * 100))
 
 """ -------------------------------------------------- FANCA ----------------------------------------------------------- """
 # AUC-ROC
@@ -1047,10 +1281,23 @@ plt.show()
 
 # Métricas
 tn, fp, fn, tp = confusion_matrix(y_true, np.round(y_pred_prob)).ravel()
-recall = tp / (tp + fn)
-precision = tp / (tp + fp)
-specifity = tn / (tn + fp)
+if tp + fn > 0:
+    recall = tp / (tp + fn)
+    print("\nSensibilidad de las mutaciones CNV-D del gen FANCA: {:.2f}%".format(recall * 100))
+else:
+    recall = "No definido"
+    print("\nSensibilidad de las mutaciones CNV-D del gen FANCA: {}".format(recall))
+if tp + fp > 0:
+    precision = tp / (tp + fp)
+    print("Precisión de las mutaciones CNV-D del gen FANCA: {:.2f}%".format(precision * 100))
+else:
+    precision = "No definido"
+    print("Precisión de las mutaciones CNV-D del gen FANCA: {}".format(precision))
+if tn + fp > 0:
+    specifity = tn / (tn + fp)
+    print("Especifidad de las mutaciones CNV-D del gen FANCA: {:.2f}%".format(specifity * 100))
+else:
+    specifity = "No definido"
+    print("Especifidad de las mutaciones CNV-D del gen FANCA: {}".format(specifity))
 accuracy = (tp + tn) / (tp + fp + tn + fn)
-print("\nSensibilidad de las mutaciones CNV-D del gen FANCA: {:.2f}\n""Precisión de las mutaciones CNV-D del gen FANCA: "
-     "{:.2f}\n""Especifidad de las mutaciones CNV-D del gen FANCA: {:.2f}\n""Exactitud de las mutaciones CNV-D del gen "
-     "FANCA: {:.2f} %".format(recall, precision, specifity, accuracy * 100))
+print("Exactitud de las mutaciones CNV-D del gen FANCA: {:.2f}%".format(accuracy * 100))
