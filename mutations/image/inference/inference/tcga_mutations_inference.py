@@ -489,7 +489,8 @@ if (y_true == 1).any():
 y_true = test_labels_snv[:, classes_snv.index('SNV_PTEN')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_PTEN')].ravel()
-if 1 in y_true:
+
+if (y_true == 1).any():
     # AUC-ROC
     fpr, tpr, thresholds_snv_pten = roc_curve(y_true, y_pred_prob)
     auc_roc = auc(fpr, tpr)
@@ -541,7 +542,8 @@ if 1 in y_true:
 y_true = test_labels_snv[:, classes_snv.index('SNV_ERBB2')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_ERBB2')].ravel()
-if 1 in y_true:
+
+if (y_true == 1).any():
     # AUC-ROC
     fpr, tpr, thresholds_snv_erbb2 = roc_curve(y_true, y_pred_prob)
     auc_roc = auc(fpr, tpr)
@@ -593,7 +595,8 @@ if 1 in y_true:
 y_true = test_labels_snv[:, classes_snv.index('SNV_EGFR')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_EGFR')].ravel()
-if 1 in y_true:
+
+if (y_true == 1).any():
     # AUC-ROC
     fpr, tpr, thresholds_snv_egfr = roc_curve(y_true, y_pred_prob)
     auc_roc = auc(fpr, tpr)
@@ -645,7 +648,8 @@ if 1 in y_true:
 y_true = test_labels_snv[:, classes_snv.index('SNV_MTOR')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_MTOR')].ravel()
-if 1 in y_true:
+
+if (y_true == 1).any():
     # AUC-ROC
     fpr, tpr, thresholds_snv_mtor = roc_curve(y_true, y_pred_prob)
     auc_roc = auc(fpr, tpr)
@@ -700,7 +704,8 @@ if 1 in y_true:
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_MYC_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_MYC_AMP')].ravel()
-if 1 in y_true:
+
+if (y_true == 1).any():
     # AUC-ROC
     fpr, tpr, thresholds_cnv_a_myc = roc_curve(y_true, y_pred_prob)
     auc_roc = auc(fpr, tpr)
@@ -752,7 +757,8 @@ if 1 in y_true:
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_CCND1_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_CCND1_AMP')].ravel()
-if 1 in y_true:
+
+if (y_true == 1).any():
     # AUC-ROC
     fpr, tpr, thresholds_cnv_a_ccnd1 = roc_curve(y_true, y_pred_prob)
     auc_roc = auc(fpr, tpr)
@@ -796,7 +802,7 @@ if 1 in y_true:
         print("Especifidad de las mutaciones CNV-A del gen CCND1: {:.2f}%".format(specifity * 100))
     else:
         specifity = "No definido"
-        print("Especifidad de las mutaciones CNV-A del gen CCND1: {}".format(specifity))
+        print("Especifi dad de las mutaciones CNV-A del gen CCND1: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-A del gen CCND1: {:.2f}%".format(accuracy * 100))
 
@@ -804,7 +810,8 @@ if 1 in y_true:
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_CDKN1B_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_CDKN1B_AMP')].ravel()
-if 1 in y_true:
+
+if (y_true == 1).any():
     # AUC-ROC
     fpr, tpr, thresholds_cnv_a_cdkn1b = roc_curve(y_true, y_pred_prob)
     auc_roc = auc(fpr, tpr)
