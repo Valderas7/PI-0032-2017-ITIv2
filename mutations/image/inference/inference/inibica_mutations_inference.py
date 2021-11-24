@@ -58,7 +58,9 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-model = load_model('/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_25_0.41.h5')
+path = '/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_25_0.41.h5'
+model = load_model(path)
+epoch_model = path.split('_')[4]
 
 """ Se abre WSI especificada """
 path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
@@ -253,9 +255,20 @@ pixeles_x = slide.shape[1]
 pixeles_y = slide.shape[0]
 dpi = 100
 
+""" Se crean las carpetas para guardar los mapas de calor que se corresponden con la 'epoch' del modelo elegido """
+new_snv_epoch_folder = '/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}'.format(epoch_model)
+new_cnv_a_epoch_folder = '/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}'.format(epoch_model)
+new_cnv_d_epoch_folder = '/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}'.format(epoch_model)
+
+if not os.path.exists(new_snv_epoch_folder):
+    os.makedirs(new_snv_epoch_folder)
+if not os.path.exists(new_cnv_a_epoch_folder):
+    os.makedirs(new_cnv_a_epoch_folder)
+if not os.path.exists(new_cnv_d_epoch_folder):
+    os.makedirs(new_cnv_d_epoch_folder)
+
 """ --------------------------------------------------- SNV -------------------------------------------------------- 
 -------------------------------------------------------------------------------------------------------------------- """
-
 """ -------------------------------------------------- PIK3CA ------------------------------------------------------ """
 grid = snv_scores[0] # (nº filas, nº columnas)
 
@@ -280,7 +293,7 @@ redimensionado a las dimensiones de la imagen de mínima resolución del WSI) ""
                #aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # TIFF
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_PIK3CA.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_PIK3CA.png'.format(epoch_model))
 #plt.show()
 
 """ --------------------------------------------------- TP53 ------------------------------------------------------- """
@@ -300,7 +313,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_TP53.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_TP53.png'.format(epoch_model))
 
 """ --------------------------------------------------- AKT1 ------------------------------------------------------- """
 grid = snv_scores[2] # (nº filas, nº columnas)
@@ -319,7 +332,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_AKT1.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_AKT1.png'.format(epoch_model))
 
 """ ------------------------------------------------- PTEN --------------------------------------------------------- """
 grid = snv_scores[3] # (nº filas, nº columnas)
@@ -338,7 +351,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_PTEN.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_PTEN.png'.format(epoch_model))
 
 """ ------------------------------------------------- ERBB2 --------------------------------------------------------- """
 grid = snv_scores[4] # (nº filas, nº columnas)
@@ -357,7 +370,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_ERBB2.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_ERBB2.png'.format(epoch_model))
 
 """ ------------------------------------------------- EGFR --------------------------------------------------------- """
 grid = snv_scores[5] # (nº filas, nº columnas)
@@ -376,7 +389,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_EGFR.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_EGFR.png'.format(epoch_model))
 
 """ ------------------------------------------------- MTOR --------------------------------------------------------- """
 grid = snv_scores[6] # (nº filas, nº columnas)
@@ -395,12 +408,11 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/snv_MTOR.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_MTOR.png'.format(epoch_model))
 
 
 """ ------------------------------------------------- CNV-A -------------------------------------------------------- 
 -------------------------------------------------------------------------------------------------------------------- """
-
 """ -------------------------------------------------- MYC --------------------------------------------------------- """
 grid = cnv_a_scores[0] # (nº filas, nº columnas)
 
@@ -418,7 +430,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_MYC.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_MYC.png'.format(epoch_model))
 
 """ ----------------------------------------------- CCND1 ---------------------------------------------------------- """
 grid = cnv_a_scores[1] # (nº filas, nº columnas)
@@ -437,7 +449,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_CCND1.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_CCND1.png'.format(epoch_model))
 
 """ ----------------------------------------------- CDKN1B --------------------------------------------------------- """
 grid = cnv_a_scores[2] # (nº filas, nº columnas)
@@ -456,7 +468,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_CDKN1B.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_CDKN1B.png'.format(epoch_model))
 
 """ ------------------------------------------------ FGF19 --------------------------------------------------------- """
 grid = cnv_a_scores[3] # (nº filas, nº columnas)
@@ -475,7 +487,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_FGF19.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_FGF19.png'.format(epoch_model))
 
 """ --------------------------------------------- ERBB2 ------------------------------------------------------------ """
 grid = cnv_a_scores[4] # (nº filas, nº columnas)
@@ -494,7 +506,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_ERBB2.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_ERBB2.png'.format(epoch_model))
 
 """ ------------------------------------------------ FGF3 ---------------------------------------------------------- """
 grid = cnv_a_scores[5] # (nº filas, nº columnas)
@@ -513,11 +525,10 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/cnv_a_FGF3.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_FGF3.png'.format(epoch_model))
 
 """ ------------------------------------------------- CNV-D -------------------------------------------------------- 
 -------------------------------------------------------------------------------------------------------------------- """
-
 """ ------------------------------------------------- BRCA1 -------------------------------------------------------- """
 grid = cnv_d_scores[0] # (nº filas, nº columnas)
 
@@ -535,7 +546,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_BRCA1.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_BRCA1.png'.format(epoch_model))
 
 """ ----------------------------------------------- BRCA2 ---------------------------------------------------------- """
 grid = cnv_d_scores[1] # (nº filas, nº columnas)
@@ -554,7 +565,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_BRCA2.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_BRCA2.png'.format(epoch_model))
 
 """ ----------------------------------------------- KDR ----------------------------------------------------------- """
 grid = cnv_d_scores[2] # (nº filas, nº columnas)
@@ -573,7 +584,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_KDR.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_KDR.png'.format(epoch_model))
 
 """ ------------------------------------------------ CHEK1 --------------------------------------------------------- """
 grid = cnv_d_scores[3] # (nº filas, nº columnas)
@@ -592,7 +603,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_CHEK1.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_CHEK1.png'.format(epoch_model))
 
 """ ---------------------------------------------- FGF3 ------------------------------------------------------------ """
 grid = cnv_d_scores[4] # (nº filas, nº columnas)
@@ -611,7 +622,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_FGF3.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_FGF3.png'.format(epoch_model))
 
 """ ------------------------------------------------ FANCA --------------------------------------------------------- """
 grid = cnv_d_scores[5] # (nº filas, nº columnas)
@@ -630,4 +641,4 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/cnv_d_FANCA.png')
+plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_FANCA.png'.format(epoch_model))
