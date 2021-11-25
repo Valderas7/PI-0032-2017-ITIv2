@@ -370,6 +370,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones SNV del gen PIK3CA: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones SNV del gen PIK3CA: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones SNV del gen PIK3CA: {:.2f}%".format(specifity * 100))
@@ -423,6 +426,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones SNV del gen TP53: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones SNV del gen TP53: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones SNV del gen TP53: {:.2f}%".format(specifity * 100))
@@ -476,6 +482,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones SNV del gen AKT1: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones SNV del gen AKT1: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones SNV del gen AKT1: {:.2f}%".format(specifity * 100))
@@ -529,6 +538,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones SNV del gen PTEN: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones SNV del gen PTEN: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones SNV del gen PTEN: {:.2f}%".format(specifity * 100))
@@ -582,6 +594,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones SNV del gen ERBB2: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones SNV del gen ERBB2: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones SNV del gen ERBB2: {:.2f}%".format(specifity * 100))
@@ -635,6 +650,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones SNV del gen EGFR: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones SNV del gen EGFR: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones SNV del gen EGFR: {:.2f}%".format(specifity * 100))
@@ -688,6 +706,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones SNV del gen MTOR: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones SNV del gen MTOR: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones SNV del gen MTOR: {:.2f}%".format(specifity * 100))
@@ -744,6 +765,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-A del gen MYC: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-A del gen MYC: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-A del gen MYC: {:.2f}%".format(specifity * 100))
@@ -797,6 +821,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-A del gen CCND1: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-A del gen CCND1: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-A del gen CCND1: {:.2f}%".format(specifity * 100))
@@ -850,6 +877,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-A del gen CDKN1B: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-A del gen CDKN1B: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-A del gen CDKN1B: {:.2f}%".format(specifity * 100))
@@ -903,6 +933,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-A del gen FGF19: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-A del gen FGF19: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-A del gen FGF19: {:.2f}%".format(specifity * 100))
@@ -956,6 +989,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-A del gen ERBB2: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-A del gen ERBB2: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-A del gen ERBB2: {:.2f}%".format(specifity * 100))
@@ -1009,6 +1045,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-A del gen FGF3: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-A del gen FGF3: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-A del gen FGF3: {:.2f}%".format(specifity * 100))
@@ -1065,6 +1104,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-D del gen BRCA1: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-D del gen BRCA1: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-D del gen BRCA1: {:.2f}%".format(specifity * 100))
@@ -1118,6 +1160,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-D del gen BRCA2: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-D del gen BRCA2: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-D del gen BRCA2: {:.2f}%".format(specifity * 100))
@@ -1171,6 +1216,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-D del gen KDR: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-D del gen KDR: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-D del gen KDR: {:.2f}%".format(specifity * 100))
@@ -1224,6 +1272,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-D del gen CHEK1: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-D del gen CHEK1: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-D del gen CHEK1: {:.2f}%".format(specifity * 100))
@@ -1277,6 +1328,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-D del gen FGF3: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-D del gen FGF3: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-D del gen FGF3: {:.2f}%".format(specifity * 100))
@@ -1330,6 +1384,9 @@ if (y_true == 1).any():
     else:
         precision = "No definido"
         print("Precisión de las mutaciones CNV-D del gen FANCA: {}".format(precision))
+    if recall > 0 and precision > 0:
+        f1_score = 2 * recall * precision / (recall + precision)
+        print("Valor-F de las mutaciones CNV-D del gen FANCA: {:.2f}".format(f1_score))
     if tn + fp > 0:
         specifity = tn / (tn + fp)
         print("Especifidad de las mutaciones CNV-D del gen FANCA: {:.2f}%".format(specifity * 100))
