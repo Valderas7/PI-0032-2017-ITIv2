@@ -295,7 +295,7 @@ model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'catego
 model.summary()
 
 """ Se implementan varios callbacks para guardar el mejor modelo. """
-checkpoint_path = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/models/model_image_mutations_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/models/model_image_anatomopathologic_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', period = 15)
 
 """ Una vez definido el modelo, se entrena: """
@@ -340,7 +340,7 @@ neural_network = model.fit(x = train_image_data, y = {'tumor_type': train_labels
                                                                           'pT': valid_labels_pT, 'pN': valid_labels_pN, 
                                                                           'pM': valid_labels_pM, 
                                                                           'IHQ': valid_labels_IHQ}),
-                           #callbacks = mcp_save,
+                           callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension), 
                            validation_steps = (valid_image_data_len / batch_dimension))
 
