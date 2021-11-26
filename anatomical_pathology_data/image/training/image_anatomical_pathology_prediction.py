@@ -294,9 +294,9 @@ model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'catego
               metrics = metrics)
 model.summary()
 
-""" Se implementa un callback: para guardar el mejor modelo que tenga la mayor F1-Score en la validación. """
-checkpoint_path = '/anatomical_pathology_data/image/inference/models/model_image_anatomical_pathology.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode = 'min')
+""" Se implementan varios callbacks para guardar el mejor modelo. """
+checkpoint_path = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/models/model_image_mutations_{epoch:02d}_{val_loss:.2f}.h5'
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', period = 15)
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = {'tumor_type': train_labels_tumor_type, 'STAGE': train_labels_STAGE,
@@ -315,7 +315,7 @@ sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
 set_trainable = 0
 
 for layer in base_model.layers:
-    if layer.name == 'block4a_expand_conv':
+    if layer.name == 'block3a_expand_conv':
         set_trainable = True
     if set_trainable:
         if not isinstance(layer, layers.BatchNormalization):
@@ -326,7 +326,7 @@ se tomen en cuenta """
 model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'categorical_crossentropy',
                       'pT': 'categorical_crossentropy', 'pN': 'categorical_crossentropy',
                       'pM': 'categorical_crossentropy', 'IHQ': 'categorical_crossentropy'},
-              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
               metrics = metrics)
 model.summary()
 
@@ -334,8 +334,8 @@ model.summary()
 neural_network = model.fit(x = train_image_data, y = {'tumor_type': train_labels_tumor_type, 'STAGE': train_labels_STAGE, 
                                                       'pT': train_labels_pT, 'pN': train_labels_pN, 
                                                       'pM': train_labels_pM, 'IHQ': train_labels_IHQ}, 
-                           epochs = 150, verbose = 1, validation_data = (valid_image_data,
-                                                                         {'tumor_type': valid_labels_tumor_type, 
+                           epochs = 500, verbose = 1, validation_data = (valid_image_data,
+                                                                         {'tumor_type': valid_labels_tumor_type,
                                                                           'STAGE': valid_labels_STAGE, 
                                                                           'pT': valid_labels_pT, 'pN': valid_labels_pN, 
                                                                           'pM': valid_labels_pM, 
