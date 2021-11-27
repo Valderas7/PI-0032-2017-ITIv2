@@ -326,7 +326,7 @@ se tomen en cuenta """
 model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'categorical_crossentropy',
                       'pT': 'categorical_crossentropy', 'pN': 'categorical_crossentropy',
                       'pM': 'categorical_crossentropy', 'IHQ': 'categorical_crossentropy'},
-              optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 model.summary()
 
@@ -340,7 +340,7 @@ neural_network = model.fit(x = train_image_data, y = {'tumor_type': train_labels
                                                                           'pT': valid_labels_pT, 'pN': valid_labels_pN, 
                                                                           'pM': valid_labels_pM, 
                                                                           'IHQ': valid_labels_IHQ}),
-                           callbacks = mcp_save,
+                           #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension), 
                            validation_steps = (valid_image_data_len / batch_dimension))
 
