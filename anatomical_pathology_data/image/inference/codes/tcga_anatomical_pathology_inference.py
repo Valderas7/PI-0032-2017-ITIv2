@@ -3,15 +3,19 @@ anatomopatológicos.
 
 Table 2. Anatomical pathology samples in TCGA dataset with lymph node patients (552 patients)
 
-|       Tumor Type        |       STAGE         |    pT     |       pN      |      pM       |       IHQ     |
-|   Type  |     Samples   | STAGE  |   Samples ||    Gene  | Samples |
-    IDC         402         MYC         81          BRCA2       5
-    ILC         105         CCND1       84          BRCA1       3
-    Other       20          CDKN1B      1           KDR         1
-Mixed(NOS)      17          FGF19       80          CHEK1       5
-Mucinous        6          ERBB2       79          FGF3        0
-Medillary       1           FGF3        81          FANCA       12
-Metaplastic     1
+|       Tumor Type  |       STAGE      |      pT      |       pN      |      pM       |       IHQ       |
+|   Type  | Samples | STAGE  | Samples | pT | Samples | pN  | Samples | pM |  Samples | Subtype | Samples |
+    IDC         402    IIB       214    T2      331     N1A     164     M0      442      Lum-A      254
+    ILC         105    IIIA      155    T3       94     N1      123     MX       92      Lum-B      113
+    Other       20     IIA        67    T1C      79     N2A      64     M1       18      Basal      64
+Mixed(NOS)      17     IIIC       64    T4B      20     N2       55                      Her2       46
+Mucinous        6      IIIB       19    T1       13     N3A      46                      Normal     16
+Medillary       1      IV         16    T4        6     N1MI     36
+Metaplastic     1      IB          6    T1B       3     N1B      32
+                       II          3    T4D       3     N3       26
+                       X           3    T1A       1     N3B       3
+                       III         2    T2B       1     N1C       2
+                                                        N3C       1
 """
 
 """ Librerías """
