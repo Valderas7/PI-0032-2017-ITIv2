@@ -176,42 +176,53 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 anatomical_pathology_data_scores[4][alto_slide][ancho_slide] = np.argmax(prediction_pM)
                 anatomical_pathology_data_scores[5][alto_slide][ancho_slide] = np.argmax(prediction_IHQ)
 
-""" Se realiza la suma para cada una de las columnas de la lista de predicciones. Como resultado, se obtiene una lista
-de (genes) columnas y 1 sola fila, ya que se han sumado las predicciones de todas las teselas para cada gen. """
-# SNV
-snv = np.concatenate(snv)
-snv_sum_columns = snv.sum(axis = 0)
+""" Se realiza la suma de las columnas para cada una de las predicciones de cada datos anatomopatológicos. Como 
+resultado, se obtiene un array de varias columnas (dependiendo del dato anatomopatológico habrá más o menos clases) y 
+una sola fila, ya que se han sumado las predicciones de todas las teselas. Este array se ordena por los índice de mayor 
+a menor puntuación, siendo el de mayor puntuación la predicción de la clase del dato anatomopatológico analizado """
+# Tipo histológico
+tumor_type_classes = ['Invasive Ductal Carcinoma', 'Invasive Lobular Carcinoma', 'Medullary', 'Metaplastic',
+                      'Mixed (NOS)', 'Mucinous', 'Other']
+tumor_type = np.concatenate(anatomical_pathology_list[0])
+tumor_type_sum = np.array(tumor_type.sum(axis = 0))
+max_tumor_type = int(np.argsort(tumor_type_sum)[::-1][:1])
+print("Tipo histológico: {}".format(tumor_type_classes[max_tumor_type]))
 
-# CNV-A
-cnv_a = np.concatenate(cnv_a)
-cnv_a_sum_columns = cnv_a.sum(axis = 0)
+# STAGE
+STAGE_classes = ['Stage IB', 'Stage II', 'Stage IIA', 'Stage IIB', 'Stage III', 'Stage IIIA', 'Stage IIIB',
+                 'Stage IIIC', 'Stage IV', 'STAGE X']
+STAGE = np.concatenate(anatomical_pathology_list[1])
+STAGE_sum = np.array(STAGE.sum(axis = 0))
+max_STAGE = int(np.argsort(STAGE_sum)[::-1][:1])
+print("Estadio anatomopatológico: {}".format(STAGE_classes[max_STAGE]))
 
-# CNV-D
-cnv_d = np.concatenate(cnv_d)
-cnv_d_sum_columns = cnv_d.sum(axis = 0)
+# pT
+pT_classes = ['T1', 'T1A', 'T1B', 'T1C', 'T2', 'T2B', 'T3', 'T4', 'T4B', 'T4D']
+pT = np.concatenate(anatomical_pathology_list[2])
+pT_sum = np.array(pT.sum(axis = 0))
+max_pT = int(np.argsort(pT_sum)[::-1][:1])
+print("Parámetro pT: {}".format(pT_classes[max_pT]))
 
-""" Se ordenan los índices de la lista resultante ordenador de mayor a menor valor, mostrando los resultados con mayor 
-valor, que serán los de los genes con mayor probabilidad de mutación """
-# SNV
-max_snv = np.argsort(snv_sum_columns)[::-1][:1]
+# pN
+pN_classes = ['N1', 'N1A', 'N1B', 'N1C', 'N1MI', 'N2', 'N2A', 'N3', 'N3A', 'N3B', 'N3C']
+pN = np.concatenate(anatomical_pathology_list[3])
+pN_sum = np.array(pN.sum(axis = 0))
+max_pN = int(np.argsort(pN_sum)[::-1][:1])
+print("Parámetro pN: {}".format(pN_classes[max_pN]))
 
-for (index, sorted_index_snv) in enumerate(max_snv):
-    label_snv = "La mutación SNV más probable es del gen {}".format(classes_snv[sorted_index_snv].split('_')[1])
-    print(label_snv)
+# pM
+pM_classes = ['M0', 'M1', 'MX']
+pM = np.concatenate(anatomical_pathology_list[4])
+pM_sum = np.array(pM.sum(axis = 0))
+max_pM = int(np.argsort(pM_sum)[::-1][:1])
+print("Parámetro pM: {}".format(pM_classes[max_pM]))
 
-# CNV-A
-max_cnv_a = np.argsort(cnv_a_sum_columns)[::-1][:1]
-
-for (index, sorted_index_cnv_a) in enumerate(max_cnv_a):
-    label_cnv_a = "La mutación CNV-A más probable es del gen {}".format(classes_cnv_a[sorted_index_cnv_a].split('_')[1])
-    print(label_cnv_a)
-
-# CNV-D
-max_cnv_d = np.argsort(cnv_d_sum_columns)[::-1][:1]
-
-for (index, sorted_index_cnv_d) in enumerate(max_cnv_d):
-    label_cnv_d = "La mutación CNV-D más probable es del gen {}".format(classes_cnv_d[sorted_index_cnv_d].split('_')[1])
-    print(label_cnv_d)
+# IHQ
+IHQ_classes = ['Basal', 'Her-2', 'Luminal A', 'Luminal B', 'Normal']
+IHQ = np.concatenate(anatomical_pathology_list[5])
+IHQ_sum = np.array(IHQ.sum(axis = 0))
+max_IHQ = int(np.argsort(IHQ_sum)[::-1][:1])
+print("Subtipo molecular: {}".format(IHQ_classes[max_IHQ]))
 
 """ Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle después el mapa de calor y lo 
 suficientemente alto para que tenga un buen nivel de resolución """
@@ -228,9 +239,9 @@ pixeles_y = slide.shape[0]
 dpi = 100
 
 """ Se crean las carpetas para guardar los mapas de calor que se corresponden con la 'epoch' del modelo elegido """
-new_snv_epoch_folder = '/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}'.format(epoch_model)
-new_cnv_a_epoch_folder = '/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}'.format(epoch_model)
-new_cnv_d_epoch_folder = '/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}'.format(epoch_model)
+new_snv_epoch_folder = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}'.format(epoch_model)
+new_cnv_a_epoch_folder = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}'.format(epoch_model)
+new_cnv_d_epoch_folder = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}'.format(epoch_model)
 
 if not os.path.exists(new_snv_epoch_folder):
     os.makedirs(new_snv_epoch_folder)
@@ -239,10 +250,10 @@ if not os.path.exists(new_cnv_a_epoch_folder):
 if not os.path.exists(new_cnv_d_epoch_folder):
     os.makedirs(new_cnv_d_epoch_folder)
 
-""" --------------------------------------------------- SNV -------------------------------------------------------- 
--------------------------------------------------------------------------------------------------------------------- """
-""" -------------------------------------------------- PIK3CA ------------------------------------------------------ """
-grid = snv_scores[0] # (nº filas, nº columnas)
+""" -------------------------------------------------------------------------------------------------------------------- 
+---------------------------------------------------- Tipo histológico --------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------ """
+grid = anatomical_pathology_data_scores[0] # (nº filas, nº columnas)
 
 """ Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
 resolución del WSI """
@@ -256,7 +267,7 @@ mask = np.zeros_like(tiles_scores_array)
 mask[np.where((tiles_scores_array < 0.09) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.5,
                       zorder = 2, vmin = 0.0, vmax = 1.0)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -265,8 +276,9 @@ redimensionado a las dimensiones de la imagen de mínima resolución del WSI) ""
                #aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # TIFF
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_PIK3CA.png'.format(epoch_model))
+plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}/tumor_type.png'.format(epoch_model))
 #plt.show()
+quit()
 
 """ --------------------------------------------------- TP53 ------------------------------------------------------- """
 grid = snv_scores[1] # (nº filas, nº columnas)
