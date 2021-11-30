@@ -95,7 +95,7 @@ df_all_merge = pd.get_dummies(df_all_merge, columns=["tumor_type", "stage", "pat
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
 # @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_data, test_data = train_test_split(df_all_merge, test_size = 0.20)
-train_data, valid_data = train_test_split(train_data, test_size = 0.20)
+train_data, valid_data = train_test_split(train_data, test_size = 0.15)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -233,7 +233,7 @@ test_labels_IHQ = np.asarray(test_labels_IHQ).astype('float32')
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
 del df_all_merge, df_path_n_stage, df_list, train_data
 
-train_image_data_len = len(train_image_data)
+train_image_data_len = len(train_image_data) #print(train_image_data_len)
 valid_image_data_len = len(valid_image_data)
 batch_dimension = 32
 
@@ -296,13 +296,13 @@ model.summary()
 
 """ Se implementan varios callbacks para guardar el mejor modelo. """
 checkpoint_path = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/models/model_image_anatomopathologic_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', period = 15)
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = {'tumor_type': train_labels_tumor_type, 'STAGE': train_labels_STAGE,
                                 'pT': train_labels_pT, 'pN': train_labels_pN, 'pM': train_labels_pM,
                                 'IHQ': train_labels_IHQ},
-          epochs = 2, verbose = 1, validation_data = (valid_image_data, {'tumor_type': valid_labels_tumor_type, 
+          epochs = 3, verbose = 1, validation_data = (valid_image_data, {'tumor_type': valid_labels_tumor_type,
                                                                          'STAGE': valid_labels_STAGE, 
                                                                          'pT': valid_labels_pT, 'pN': valid_labels_pN, 
                                                                          'pM': valid_labels_pM, 'IHQ': valid_labels_IHQ}), 
@@ -334,7 +334,7 @@ model.summary()
 neural_network = model.fit(x = train_image_data, y = {'tumor_type': train_labels_tumor_type, 'STAGE': train_labels_STAGE, 
                                                       'pT': train_labels_pT, 'pN': train_labels_pN, 
                                                       'pM': train_labels_pM, 'IHQ': train_labels_IHQ}, 
-                           epochs = 500, verbose = 1, validation_data = (valid_image_data,
+                           epochs = 100, verbose = 1, validation_data = (valid_image_data,
                                                                          {'tumor_type': valid_labels_tumor_type,
                                                                           'STAGE': valid_labels_STAGE, 
                                                                           'pT': valid_labels_pT, 'pN': valid_labels_pN, 

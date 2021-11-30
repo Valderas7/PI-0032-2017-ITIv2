@@ -423,7 +423,7 @@ classes_cnv_normal = test_columns_cnv_normal.tolist()
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
 del df_all_merge, df_path_n_stage, df_list
 
-train_image_data_len = len(train_image_data)
+train_image_data_len = len(train_image_data) #print(train_image_data_len)
 valid_image_data_len = len(valid_image_data)
 batch_dimension = 32
 
@@ -497,14 +497,14 @@ model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentrop
               metrics = metrics)
 model.summary()
 
-""" Se implementan varios callbacks para guardar el mejor modelo. """
+""" Se implementa un callbacks para guardar el modelo cada época. """
 checkpoint_path = '/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', period = 15)
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = {'snv': train_labels_snv, 'cnv_a': train_labels_cnv_a,
                                      'cnv_normal': train_labels_cnv_normal, 'cnv_d': train_labels_cnv_d},
-          epochs = 2, verbose = 1, validation_data = (valid_image_data, {'snv': valid_labels_snv,
+          epochs = 1, verbose = 1, validation_data = (valid_image_data, {'snv': valid_labels_snv,
                                                                          'cnv_a': valid_labels_cnv_a,
                                                                          'cnv_normal': valid_labels_cnv_normal,
                                                                          'cnv_d': valid_labels_cnv_d}),
@@ -535,7 +535,7 @@ model.summary()
 neural_network = model.fit(x = train_image_data, y = {'snv': train_labels_snv, 'cnv_a': train_labels_cnv_a,
                                                       'cnv_normal': train_labels_cnv_normal,
                                                       'cnv_d': train_labels_cnv_d},
-                           epochs = 500, verbose = 1, validation_data = (valid_image_data, {'snv': valid_labels_snv,
+                           epochs = 100, verbose = 1, validation_data = (valid_image_data, {'snv': valid_labels_snv,
                                                                                           'cnv_a': valid_labels_cnv_a,
                                                                                           'cnv_normal': valid_labels_cnv_normal,
                                                                                           'cnv_d': valid_labels_cnv_d}),

@@ -30,7 +30,7 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/mutations/image/inference/models/model_image_mutations_EpochX.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_15_0.43.h5')
 
 test_image_data = np.load('/home/avalderas/img_slides/mutations/image/inference/test_data/test_image.npy')
 

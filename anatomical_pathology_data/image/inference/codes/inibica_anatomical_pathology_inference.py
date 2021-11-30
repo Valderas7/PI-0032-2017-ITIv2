@@ -45,9 +45,9 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/models/model_image_anatomical_pathology.h5'
+path = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/models/model_image_anatomopathologic_X_.h5'
 model = load_model(path)
-epoch_model = path.split('_')[4]
+epoch_model = path.split('_')[6]
 
 """ Se abre WSI especificada """
 path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
@@ -129,14 +129,14 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 b = np.sum(sub_img_array[index, :, 2])
                 if r + g + b == 0:
                     tiles_scores_array[alto_slide][ancho_slide] = 1.0
-                    break # Salta a la línea #164
+                    break # Salta a la línea #147
                 """ Se realiza lo mismo que se ha realizado con las filas, pero esta vez con las columnas """
                 r = np.sum(sub_img_array[:, index, 0])
                 g = np.sum(sub_img_array[:, index, 1])
                 b = np.sum(sub_img_array[:, index, 2])
                 if r + g + b == 0:
                     tiles_scores_array[alto_slide][ancho_slide] = 1.0
-                    break # Salta a la línea #164
+                    break # Salta a la línea #147
             """ Aunque estas imágenes que tienen líneas enteramente negras (ya sea horizontalmente o verticalmente) son
             leídas, al realizar la máscara del mapa de calor van a ser ocultadas, puesto que se les ha hecho que su
             puntuación sea uno. """
@@ -267,7 +267,7 @@ mask = np.zeros_like(tiles_scores_array)
 mask[np.where((tiles_scores_array < 0.09) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.3,
                       zorder = 2, vmin = 0, vmax = 6)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -291,7 +291,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.3,
                       zorder = 2, vmin = 0, vmax = 9)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -312,7 +312,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.3,
                       zorder = 2, vmin = 0, vmax = 9)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -333,7 +333,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.3,
                       zorder = 2, vmin = 0, vmax = 10)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -354,7 +354,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.3,
                       zorder = 2, vmin = 0, vmax = 2)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
@@ -375,7 +375,7 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.3,
                       zorder = 2, vmin = 0, vmax = 4)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
