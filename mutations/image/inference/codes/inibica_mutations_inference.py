@@ -58,7 +58,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/mutations/image/inference/models/model_image_mutations_EpochX.h5'
+path = '/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_X.h5'
 model = load_model(path)
 epoch_model = path.split('_')[4]
 
@@ -148,14 +148,14 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 b = np.sum(sub_img_array[index, :, 2])
                 if r + g + b == 0:
                     tiles_scores_array[alto_slide][ancho_slide] = 1.0
-                    break # Salta a la línea #164
+                    break # Salta a la línea #166
                 """ Se realiza lo mismo que se ha realizado con las filas, pero esta vez con las columnas """
                 r = np.sum(sub_img_array[:, index, 0])
                 g = np.sum(sub_img_array[:, index, 1])
                 b = np.sum(sub_img_array[:, index, 2])
                 if r + g + b == 0:
                     tiles_scores_array[alto_slide][ancho_slide] = 1.0
-                    break # Salta a la línea #164
+                    break # Salta a la línea #166
             """ Aunque estas imágenes que tienen líneas enteramente negras (ya sea horizontalmente o verticalmente) son
             leídas, al realizar la máscara del mapa de calor van a ser ocultadas, puesto que se les ha hecho que su
             puntuación sea uno. """

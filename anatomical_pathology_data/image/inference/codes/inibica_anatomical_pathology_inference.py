@@ -267,8 +267,8 @@ mask = np.zeros_like(tiles_scores_array)
 mask[np.where((tiles_scores_array < 0.09) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+                      zorder = 2, vmin = 0, vmax = 6)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
@@ -278,29 +278,11 @@ heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), asp
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
 plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}/tumor_type.png'.format(epoch_model))
 #plt.show()
-quit()
 
-""" --------------------------------------------------- TP53 ------------------------------------------------------- """
-grid = snv_scores[1] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_TP53.png'.format(epoch_model))
-
-""" --------------------------------------------------- AKT1 ------------------------------------------------------- """
-grid = snv_scores[2] # (nº filas, nº columnas)
+""" -------------------------------------------------------------------------------------------------------------------- 
+---------------------------------------------- Estadio anatomopatológico -----------------------------------------------
+------------------------------------------------------------------------------------------------------------------------ """
+grid = anatomical_pathology_data_scores[1]
 
 """ Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
 resolución del WSI """
@@ -309,17 +291,19 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+                      zorder = 2, vmin = 0, vmax = 9)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_AKT1.png'.format(epoch_model))
+plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}/STAGE.png'.format(epoch_model))
 
-""" ------------------------------------------------- PTEN --------------------------------------------------------- """
-grid = snv_scores[3] # (nº filas, nº columnas)
+""" -------------------------------------------------------------------------------------------------------------------- 
+--------------------------------------------------- Parámetro pT -------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------ """
+grid = anatomical_pathology_data_scores[2]
 
 """ Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
 resolución del WSI """
@@ -328,17 +312,19 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+                      zorder = 2, vmin = 0, vmax = 9)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_PTEN.png'.format(epoch_model))
+plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}/pT.png'.format(epoch_model))
 
-""" ------------------------------------------------- ERBB2 --------------------------------------------------------- """
-grid = snv_scores[4] # (nº filas, nº columnas)
+""" -------------------------------------------------------------------------------------------------------------------- 
+--------------------------------------------------- Parámetro pN ------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------ """
+grid = anatomical_pathology_data_scores[3]
 
 """ Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
 resolución del WSI """
@@ -347,17 +333,19 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+                      zorder = 2, vmin = 0, vmax = 10)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_ERBB2.png'.format(epoch_model))
+plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}/pN.png'.format(epoch_model))
 
-""" ------------------------------------------------- EGFR --------------------------------------------------------- """
-grid = snv_scores[5] # (nº filas, nº columnas)
+""" -------------------------------------------------------------------------------------------------------------------- 
+--------------------------------------------------- Parámetro pM ------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------ """
+grid = anatomical_pathology_data_scores[4]
 
 """ Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
 resolución del WSI """
@@ -366,17 +354,19 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+                      zorder = 2, vmin = 0, vmax = 2)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_EGFR.png'.format(epoch_model))
+plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}/pM.png'.format(epoch_model))
 
-""" ------------------------------------------------- MTOR --------------------------------------------------------- """
-grid = snv_scores[6] # (nº filas, nº columnas)
+""" -------------------------------------------------------------------------------------------------------------------- 
+------------------------------------------------- Subtipo molecular ----------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------ """
+grid = anatomical_pathology_data_scores[5]
 
 """ Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
 resolución del WSI """
@@ -385,244 +375,11 @@ plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.4,
+                      zorder = 2, vmin = 0, vmax = 4)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/SNV/Epoch{}/snv_MTOR.png'.format(epoch_model))
-
-
-""" ------------------------------------------------- CNV-A -------------------------------------------------------- 
--------------------------------------------------------------------------------------------------------------------- """
-""" -------------------------------------------------- MYC --------------------------------------------------------- """
-grid = cnv_a_scores[0] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_MYC.png'.format(epoch_model))
-
-""" ----------------------------------------------- CCND1 ---------------------------------------------------------- """
-grid = cnv_a_scores[1] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_CCND1.png'.format(epoch_model))
-
-""" ----------------------------------------------- CDKN1B --------------------------------------------------------- """
-grid = cnv_a_scores[2] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_CDKN1B.png'.format(epoch_model))
-
-""" ------------------------------------------------ FGF19 --------------------------------------------------------- """
-grid = cnv_a_scores[3] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_FGF19.png'.format(epoch_model))
-
-""" --------------------------------------------- ERBB2 ------------------------------------------------------------ """
-grid = cnv_a_scores[4] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_ERBB2.png'.format(epoch_model))
-
-""" ------------------------------------------------ FGF3 ---------------------------------------------------------- """
-grid = cnv_a_scores[5] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-A/Epoch{}/cnv_a_FGF3.png'.format(epoch_model))
-
-""" ------------------------------------------------- CNV-D -------------------------------------------------------- 
--------------------------------------------------------------------------------------------------------------------- """
-""" ------------------------------------------------- BRCA1 -------------------------------------------------------- """
-grid = cnv_d_scores[0] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_BRCA1.png'.format(epoch_model))
-
-""" ----------------------------------------------- BRCA2 ---------------------------------------------------------- """
-grid = cnv_d_scores[1] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_BRCA2.png'.format(epoch_model))
-
-""" ----------------------------------------------- KDR ----------------------------------------------------------- """
-grid = cnv_d_scores[2] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_KDR.png'.format(epoch_model))
-
-""" ------------------------------------------------ CHEK1 --------------------------------------------------------- """
-grid = cnv_d_scores[3] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_CHEK1.png'.format(epoch_model))
-
-""" ---------------------------------------------- FGF3 ------------------------------------------------------------ """
-grid = cnv_d_scores[4] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_FGF3.png'.format(epoch_model))
-
-""" ------------------------------------------------ FANCA --------------------------------------------------------- """
-grid = cnv_d_scores[5] # (nº filas, nº columnas)
-
-""" Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
-resolución del WSI """
-sns.set(style = "white", rc = {'figure.dpi': dpi})
-plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
-plt.tight_layout()
-
-""" Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "Reds", alpha = 0.5,
-                      zorder = 2, vmin = 0.0, vmax = 1.0)
-
-""" Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
-redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/mutations/image/inference/heatmaps/CNV-D/Epoch{}/cnv_d_FANCA.png'.format(epoch_model))
+plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}/IHQ.png'.format(epoch_model))
