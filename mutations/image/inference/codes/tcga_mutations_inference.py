@@ -30,7 +30,7 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_15_0.43.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_06_0.36.h5')
 
 test_image_data = np.load('/home/avalderas/img_slides/mutations/image/inference/test_data/test_image.npy')
 
@@ -45,42 +45,7 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_image_data, [test_labels_snv, test_labels_cnv_a, test_labels_cnv_normal,
                                            test_labels_cnv_d], verbose = 0)
-"""
-print("\n'Loss' de las mutaciones SNV del panel OCA en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
-      "SNV del panel OCA en el conjunto de prueba: {:.2f}\n""Precisión de las mutaciones SNV del panel OCA en el "
-      "conjunto de prueba: {:.2f}\n""Especifidad de las mutaciones SNV del panel OCA en el conjunto de prueba: {:.2f} \n"
-      "Exactitud de las mutaciones SNV del panel OCA en el conjunto de prueba: {:.2f} %\n""AUC-ROC de las mutaciones SNV"
-      " del panel OCA en el conjunto de prueba: {:.2f}\nAUC-PR de las mutaciones SNV del panel OCA en el conjunto de "
-      "prueba: {:.2f}".format(results[1], results[9], results[10], results[7]/(results[7]+results[6]),
-                              results[11] * 100, results[12], results[13]))
 
-if results[9] > 0 or results[10] > 0:
-    print("Valor-F de las mutaciones SNV del panel OCA en el conjunto de prueba: {:.2f}".format((2 * results[9] * results[10]) /
-                                                                                                (results[9] + results[10])))
-
-print("\n'Loss' de las mutaciones CNV-A del panel OCA en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
-      "CNV-A del panel OCA en el conjunto de prueba: {:.2f}\n""Precisión de las mutaciones CNV-A del panel OCA en el "
-      "conjunto de prueba: {:.2f}\n""Especifidad de las mutaciones CNV-A del panel OCA en el conjunto de prueba: {:.2f}\n"
-      "Exactitud de las mutaciones CNV-A del panel OCA en el conjunto de prueba: {:.2f} %\n""AUC-ROC de las mutaciones "
-      "CNV-A del panel OCA en el conjunto de prueba: {:.2f}\n""AUC-PR de las mutaciones CNV-A del panel OCA en el "
-      "conjunto de prueba: {:.2f}".format(results[2], results[18], results[19], results[16]/(results[16]+results[15]),
-                                          results[20] * 100, results[21], results[22]))
-
-if results[18] > 0 or results[19] > 0:
-    print("Valor-F de las mutaciones CNV-A del panel OCA en el conjunto de prueba: {:.2f}".format((2 * results[18] * results[19]) /
-                                                                                                  (results[18] + results[19])))
-
-print("\n'Loss' de las mutaciones CNV-D del panel OCA en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
-      "CNV-D del panel OCA en el conjunto de prueba: {:.2f}\n""Precisión de las mutaciones CNV-D del panel OCA en el "
-      "conjunto de prueba: {:.2f}\n""Especifidad de las mutaciones CNV-D del panel OCA en el conjunto de prueba: {:.2f}\n"
-      "Exactitud de las mutaciones CNV-D del panel OCA en el conjunto de prueba: {:.2f} %\n""AUC-ROC de las mutaciones "
-      "CNV-D del panel OCA en el conjunto de prueba: {:.2f}\n""AUC-PR de las mutaciones CNV-D del panel OCA en el "
-      "conjunto de prueba: {:.2f}".format(results[4], results[36], results[37], results[34]/(results[34]+results[33]),
-                                          results[38] * 100, results[39], results[40]))
-if results[36] > 0 or results[37] > 0:
-    print("Valor-F de las mutaciones CNV-D del panel OCA en el conjunto de prueba: {:.2f}".format((2 * results[36] * results[37]) /
-                                                                                                  (results[36] + results[37])))
-"""
 """ -------------------------------------------------------------------------------------------------------------------
 ------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
@@ -124,208 +89,16 @@ classes_cnv_d = ['CNV_AKT1_DEL', 'CNV_AKT2_DEL', 'CNV_AKT3_DEL', 'CNV_ALK_DEL', 
                  'CNV_MYC_DEL', 'CNV_MYCL_DEL', 'CNV_MYCN_DEL', 'CNV_NTRK1_DEL', 'CNV_NTRK2_DEL', 'CNV_NTRK3_DEL',
                  'CNV_PDGFRA_DEL', 'CNV_PDGFRB_DEL', 'CNV_PIK3CA_DEL', 'CNV_PIK3CB_DEL', 'CNV_PPARG_DEL',
                  'CNV_RICTOR_DEL', 'CNV_TERT_DEL']
-
-
-""" Códigos para calcular las curvas AUC-ROC y AUC-PR micro de todos los subconjuntos de mutaciones para todos los genes
-
-#Para finalizar, se dibuja el área bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
-#documento gráfico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
-#tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases:
-# @ravel: Aplana el vector a 1D
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-from scipy import interp
-
-y_pred_prob_snv = model.predict(test_image_data)[0]
-y_pred_prob_cnv_a = model.predict(test_image_data)[1]
-y_pred_prob_cnv_d = model.predict(test_image_data)[3]
-
-# SNV
-fpr = dict()
-tpr = dict()
-auc_roc = dict()
-
-#Se calcula la tasa de falsos positivos y de verdaderos negativos para cada una de las clases, buscando en cada una
-#de las 'n' (del número de clases) columnas del problema y se calcula con ello el AUC-ROC micro-promedio 
-for i in range(len(classes_snv)):
-    if len(np.unique(test_labels_snv[:, i])) > 1:
-        fpr[i], tpr[i], _ = roc_curve(test_labels_snv[:, i], y_pred_prob_snv[:, i])
-        auc_roc[i] = auc(fpr[i], tpr[i])
-
-fpr["micro"], tpr["micro"], _ = roc_curve(test_labels_snv.ravel(), y_pred_prob_snv.ravel())
-auc_roc["micro"] = auc(fpr["micro"], tpr["micro"])
-
-#Finalmente se dibuja la curva AUC-ROC micro-promedio
-plt.figure()
-plt.plot(fpr["micro"], tpr["micro"],
-         label = 'Micro-average AUC-ROC curve (AUC = {0:.2f})'.format(auc_roc["micro"]),
-         color = 'blue', linewidth = 2)
-
-plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.xlabel('False positive rate')
-plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve for SNV mutations')
-plt.legend(loc = 'best')
-plt.show()
-
-#Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
-#del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados.
-precision = dict()
-recall = dict()
-auc_pr = dict()
-
-#Se calcula precisión y la sensibilidad para cada una de las clases, buscando en cada una de las 'n' (del número de 
-#clases) columnas del problema y se calcula con ello el AUC-PR micro-promedio
-for i in range(len(classes_snv)):
-    if len(np.unique(test_labels_snv[:, i])) > 1:
-        precision[i], recall[i], _ = precision_recall_curve(test_labels_snv[:, i], y_pred_prob_snv[:, i])
-        auc_pr[i] = auc(recall[i], precision[i])
-
-precision["micro"], recall["micro"], _ = precision_recall_curve(test_labels_snv.ravel(), y_pred_prob_snv.ravel())
-auc_pr["micro"] = auc(recall["micro"], precision["micro"])
-
-#Finalmente se dibuja la curvas AUC-PR micro-promedio
-plt.figure()
-plt.plot(recall["micro"], precision["micro"],
-         label = 'Micro-average AUC-PR curve (AUC = {0:.2f})'.format(auc_pr["micro"]),
-         color = 'blue', linewidth = 2)
-
-plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('AUC-PR curve (micro) for SNV mutations')
-plt.legend(loc = 'best')
-plt.show()
-
-# CNV-A
-fpr = dict()
-tpr = dict()
-auc_roc = dict()
-
-#Se calcula la tasa de falsos positivos y de verdaderos negativos para cada una de las clases, buscando en cada una
-#de las 'n' (del número de clases) columnas del problema y se calcula con ello el AUC-ROC micro-promedio
-for i in range(len(classes_cnv_a)):
-    if len(np.unique(test_labels_cnv_a[:, i])) > 1:
-        fpr[i], tpr[i], _ = roc_curve(test_labels_cnv_a[:, i], y_pred_prob_cnv_a[:, i])
-        auc_roc[i] = auc(fpr[i], tpr[i])
-
-fpr["micro"], tpr["micro"], _ = roc_curve(test_labels_cnv_a.ravel(), y_pred_prob_cnv_a.ravel())
-auc_roc["micro"] = auc(fpr["micro"], tpr["micro"])
-
-#Finalmente se dibuja la curva AUC-ROC micro-promedio
-plt.figure()
-plt.plot(fpr["micro"], tpr["micro"],
-         label = 'Micro-average AUC-ROC curve (AUC = {0:.2f})'.format(auc_roc["micro"]),
-         color = 'blue', linewidth = 2)
-
-plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.xlabel('False positive rate')
-plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve for CNV-A mutations')
-plt.legend(loc = 'best')
-plt.show()
-
-#Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
-#del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados.
-precision = dict()
-recall = dict()
-auc_pr = dict()
-
-#Se calcula precisión y la sensibilidad para cada una de las clases, buscando en cada una de las 'n' (del número de 
-#clases) columnas del problema y se calcula con ello el AUC-PR micro-promedio
-for i in range(len(classes_cnv_a)):
-    if len(np.unique(test_labels_cnv_a[:, i])) > 1:
-        precision[i], recall[i], _ = precision_recall_curve(test_labels_cnv_a[:, i], y_pred_prob_cnv_a[:, i])
-        auc_pr[i] = auc(recall[i], precision[i])
-
-precision["micro"], recall["micro"], _ = precision_recall_curve(test_labels_cnv_a.ravel(), y_pred_prob_cnv_a.ravel())
-auc_pr["micro"] = auc(recall["micro"], precision["micro"])
-
-#Finalmente se dibuja la curvas AUC-PR micro-promedio
-plt.figure()
-plt.plot(recall["micro"], precision["micro"],
-         label = 'Micro-average AUC-PR curve (AUC = {0:.2f})'.format(auc_pr["micro"]),
-         color = 'blue', linewidth = 2)
-
-plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('AUC-PR curve for CNV-A mutations')
-plt.legend(loc = 'best')
-plt.show()
-
-#CNV-D
-fpr = dict()
-tpr = dict()
-auc_roc = dict()
-
-#Se calcula la tasa de falsos positivos y de verdaderos negativos para cada una de las clases, buscando en cada una
-#de las 'n' (del número de clases) columnas del problema y se calcula con ello el AUC-ROC micro-promedio
-for i in range(len(classes_cnv_d)):
-    if len(np.unique(test_labels_cnv_d[:, i])) > 1:
-        fpr[i], tpr[i], _ = roc_curve(test_labels_cnv_d[:, i], y_pred_prob_cnv_d[:, i])
-        auc_roc[i] = auc(fpr[i], tpr[i])
-
-fpr["micro"], tpr["micro"], _ = roc_curve(test_labels_cnv_d.ravel(), y_pred_prob_cnv_d.ravel())
-auc_roc["micro"] = auc(fpr["micro"], tpr["micro"])
-
-#Finalmente se dibuja la curva AUC-ROC micro-promedio
-plt.figure()
-plt.plot(fpr["micro"], tpr["micro"],
-         label = 'Micro-average AUC-ROC curve (AUC = {0:.2f})'.format(auc_roc["micro"]),
-         color = 'blue', linewidth = 2)
-
-plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.xlabel('False positive rate')
-plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve for CNV-D mutations')
-plt.legend(loc = 'best')
-plt.show()
-
-#Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
-#del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados.
-precision = dict()
-recall = dict()
-auc_pr = dict()
-
-#Se calcula precisión y la sensibilidad para cada una de las clases, buscando en cada una de las 'n' (del número de 
-#clases) columnas del problema y se calcula con ello el AUC-PR micro-promedio
-for i in range(len(classes_cnv_d)):
-    if len(np.unique(test_labels_cnv_d[:, i])) > 1:
-        precision[i], recall[i], _ = precision_recall_curve(test_labels_cnv_d[:, i], y_pred_prob_cnv_d[:, i])
-        auc_pr[i] = auc(recall[i], precision[i])
-
-precision["micro"], recall["micro"], _ = precision_recall_curve(test_labels_cnv_d.ravel(), y_pred_prob_cnv_d.ravel())
-auc_pr["micro"] = auc(recall["micro"], precision["micro"])
-
-#Finalmente se dibuja la curvas AUC-PR micro-promedio
-plt.figure()
-plt.plot(recall["micro"], precision["micro"],
-         label = 'Micro-average AUC-PR curve (AUC = {0:.2f})'.format(auc_pr["micro"]),
-         color = 'blue', linewidth = 2)
-
-plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('AUC-PR curve for CNV-D mutations')
-plt.legend(loc = 'best')
-plt.show()
-"""
-
-""" Para finalizar, se dibuja el área bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
-documento gráfico del rendimiento del clasificador binario de los genes sobre los que se van a realizar posteriormente
-los mapas de calor. Esta curva representa la tasa de verdaderos positivos y la tasa de falsos positivos, por lo que 
-resume el comportamiento general del clasificador para diferenciar clases. También se dibuja el área bajo la la curva PR 
-(precision-recall), para tener un documento gráfico del rendimiento del clasificador en cuanto a la sensibilidad y la 
-precisión de resultados.
  
-Para terminar, se calculan las métricas específicas (sensibilidad, precisión, eficacia y especificidad) de estos genes
+"""Para terminar, se calculan las métricas específicas (sensibilidad, precisión, eficacia y especificidad) de estos genes
 sobre los que se van a realizar los mapas de calor. """
 # @ravel: Aplana el vector a 1D
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, classification_report
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, classification_report, roc_auc_score
 
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------ SNV -------------------------------------------------------------  
 ------------------------------------------------------------------------------------------------------------------------ """
+
 """ ------------------------------------------------- PIK3CA ----------------------------------------------------------- """
 y_true = test_labels_snv[:, classes_snv.index('SNV_PIK3CA')]
 y_pred_prob = model.predict(test_image_data)[0]
@@ -381,6 +154,9 @@ if (y_true == 1).any():
         print("Especifidad de las mutaciones SNV del gen PIK3CA: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones SNV del gen PIK3CA: {:.2f}%".format(accuracy * 100))
+
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones SNV del gen PIK3CA: {:.2f}".format(auc_roc))
 
 """ -------------------------------------------------- TP53 ------------------------------------------------------------ """
 y_true = test_labels_snv[:, classes_snv.index('SNV_TP53')]
@@ -438,6 +214,9 @@ if (y_true == 1).any():
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones SNV del gen TP53: {:.2f}%".format(accuracy * 100))
 
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones SNV del gen TP53: {:.2f}".format(auc_roc))
+
 """ -------------------------------------------------- AKT1 ------------------------------------------------------------ """
 y_true = test_labels_snv[:, classes_snv.index('SNV_AKT1')]
 y_pred_prob = model.predict(test_image_data)[0]
@@ -493,6 +272,9 @@ if (y_true == 1).any():
         print("Especifidad de las mutaciones SNV del gen AKT1: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones SNV del gen AKT1: {:.2f}%".format(accuracy * 100))
+
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones SNV del gen AKT1: {:.2f}".format(auc_roc))
 
 """ -------------------------------------------------- PTEN ------------------------------------------------------------ """
 y_true = test_labels_snv[:, classes_snv.index('SNV_PTEN')]
@@ -550,6 +332,9 @@ if (y_true == 1).any():
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones SNV del gen PTEN: {:.2f}%".format(accuracy * 100))
 
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones SNV del gen PTEN: {:.2f}".format(auc_roc))
+
 """ --------------------------------------------------- ERBB2 ---------------------------------------------------------- """
 y_true = test_labels_snv[:, classes_snv.index('SNV_ERBB2')]
 y_pred_prob = model.predict(test_image_data)[0]
@@ -605,6 +390,9 @@ if (y_true == 1).any():
         print("Especifidad de las mutaciones SNV del gen ERBB2: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones SNV del gen ERBB2: {:.2f}%".format(accuracy * 100))
+
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones SNV del gen ERBB2: {:.2f}".format(auc_roc))
 
 """ --------------------------------------------------- EGFR ---------------------------------------------------------- """
 y_true = test_labels_snv[:, classes_snv.index('SNV_EGFR')]
@@ -662,6 +450,9 @@ if (y_true == 1).any():
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones SNV del gen EGFR: {:.2f}%".format(accuracy * 100))
 
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones SNV del gen EGFR: {:.2f}".format(auc_roc))
+
 """ --------------------------------------------------- MTOR ---------------------------------------------------------- """
 y_true = test_labels_snv[:, classes_snv.index('SNV_MTOR')]
 y_pred_prob = model.predict(test_image_data)[0]
@@ -718,9 +509,13 @@ if (y_true == 1).any():
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones SNV del gen MTOR: {:.2f}%".format(accuracy * 100))
 
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones SNV del gen MTOR: {:.2f}".format(auc_roc))
+
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------ CNV-A -----------------------------------------------------------  
 ------------------------------------------------------------------------------------------------------------------------ """
+
 """ --------------------------------------------------- MYC ---------------------------------------------------------- """
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_MYC_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
@@ -776,6 +571,9 @@ if (y_true == 1).any():
         print("Especifidad de las mutaciones CNV-A del gen MYC: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-A del gen MYC: {:.2f}%".format(accuracy * 100))
+
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-A del gen MYC: {:.2f}".format(auc_roc))
 
 """ --------------------------------------------------- CCND1 ---------------------------------------------------------- """
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_CCND1_AMP')]
@@ -833,6 +631,9 @@ if (y_true == 1).any():
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-A del gen CCND1: {:.2f}%".format(accuracy * 100))
 
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-A del gen CCND1: {:.2f}".format(auc_roc))
+
 """ --------------------------------------------------- CDKN1B --------------------------------------------------------- """
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_CDKN1B_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
@@ -888,6 +689,9 @@ if (y_true == 1).any():
         print("Especifidad de las mutaciones CNV-A del gen CDKN1B: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-A del gen CDKN1B: {:.2f}%".format(accuracy * 100))
+
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-A del gen CDKN1B: {:.2f}".format(auc_roc))
 
 """ --------------------------------------------------- FGF19 ---------------------------------------------------------- """
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_FGF19_AMP')]
@@ -945,6 +749,9 @@ if (y_true == 1).any():
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-A del gen FGF19: {:.2f}%".format(accuracy * 100))
 
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-A del gen FGF19: {:.2f}".format(auc_roc))
+
 """ --------------------------------------------------- ERBB2 ---------------------------------------------------------- """
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_ERBB2_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
@@ -1001,6 +808,9 @@ if (y_true == 1).any():
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-A del gen ERBB2: {:.2f}%".format(accuracy * 100))
 
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-A del gen ERBB2: {:.2f}".format(auc_roc))
+
 """ --------------------------------------------------- FGF3 ---------------------------------------------------------- """
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_FGF3_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
@@ -1056,6 +866,9 @@ if (y_true == 1).any():
         print("Especifidad de las mutaciones CNV-A del gen FGF3: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-A del gen FGF3: {:.2f}%".format(accuracy * 100))
+    
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-A del gen FGF3: {:.2f}".format(auc_roc))
 
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------- CNV-D ----------------------------------------------------------  
@@ -1115,6 +928,9 @@ if (y_true == 1).any():
         print("Especifidad de las mutaciones CNV-D del gen BRCA1: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-D del gen BRCA1: {:.2f}%".format(accuracy * 100))
+    
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-D del gen BRCA1: {:.2f}".format(auc_roc))
 
 """ --------------------------------------------------- BRCA2 ---------------------------------------------------------- """
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_BRCA2_DEL')]
@@ -1172,6 +988,9 @@ if (y_true == 1).any():
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-D del gen BRCA2: {:.2f}%".format(accuracy * 100))
 
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-D del gen BRCA2: {:.2f}".format(auc_roc))
+
 """ --------------------------------------------------- KDR ------------------------------------------------------------ """
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_KDR_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
@@ -1227,6 +1046,9 @@ if (y_true == 1).any():
         print("Especifidad de las mutaciones CNV-D del gen KDR: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-D del gen KDR: {:.2f}%".format(accuracy * 100))
+    
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-D del gen KDR: {:.2f}".format(auc_roc))
 
 """ --------------------------------------------------- CHEK1 ---------------------------------------------------------- """
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_CHEK1_DEL')]
@@ -1283,6 +1105,9 @@ if (y_true == 1).any():
         print("Especifidad de las mutaciones CNV-D del gen CHEK1: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-D del gen CHEK1: {:.2f}%".format(accuracy * 100))
+    
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-D del gen CHEK1: {:.2f}".format(auc_roc))
 
 """ --------------------------------------------------- FGF3 ---------------------------------------------------------- """
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_FGF3_DEL')]
@@ -1339,6 +1164,9 @@ if (y_true == 1).any():
         print("Especifidad de las mutaciones CNV-D del gen FGF3: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-D del gen FGF3: {:.2f}%".format(accuracy * 100))
+    
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-D del gen FGF3: {:.2f}".format(auc_roc))
 
 """ -------------------------------------------------- FANCA ----------------------------------------------------------- """
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_FANCA_DEL')]
@@ -1395,3 +1223,6 @@ if (y_true == 1).any():
         print("Especifidad de las mutaciones CNV-D del gen FANCA: {}".format(specifity))
     accuracy = (tp + tn) / (tp + fp + tn + fn)
     print("Exactitud de las mutaciones CNV-D del gen FANCA: {:.2f}%".format(accuracy * 100))
+    
+auc_roc = roc_auc_score(y_true, y_pred_prob)
+print("AUC-ROC de las mutaciones CNV-D del gen FANCA: {:.2f}".format(auc_roc))
