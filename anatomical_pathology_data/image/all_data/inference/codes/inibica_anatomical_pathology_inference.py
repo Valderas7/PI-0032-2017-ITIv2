@@ -45,7 +45,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/models/model_image_anatomopathologic_X_.h5'
+path = '/anatomical_pathology_data/image/all_data/inference/models/model_image_anatomopathologic_X_.h5'
 model = load_model(path)
 epoch_model = path.split('_')[6]
 

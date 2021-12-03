@@ -52,13 +52,9 @@ with shelve.open(filename) as data:
 renombran las columnas para que todo quede más claro. Además, se crea una lista con todos los dataframes para
 posteriormente unirlos todos juntos. """
 df_tumor_type = pd.DataFrame.from_dict(tumor_type.items()); df_tumor_type.rename(columns = {0 : 'ID', 1 : 'tumor_type'}, inplace = True)
-df_stage = pd.DataFrame.from_dict(stage.items()); df_stage.rename(columns = {0 : 'ID', 1 : 'stage'}, inplace = True)
-df_path_t_stage = pd.DataFrame.from_dict(path_t_stage.items()); df_path_t_stage.rename(columns = {0 : 'ID', 1 : 'path_t_stage'}, inplace = True)
 df_path_n_stage = pd.DataFrame.from_dict(path_n_stage.items()); df_path_n_stage.rename(columns = {0 : 'ID', 1 : 'path_n_stage'}, inplace = True)
-df_path_m_stage = pd.DataFrame.from_dict(path_m_stage.items()); df_path_m_stage.rename(columns = {0 : 'ID', 1 : 'path_m_stage'}, inplace = True)
-df_subtype = pd.DataFrame.from_dict(subtype.items()); df_subtype.rename(columns = {0 : 'ID', 1 : 'subtype'}, inplace = True)
 
-df_list = [df_tumor_type, df_stage, df_path_t_stage, df_path_n_stage, df_path_m_stage, df_subtype]
+df_list = [df_path_n_stage, df_tumor_type]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
 esté descuadrado en la fila que no le corresponda. """
@@ -70,26 +66,22 @@ categoría N (extensión de cáncer que se ha diseminado a los ganglios linfáti
 Por tanto, en los datos tabulares tendremos que quedarnos solo con los casos donde los pacientes tengan esos valores
 de la categoría 'N' y habrá que usar, por tanto, una imagen para cada paciente, para que no haya errores al repartir
 los subconjuntos de datos. """
-# 460 filas resultantes, como en cBioPortal:
-df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge["path_n_stage"]!='NX') &
-                            (df_all_merge["path_n_stage"]!='N0 (I-)') & (df_all_merge["path_n_stage"]!='N0 (I+)') &
-                            (df_all_merge["path_n_stage"]!='N0 (MOL+)')]
+""" También se eliminan los pacientes con tipo histológico mixto, puesto que se va a hacer mapas de calor sobre este
+tipo de tumores, y también se eliminan los pacientes con tipo histológico 'Otro', por estar poco definido. """
+df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!= 'N0') & (df_all_merge["path_n_stage"]!= 'NX') &
+                            (df_all_merge["path_n_stage"]!= 'N0 (I-)') & (df_all_merge["path_n_stage"]!= 'N0 (I+)') &
+                            (df_all_merge["path_n_stage"]!= 'N0 (MOL+)') & (df_all_merge["tumor_type"]!= 'Other') &
+                            (df_all_merge["tumor_type"]!= 'Mixed Histology (NOS)')]
 
-""" Se convierten datos: """
-df_all_merge.loc[df_all_merge.tumor_type == "Infiltrating Carcinoma (NOS)", "tumor_type"] = "Mixed Histology (NOS)"
-df_all_merge.loc[df_all_merge.tumor_type == "Breast Invasive Carcinoma", "tumor_type"] = "Infiltrating Ductal Carcinoma"
-df_all_merge.loc[df_all_merge.path_m_stage == "CM0 (I+)", "path_m_stage"] = "M0"
-
-""" Ahora, antes de transformar las variables categóricas en numéricas, se eliminan las filas donde haya datos nulos
-para no ir arrastrándolos a lo largo del programa: """
+""" Se eliminan todas las columnas de mutaciones excepto la de SNV_TP53 """
+df_all_merge = df_all_merge[['ID', 'tumor_type']]
 df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
 """ Una vez la tabla tiene las columnas deseadas se procede a codificar las columnas categóricas del dataframe a valores
 numéricos mediante la técnica del 'One Hot Encoding' antes de hacer la repartición de subconjuntos para que no haya 
 problemas con las columnas. """
 #@ get_dummies: Aplica técnica de 'One Hot Encoding', creando columnas binarias para las columnas seleccionadas
-df_all_merge = pd.get_dummies(df_all_merge, columns=["tumor_type", "stage", "path_t_stage", "path_n_stage",
-                                                     "path_m_stage", "subtype"])
+df_all_merge = pd.get_dummies(df_all_merge, columns=["tumor_type"])
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento, validación y test. """
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
@@ -183,51 +175,14 @@ valid_data = valid_data.drop(['img_path'], axis = 1)
 test_data = test_data.drop(['img_path'], axis = 1)
 
 """ Se extraen los datos de salida para cada dato anatomopatológico """
-train_labels_tumor_type = train_data.iloc[:, 1:8]
-valid_labels_tumor_type = valid_data.iloc[:, 1:8]
-test_labels_tumor_type = test_data.iloc[:, 1:8]
-
-train_labels_STAGE = train_data.iloc[:, 8:18]
-valid_labels_STAGE = valid_data.iloc[:, 8:18]
-test_labels_STAGE = test_data.iloc[:, 8:18]
-
-train_labels_pT = train_data.iloc[:, 18:28]
-valid_labels_pT = valid_data.iloc[:, 18:28]
-test_labels_pT = test_data.iloc[:, 18:28]
-
-train_labels_pN = train_data.iloc[:, 28:39]
-valid_labels_pN = valid_data.iloc[:, 28:39]
-test_labels_pN = test_data.iloc[:, 28:39]
-
-train_labels_pM = train_data.iloc[:, 39:42]
-valid_labels_pM = valid_data.iloc[:, 39:42]
-test_labels_pM = test_data.iloc[:, 39:42]
-
-train_labels_IHQ = train_data.iloc[:, 42:]
-valid_labels_IHQ = valid_data.iloc[:, 42:]
-test_labels_IHQ = test_data.iloc[:, 42:]
+train_labels_tumor_type = train_data.iloc[:, 1:]
+valid_labels_tumor_type = valid_data.iloc[:, 1:]
+test_labels_tumor_type = test_data.iloc[:, 1:]
 
 """ Para poder entrenar la red hace falta transformar los dataframes en arrays de numpy. """
 train_labels_tumor_type = np.asarray(train_labels_tumor_type).astype('float32')
-train_labels_STAGE = np.asarray(train_labels_STAGE).astype('float32')
-train_labels_pT = np.asarray(train_labels_pT).astype('float32')
-train_labels_pN = np.asarray(train_labels_pN).astype('float32')
-train_labels_pM = np.asarray(train_labels_pM).astype('float32')
-train_labels_IHQ = np.asarray(train_labels_IHQ).astype('float32')
-
 valid_labels_tumor_type = np.asarray(valid_labels_tumor_type).astype('float32')
-valid_labels_STAGE = np.asarray(valid_labels_STAGE).astype('float32')
-valid_labels_pT = np.asarray(valid_labels_pT).astype('float32')
-valid_labels_pN = np.asarray(valid_labels_pN).astype('float32')
-valid_labels_pM = np.asarray(valid_labels_pM).astype('float32')
-valid_labels_IHQ = np.asarray(valid_labels_IHQ).astype('float32')
-
 test_labels_tumor_type = np.asarray(test_labels_tumor_type).astype('float32')
-test_labels_STAGE = np.asarray(test_labels_STAGE).astype('float32')
-test_labels_pT = np.asarray(test_labels_pT).astype('float32')
-test_labels_pN = np.asarray(test_labels_pN).astype('float32')
-test_labels_pM = np.asarray(test_labels_pM).astype('float32')
-test_labels_IHQ = np.asarray(test_labels_IHQ).astype('float32')
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada, y se recopila la longitud de las imagenes de
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
@@ -239,13 +194,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-# np.save('test_image', test_image_data)
-# np.save('test_labels_tumor_type', test_labels_tumor_type)
-# np.save('test_labels_STAGE', test_labels_STAGE)
-# np.save('test_labels_pT', test_labels_pT)
-# np.save('test_labels_pN', test_labels_pN)
-# np.save('test_labels_pM', test_labels_pM)
-# np.save('test_labels_IHQ', test_labels_IHQ)
+#np.save('test_image', test_image_data)
+#np.save('test_labels_tumor_type', test_labels_tumor_type)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL (CNN) -----------------------------------------------
@@ -260,15 +210,9 @@ all_model = layers.Dense(256)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 all_model = layers.Dense(32)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-
 tumor_type = layers.Dense(train_labels_tumor_type.shape[1], activation = "softmax", name= 'tumor_type')(all_model)
-STAGE = layers.Dense(train_labels_STAGE.shape[1], activation = "softmax", name = 'STAGE')(all_model)
-pT = layers.Dense(train_labels_pT.shape[1], activation = "softmax", name= 'pT')(all_model)
-pN = layers.Dense(train_labels_pN.shape[1], activation = "softmax", name= 'pN')(all_model)
-pM = layers.Dense(train_labels_pM.shape[1], activation = "softmax", name= 'pM')(all_model)
-IHQ = layers.Dense(train_labels_IHQ.shape[1], activation = "softmax", name= 'IHQ')(all_model)
 
-model = keras.models.Model(inputs = base_model.input, outputs = [tumor_type, STAGE, pT, pN, pM, IHQ])
+model = keras.models.Model(inputs = base_model.input, outputs = tumor_type)
 
 """ Se congelan todas las capas convolucionales del modelo base """
 # A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
@@ -287,25 +231,18 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC-ROC'),
            keras.metrics.AUC(curve = 'PR', name = 'AUC-PR')]
 
-model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'categorical_crossentropy',
-                      'pT': 'categorical_crossentropy', 'pN': 'categorical_crossentropy',
-                      'pM': 'categorical_crossentropy', 'IHQ': 'categorical_crossentropy'},
+model.compile(loss = 'categorical_crossentropy',
               optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 model.summary()
 
 """ Se implementan varios callbacks para guardar el mejor modelo. """
-checkpoint_path = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/models/model_image_anatomopathologic_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = train_image_data, y = {'tumor_type': train_labels_tumor_type, 'STAGE': train_labels_STAGE,
-                                'pT': train_labels_pT, 'pN': train_labels_pN, 'pM': train_labels_pM,
-                                'IHQ': train_labels_IHQ},
-          epochs = 3, verbose = 1, validation_data = (valid_image_data, {'tumor_type': valid_labels_tumor_type,
-                                                                         'STAGE': valid_labels_STAGE, 
-                                                                         'pT': valid_labels_pT, 'pN': valid_labels_pN, 
-                                                                         'pM': valid_labels_pM, 'IHQ': valid_labels_IHQ}), 
+model.fit(x = train_image_data, y = train_labels_tumor_type,
+          epochs = 3, verbose = 1, validation_data = (valid_image_data, valid_labels_tumor_type),
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -323,39 +260,29 @@ for layer in base_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta """
-model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'categorical_crossentropy',
-                      'pT': 'categorical_crossentropy', 'pN': 'categorical_crossentropy',
-                      'pM': 'categorical_crossentropy', 'IHQ': 'categorical_crossentropy'},
+model.compile(loss = 'categorical_crossentropy',
               optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 model.summary()
 
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_image_data, y = {'tumor_type': train_labels_tumor_type, 'STAGE': train_labels_STAGE, 
-                                                      'pT': train_labels_pT, 'pN': train_labels_pN, 
-                                                      'pM': train_labels_pM, 'IHQ': train_labels_IHQ}, 
-                           epochs = 100, verbose = 1, validation_data = (valid_image_data,
-                                                                         {'tumor_type': valid_labels_tumor_type,
-                                                                          'STAGE': valid_labels_STAGE, 
-                                                                          'pT': valid_labels_pT, 'pN': valid_labels_pN, 
-                                                                          'pM': valid_labels_pM, 
-                                                                          'IHQ': valid_labels_IHQ}),
+neural_network = model.fit(x = train_image_data, y = train_labels_tumor_type,
+                           epochs = 100, verbose = 1, validation_data = (valid_image_data, valid_labels_tumor_type),
                            #callbacks = mcp_save,
-                           steps_per_epoch = (train_image_data_len / batch_dimension), 
+                           steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_image_data, [test_labels_tumor_type, test_labels_STAGE, test_labels_pT, test_labels_pN,
-                                             test_labels_pM, test_labels_IHQ], verbose = 0)
+results = model.evaluate(test_image_data, test_labels_tumor_type, verbose = 0)
 
 print("\n'Loss' del tipo histológico en el conjunto de prueba: {:.2f}\n""Sensibilidad del tipo histológico en el "
       "conjunto de prueba: {:.2f}\n""Precisión del tipo histológico en el conjunto de prueba: {:.2f}\n""Especifidad del "
       "tipo histológico en el conjunto de prueba: {:.2f}\n""Exactitud del tipo histológico en el conjunto de prueba: "
       "{:.2f} %\n""AUC-ROC del tipo histológico en el conjunto de prueba: {:.2f}\n""AUC-PR del tipo histológico en el "
-      "conjunto de prueba: {:.2f}".format(results[1], results[11], results[12], results[9]/(results[9]+results[8]), 
+      "conjunto de prueba: {:.2f}".format(results[1], results[11], results[12], results[9]/(results[9]+results[8]),
                                           results[13] * 100, results[14], results[15]))
 if results[11] > 0 or results[12] > 0:
     print("Valor-F del tipo histológico en el conjunto de prueba: {:.2f}".format((2 * results[11] * results[12]) /
@@ -366,8 +293,8 @@ print("\n'Loss' del estadio anatomopatológico en el conjunto de prueba: {:.2f}\
       "prueba: {:.2f}\n""Especifidad del estadio anatomopatológico en el conjunto de prueba: {:.2f} \n""Exactitud del "
       "estadio anatomopatológico en el conjunto de prueba: {:.2f} %\n""AUC-ROC del estadio anatomopatológico en el "
       "conjunto de prueba: {:.2f}\n""AUC-PR del estadio anatomopatológico "
-      "en el conjunto de prueba: {:.2f}".format(results[2], results[20], results[21], 
-                                                results[18]/(results[18]+results[17]), results[22] * 100, results[23], 
+      "en el conjunto de prueba: {:.2f}".format(results[2], results[20], results[21],
+                                                results[18]/(results[18]+results[17]), results[22] * 100, results[23],
                                                 results[24]))
 if results[20] > 0 or results[21] > 0:
     print("Valor-F del estadio anatomopatológico en el conjunto de prueba: {:.2f}".format((2 * results[20] * results[21]) /

@@ -33,16 +33,18 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/models/model_image_anatomopathologic_02_7.68.h5')
+model = load_model(
+    '/anatomical_pathology_data/image/all_data/inference/models/model_image_anatomopathologic_02_7.68.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/test_data/test_image.npy')
+test_image_data = np.load('/anatomical_pathology_data/image/all_data/inference/test_data/test_image.npy')
 
-test_labels_tumor_type = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/test_data/test_labels_tumor_type.npy')
-test_labels_STAGE = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/test_data/test_labels_STAGE.npy')
-test_labels_pT = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/test_data/test_labels_pT.npy')
-test_labels_pN = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/test_data/test_labels_pN.npy')
-test_labels_pM = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/test_data/test_labels_pM.npy')
-test_labels_IHQ = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/test_data/test_labels_IHQ.npy')
+test_labels_tumor_type = np.load(
+    '/anatomical_pathology_data/image/all_data/inference/test_data/test_labels_tumor_type.npy')
+test_labels_STAGE = np.load('/anatomical_pathology_data/image/all_data/inference/test_data/test_labels_STAGE.npy')
+test_labels_pT = np.load('/anatomical_pathology_data/image/all_data/inference/test_data/test_labels_pT.npy')
+test_labels_pN = np.load('/anatomical_pathology_data/image/all_data/inference/test_data/test_labels_pN.npy')
+test_labels_pM = np.load('/anatomical_pathology_data/image/all_data/inference/test_data/test_labels_pM.npy')
+test_labels_IHQ = np.load('/anatomical_pathology_data/image/all_data/inference/test_data/test_labels_IHQ.npy')
 
 """ Una vez entrenado el modelo se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

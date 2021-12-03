@@ -30,14 +30,14 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image/inference/models/model_image_mutations_06_0.36.h5')
+model = load_model('/mutations/image/OCA_genes/inference/models/model_image_mutations_06_0.36.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/mutations/image/inference/test_data/test_image.npy')
+test_image_data = np.load('/mutations/image/OCA_genes/inference/test_data/test_image.npy')
 
-test_labels_snv = np.load('/home/avalderas/img_slides/mutations/image/inference/test_data/test_labels_snv.npy')
-test_labels_cnv_a = np.load('/home/avalderas/img_slides/mutations/image/inference/test_data/test_labels_cnv_a.npy')
-test_labels_cnv_normal = np.load('/home/avalderas/img_slides/mutations/image/inference/test_data/test_labels_cnv_normal.npy')
-test_labels_cnv_d = np.load('/home/avalderas/img_slides/mutations/image/inference/test_data/test_labels_cnv_d.npy')
+test_labels_snv = np.load('/mutations/image/OCA_genes/inference/test_data/test_labels_snv.npy')
+test_labels_cnv_a = np.load('/mutations/image/OCA_genes/inference/test_data/test_labels_cnv_a.npy')
+test_labels_cnv_normal = np.load('/mutations/image/OCA_genes/inference/test_data/test_labels_cnv_normal.npy')
+test_labels_cnv_d = np.load('/mutations/image/OCA_genes/inference/test_data/test_labels_cnv_d.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
