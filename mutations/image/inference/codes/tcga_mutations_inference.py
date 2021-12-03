@@ -93,7 +93,7 @@ classes_cnv_d = ['CNV_AKT1_DEL', 'CNV_AKT2_DEL', 'CNV_AKT3_DEL', 'CNV_ALK_DEL', 
 """Para terminar, se calculan las métricas específicas (sensibilidad, precisión, eficacia y especificidad) de estos genes
 sobre los que se van a realizar los mapas de calor. """
 # @ravel: Aplana el vector a 1D
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, classification_report, roc_auc_score
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, classification_report, roc_auc_score, average_precision_score
 
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------ SNV -------------------------------------------------------------  
@@ -218,6 +218,7 @@ auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones SNV del gen TP53: {:.2f}".format(auc_roc))
 
 """ -------------------------------------------------- AKT1 ------------------------------------------------------------ """
+"""
 y_true = test_labels_snv[:, classes_snv.index('SNV_AKT1')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_AKT1')].ravel()
@@ -275,7 +276,7 @@ if (y_true == 1).any():
 
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones SNV del gen AKT1: {:.2f}".format(auc_roc))
-
+"""
 """ -------------------------------------------------- PTEN ------------------------------------------------------------ """
 y_true = test_labels_snv[:, classes_snv.index('SNV_PTEN')]
 y_pred_prob = model.predict(test_image_data)[0]
@@ -336,6 +337,7 @@ auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones SNV del gen PTEN: {:.2f}".format(auc_roc))
 
 """ --------------------------------------------------- ERBB2 ---------------------------------------------------------- """
+"""
 y_true = test_labels_snv[:, classes_snv.index('SNV_ERBB2')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_ERBB2')].ravel()
@@ -393,8 +395,9 @@ if (y_true == 1).any():
 
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones SNV del gen ERBB2: {:.2f}".format(auc_roc))
-
+"""
 """ --------------------------------------------------- EGFR ---------------------------------------------------------- """
+"""
 y_true = test_labels_snv[:, classes_snv.index('SNV_EGFR')]
 y_pred_prob = model.predict(test_image_data)[0]
 y_pred_prob = y_pred_prob[:, classes_snv.index('SNV_EGFR')].ravel()
@@ -452,7 +455,7 @@ if (y_true == 1).any():
 
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones SNV del gen EGFR: {:.2f}".format(auc_roc))
-
+"""
 """ --------------------------------------------------- MTOR ---------------------------------------------------------- """
 y_true = test_labels_snv[:, classes_snv.index('SNV_MTOR')]
 y_pred_prob = model.predict(test_image_data)[0]
@@ -517,6 +520,7 @@ print("AUC-ROC de las mutaciones SNV del gen MTOR: {:.2f}".format(auc_roc))
 ------------------------------------------------------------------------------------------------------------------------ """
 
 """ --------------------------------------------------- MYC ---------------------------------------------------------- """
+"""
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_MYC_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_MYC_AMP')].ravel()
@@ -574,8 +578,9 @@ if (y_true == 1).any():
 
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-A del gen MYC: {:.2f}".format(auc_roc))
-
+"""
 """ --------------------------------------------------- CCND1 ---------------------------------------------------------- """
+"""
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_CCND1_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_CCND1_AMP')].ravel()
@@ -633,8 +638,9 @@ if (y_true == 1).any():
 
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-A del gen CCND1: {:.2f}".format(auc_roc))
-
+"""
 """ --------------------------------------------------- CDKN1B --------------------------------------------------------- """
+"""
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_CDKN1B_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_CDKN1B_AMP')].ravel()
@@ -692,8 +698,9 @@ if (y_true == 1).any():
 
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-A del gen CDKN1B: {:.2f}".format(auc_roc))
-
+"""
 """ --------------------------------------------------- FGF19 ---------------------------------------------------------- """
+"""
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_FGF19_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_FGF19_AMP')].ravel()
@@ -751,7 +758,7 @@ if (y_true == 1).any():
 
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-A del gen FGF19: {:.2f}".format(auc_roc))
-
+"""
 """ --------------------------------------------------- ERBB2 ---------------------------------------------------------- """
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_ERBB2_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
@@ -812,6 +819,7 @@ auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-A del gen ERBB2: {:.2f}".format(auc_roc))
 
 """ --------------------------------------------------- FGF3 ---------------------------------------------------------- """
+"""
 y_true = test_labels_cnv_a[:, classes_cnv_a.index('CNV_FGF3_AMP')]
 y_pred_prob = model.predict(test_image_data)[1]
 y_pred_prob = y_pred_prob[:, classes_cnv_a.index('CNV_FGF3_AMP')].ravel()
@@ -869,11 +877,12 @@ if (y_true == 1).any():
     
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-A del gen FGF3: {:.2f}".format(auc_roc))
-
+"""
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------- CNV-D ----------------------------------------------------------  
 ------------------------------------------------------------------------------------------------------------------------ """
 """ --------------------------------------------------- BRCA1 ---------------------------------------------------------- """
+"""
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_BRCA1_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_BRCA1_DEL')].ravel()
@@ -931,8 +940,9 @@ if (y_true == 1).any():
     
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-D del gen BRCA1: {:.2f}".format(auc_roc))
-
+"""
 """ --------------------------------------------------- BRCA2 ---------------------------------------------------------- """
+"""
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_BRCA2_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_BRCA2_DEL')].ravel()
@@ -990,8 +1000,9 @@ if (y_true == 1).any():
 
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-D del gen BRCA2: {:.2f}".format(auc_roc))
-
+"""
 """ --------------------------------------------------- KDR ------------------------------------------------------------ """
+"""
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_KDR_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_KDR_DEL')].ravel()
@@ -1049,8 +1060,9 @@ if (y_true == 1).any():
     
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-D del gen KDR: {:.2f}".format(auc_roc))
-
+"""
 """ --------------------------------------------------- CHEK1 ---------------------------------------------------------- """
+"""
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_CHEK1_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_CHEK1_DEL')].ravel()
@@ -1108,8 +1120,9 @@ if (y_true == 1).any():
     
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-D del gen CHEK1: {:.2f}".format(auc_roc))
-
+"""
 """ --------------------------------------------------- FGF3 ---------------------------------------------------------- """
+"""
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_FGF3_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_FGF3_DEL')].ravel()
@@ -1167,8 +1180,9 @@ if (y_true == 1).any():
     
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-D del gen FGF3: {:.2f}".format(auc_roc))
-
+"""
 """ -------------------------------------------------- FANCA ----------------------------------------------------------- """
+"""
 y_true = test_labels_cnv_d[:, classes_cnv_d.index('CNV_FANCA_DEL')]
 y_pred_prob = model.predict(test_image_data)[3]
 y_pred_prob = y_pred_prob[:, classes_cnv_d.index('CNV_FANCA_DEL')].ravel()
@@ -1226,3 +1240,4 @@ if (y_true == 1).any():
     
 auc_roc = roc_auc_score(y_true, y_pred_prob)
 print("AUC-ROC de las mutaciones CNV-D del gen FANCA: {:.2f}".format(auc_roc))
+"""
