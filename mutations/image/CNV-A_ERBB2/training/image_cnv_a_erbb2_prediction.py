@@ -60,59 +60,185 @@ los genes CNV."""
 mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genesOCA&inibica_patients/Panel_OCA.xlsx',
                                  usecols='B:C', engine='openpyxl')
 
-snv = mutations_target.loc[mutations_target['Scope'] != 'CNV', 'Gen']
+cnv = mutations_target.loc[mutations_target['Scope'] == 'CNV', 'Gen']
 
-# SNV
-snv_list = []
-for gen_snv in snv:
-    if gen_snv not in snv_list:
-        snv_list.append(gen_snv)
+# CNV
+cnv_list = []
+for gen_cnv in cnv:
+    if gen_cnv not in cnv_list:
+        cnv_list.append(gen_cnv)
 
 """ Ahora se recopilan en una lista los distintos IDs de los genes a estudiar. """
-id_snv_list = []
+id_cnv_list = []
 
 key_list = list(dict_genes.keys())
 val_list = list(dict_genes.values())
 
-# SNV
-for gen_snv in snv_list:
-    position = val_list.index(gen_snv)  # Número
-    id_gen_snv = (key_list[position])  # Número
-    id_snv_list.append(id_gen_snv)  # Se añaden todos los IDs en la lista vacía
+# CNV
+for gen_cnv in cnv_list:
+    if gen_cnv == 'RICTOR':
+        id_cnv_list.append(253260)
+        continue
+    position = val_list.index(gen_cnv)  # Número
+    id_gen_cnv = (key_list[position])  # Número
+    id_cnv_list.append(id_gen_cnv)  # Se añaden todos los IDs en la lista vacía
+
+""" Ahora se hace un bucle sobre la columna de mutaciones CNV del dataframe. Así, se busca en cada mutación de 
+cada fila para ver en cuales de estas filas se encuentra el ID de los genes a estudiar. Se almacenan en una lista de 
+listas los índices de las filas donde se encuentran los IDs de esos genes, de forma que se tiene una lista para cada gen. """
+""" Se crea esta lista de los pacientes que tienen mutación 'CNV' de estos genes porque hay un fallo en el diccionario 
+de mutaciones 'CNV' y no identifica sus mutaciones. Por tanto, se ha recopilado manualmente los 'IDs' de los pacientes
+que tienen mutaciones en el gen (gracias a cBioPortal) para poner un '1' en la columna 'CNV' de esos 'IDs'. """
+cdkn1b_list_amp = ['TCGA-A1-A0SK', 'TCGA-A1-A0SP', 'TCGA-A2-A04T', 'TCGA-A2-A04U', 'TCGA-A7-A4SD', 'TCGA-A7-A6VW',
+                   'TCGA-AN-A0FJ', 'TCGA-AQ-A54N', 'TCGA-C8-A12L', 'TCGA-C8-A1HJ', 'TCGA-E9-A22G']
+cdkn1b_list_del = ['TCGA-A2-A3XT', 'TCGA-A8-A06R', 'TCGA-AC-A2FM', 'TCGA-AN-A0AJ', 'TCGA-AR-A24M', 'TCGA-LL-A8F5',
+                   'TCGA-OL-A5RU']
+
+brca2_list_amp = ['TCGA-A2-A04T', 'TCGA-A8-A06R', 'TCGA-AN-A0AS', 'TCGA-BH-A0GZ', 'TCGA-BH-A1EV', 'TCGA-D8-A1Y2',
+                  'TCGA-E2-A14T', 'TCGA-E2-A1LG']
+brca2_list_del = ['TCGA-A7-A0CE', 'TCGA-A8-A08I', 'TCGA-A8-A09V', 'TCGA-A8-A0AB', 'TCGA-AN-A04D', 'TCGA-AR-A24H',
+                  'TCGA-B6-A0IQ', 'TCGA-D8-A147', 'TCGA-D8-A1JB', 'TCGA-D8-A1JD', 'TCGA-EW-A1OX', 'TCGA-EW-A1P7',
+                  'TCGA-PE-A5DC', 'TCGA-S3-AA10']
+
+brca1_list_amp = ['TCGA-A2-A0EO', 'TCGA-A7-A13D', 'TCGA-A8-A09G', 'TCGA-AC-A2FB', 'TCGA-AN-A04C', 'TCGA-AR-A24H',
+                  'TCGA-B6-A0IG', 'TCGA-B6-A0IN', 'TCGA-BH-A42T', 'TCGA-C8-A9FZ', 'TCGA-E2-A105', 'TCGA-E9-A1RI',
+                  'TCGA-LD-A9QF']
+brca1_list_del = ['TCGA-BH-A0AW', 'TCGA-BH-A0C0', 'TCGA-C8-A12L', 'TCGA-E2-A1L7', 'TCGA-EW-A1OX']
+
+kdr_list_amp = ['TCGA-A2-A04T', 'TCGA-A2-A0YE', 'TCGA-B6-A0RS', 'TCGA-EW-A1P8']
+kdr_list_del = ['TCGA-AC-A5EH']
+
+chek1_list_amp = ['TCGA-AR-A2LJ']
+chek1_list_del = ['TCGA-A8-A0A1', 'TCGA-BH-A18M', 'TCGA-BH-A1FN', 'TCGA-C8-A130', 'TCGA-D8-A147', 'TCGA-E2-A56Z',
+                  'TCGA-E2-A9RU', 'TCGA-E9-A1RF', 'TCGA-EW-A1OX', 'TCGA-LL-A6FP']
+
+fanca_list_amp = ['TCGA-A2-A04P', 'TCGA-A2-A0D2', 'TCGA-AO-A0J2', 'TCGA-EW-A1PB']
+fanca_list_del = ['TCGA-A1-A0SG', 'TCGA-A2-A0D1', 'TCGA-A7-A0CD', 'TCGA-A7-A0CH', 'TCGA-A7-A5ZW', 'TCGA-A8-A08H',
+                  'TCGA-A8-A09V', 'TCGA-A8-A0A1', 'TCGA-AC-A3YI', 'TCGA-AC-A62V', 'TCGA-AO-A0JC', 'TCGA-AR-A2LQ',
+                  'TCGA-B6-A0IM', 'TCGA-B6-A0RM', 'TCGA-BH-A0AU', 'TCGA-BH-A0BF', 'TCGA-BH-A18J', 'TCGA-BH-A18M',
+                  'TCGA-BH-A18U', 'TCGA-BH-A1FB', 'TCGA-BH-A28O', 'TCGA-C8-A12T', 'TCGA-D8-A73X', 'TCGA-E2-A15J',
+                  'TCGA-E9-A295', 'TCGA-EW-A1IY', 'TCGA-EW-A1PG', 'TCGA-GM-A5PV', 'TCGA-OL-A6VO', 'TCGA-S3-AA10']
+
+rictor_list_amp = ['TCGA-A2-A0D0', 'TCGA-A2-A25B', 'TCGA-A7-A13D', 'TCGA-A8-A09C', 'TCGA-AC-A2FE', 'TCGA-AR-A0TW',
+                   'TCGA-B6-A3ZX', 'TCGA-BH-A0BP', 'TCGA-BH-A1FU', 'TCGA-C8-A131', 'TCGA-D8-A27H', 'TCGA-E2-A574']
+rictor_list_del = ['TCGA-BH-A0B3', 'TCGA-GM-A3XL']
 
 """ Se recopila los índices de las distintas filas donde aparecen las mutaciones 'CNV' de los genes seleccionados (tanto 
 de amplificación como deleción), y se añaden a la lista de listas correspondiente (la de amplificación o la de deleción). """
-# SNV
-list_gen_snv = [[] for ID in range(len(id_snv_list))]
+# CNV
+list_gen_cnv_amp = [[] for ID in range(len(id_cnv_list))]
+list_gen_cnv_del = [[] for ID in range(len(id_cnv_list))]
 
-for index, id_snv in enumerate(id_snv_list):  # Para cada ID del gen SNV de la lista...
-    for index_row, row in enumerate(df_all_merge['SNV']):  # Para cada fila dentro de la columna 'SNV'...
-        for mutation in row:  # Para cada mutación dentro de cada fila...
-            if mutation[1] == id_snv:  # Si el ID de la mutación es el mismo que el ID de la lista de genes...
-                list_gen_snv[index].append(index_row)  # Se almacena el índice de la fila en la lista de listas
+for index, id_cnv in enumerate(id_cnv_list):  # Para cada ID del gen CNV de la lista...
+    if id_cnv == 1027:  # CDKN1B
+        for patient_cdkn1b_amp in cdkn1b_list_amp:
+            for index_cdkn1b_amp, row_cdkn1b_amp in enumerate(df_all_merge['ID']):
+                if patient_cdkn1b_amp == row_cdkn1b_amp:
+                    list_gen_cnv_amp[index].append(index_cdkn1b_amp)
+        for patient_cdkn1b_del in cdkn1b_list_del:
+            for index_cdkn1b_del, row_cdkn1b_del in enumerate(df_all_merge['ID']):
+                if patient_cdkn1b_del == row_cdkn1b_del:
+                    list_gen_cnv_del[index].append(index_cdkn1b_del)
+
+    elif id_cnv == 675:  # BRCA2
+        for patient_brca2_amp in brca2_list_amp:
+            for index_brca2_amp, row_brca2_amp in enumerate(df_all_merge['ID']):
+                if patient_brca2_amp == row_brca2_amp:
+                    list_gen_cnv_amp[index].append(index_brca2_amp)
+        for patient_brca2_del in brca2_list_del:
+            for index_brca2_del, row_brca2_del in enumerate(df_all_merge['ID']):
+                if patient_brca2_del == row_brca2_del:
+                    list_gen_cnv_del[index].append(index_brca2_del)
+
+    elif id_cnv == 672:  # BRCA1
+        for patient_brca1_amp in brca1_list_amp:
+            for index_brca1_amp, row_brca1_amp in enumerate(df_all_merge['ID']):
+                if patient_brca1_amp == row_brca1_amp:
+                    list_gen_cnv_amp[index].append(index_brca1_amp)
+        for patient_brca1_del in brca1_list_del:
+            for index_brca1_del, row_brca1_del in enumerate(df_all_merge['ID']):
+                if patient_brca1_del == row_brca1_del:
+                    list_gen_cnv_del[index].append(index_brca1_del)
+
+    elif id_cnv == 3791:  # KDR
+        for patient_kdr_amp in kdr_list_amp:
+            for index_kdr_amp, row_kdr_amp in enumerate(df_all_merge['ID']):
+                if patient_kdr_amp == row_kdr_amp:
+                    list_gen_cnv_amp[index].append(index_kdr_amp)
+        for patient_kdr_del in kdr_list_del:
+            for index_kdr_del, row_kdr_del in enumerate(df_all_merge['ID']):
+                if patient_kdr_del == row_kdr_del:
+                    list_gen_cnv_del[index].append(index_kdr_del)
+
+    elif id_cnv == 1111:  # CHEK1
+        for patient_chek1_amp in chek1_list_amp:
+            for index_chek1_amp, row_chek1_amp in enumerate(df_all_merge['ID']):
+                if patient_chek1_amp == row_chek1_amp:
+                    list_gen_cnv_amp[index].append(index_chek1_amp)
+        for patient_chek1_del in chek1_list_del:
+            for index_chek1_del, row_chek1_del in enumerate(df_all_merge['ID']):
+                if patient_chek1_del == row_chek1_del:
+                    list_gen_cnv_del[index].append(index_chek1_del)
+
+    elif id_cnv == 2175:  # FANCA
+        for patient_fanca_amp in fanca_list_amp:
+            for index_fanca_amp, row_fanca_amp in enumerate(df_all_merge['ID']):
+                if patient_fanca_amp == row_fanca_amp:
+                    list_gen_cnv_amp[index].append(index_fanca_amp)
+        for patient_fanca_del in fanca_list_del:
+            for index_fanca_del, row_fanca_del in enumerate(df_all_merge['ID']):
+                if patient_fanca_del == row_fanca_del:
+                    list_gen_cnv_del[index].append(index_fanca_del)
+
+    elif id_cnv == 253260:  # RICTOR
+        for patient_rictor_amp in rictor_list_amp:
+            for index_rictor_amp, row_rictor_amp in enumerate(df_all_merge['ID']):
+                if patient_rictor_amp == row_rictor_amp:
+                    list_gen_cnv_amp[index].append(index_rictor_amp)
+        for patient_rictor_del in rictor_list_del:
+            for index_rictor_del, row_rictor_del in enumerate(df_all_merge['ID']):
+                if patient_rictor_del == row_rictor_del:
+                    list_gen_cnv_del[index].append(index_rictor_del)
+
+    else:
+        for index_row, row in enumerate(df_all_merge['CNV']):  # Para cada fila dentro de la columna 'CNV'...
+            for mutation in row:  # Para cada mutación dentro de cada fila...
+                if mutation[1] == id_cnv and mutation[2] > 0:
+                    list_gen_cnv_amp[index].append(index_row)  # Se almacena el índice de la fila en la lista de listas
+                elif mutation[1] == id_cnv and mutation[2] < 0:
+                    list_gen_cnv_del[index].append(index_row)  # Se almacena el índice de la fila en la lista de listas
 
 """ Una vez se tienen almacenados los índices de las filas donde se producen las mutaciones CNV, hay que crear distintas 
 columnas para cada uno de los genes objetivo, para asi mostrar la informacion de uno en uno. De esta forma, habra dos 
 columnas distintas para cada gen CNV a estudiar (amplificacion y delecion). Ademas, se recopilan las columnas creadas en 
 listas (dos para las columnas de mutaciones CNV). """
-columns_list_snv = []
+columns_list_cnv_amp = []
+columns_list_cnv_del = []
 
-# SNV:
-df_all_merge.drop(['SNV'], axis=1, inplace=True)
-for gen_snv in snv_list:
-    df_all_merge['SNV_' + gen_snv] = 0
-    columns_list_snv.append('SNV_' + gen_snv)
+# CNV
+df_all_merge.drop(['CNV'], axis=1, inplace=True)
+for gen_cnv in cnv_list:
+    df_all_merge['CNV_' + gen_cnv + '_AMP'] = 0
+    df_all_merge['CNV_' + gen_cnv + '_DEL'] = 0
+    columns_list_cnv_amp.append('CNV_' + gen_cnv + '_AMP')
+    columns_list_cnv_del.append('CNV_' + gen_cnv + '_DEL')
 
 """ Una vez han sido creadas las columnas, se añade un '1' en aquellas filas donde el paciente tiene mutación sobre el
 gen seleccionado. Se utiliza para ello los índices recogidos anteriormente en las respectivas listas de listas. De esta
 forma, iterando sobre la lista de columnas creadas y mediante los distintos indices de cada sublista, se consigue
 colocar un '1' en aquella filas donde el paciente tiene la mutacion especificada en el gen especificado. """
-# SNV
-i_snv = 0
-for column_snv in columns_list_snv:
-    for index_snv_sublist in list_gen_snv[i_snv]:
-        df_all_merge.loc[index_snv_sublist, column_snv] = 1
-    i_snv += 1
+# CNV
+i_cnv_amp = 0
+for column_cnv_amp in columns_list_cnv_amp:
+    for index_cnv_sublist_amp in list_gen_cnv_amp[i_cnv_amp]:
+        df_all_merge.loc[index_cnv_sublist_amp, column_cnv_amp] = 1
+    i_cnv_amp += 1
+
+i_cnv_del = 0
+for column_cnv_del in columns_list_cnv_del:
+    for index_cnv_sublist_del in list_gen_cnv_del[i_cnv_del]:
+        df_all_merge.loc[index_cnv_sublist_del, column_cnv_del] = 1
+    i_cnv_del += 1
 
 """ En este caso, el número de muestras de imágenes y de datos deben ser iguales. Las imágenes de las que se disponen se 
 enmarcan según el sistema de estadificación TNM como N1A, N1, N2A, N2, N3A, N1MI, N1B, N3, NX, N3B, N1C o N3C según la
@@ -125,16 +251,16 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"] != 'N0') & (df_all_mer
                             (df_all_merge["path_n_stage"] != 'N0 (I-)') & (df_all_merge["path_n_stage"] != 'N0 (I+)') &
                             (df_all_merge["path_n_stage"] != 'N0 (MOL+)')]
 
-""" Se eliminan todas las columnas de mutaciones excepto la de SNV_TP53 """
-df_all_merge = df_all_merge[['ID', 'SNV_TP53']]
-df_all_merge = df_all_merge.sort_values(by='SNV_TP53', ascending = False)
-df_all_merge = df_all_merge[:-216] # Ahora hay el mismo número de pacientes con mutación y sin mutación
+""" Se eliminan todas las columnas de mutaciones excepto la de CNV-A_ERBB2 """
+df_all_merge = df_all_merge[['ID', 'CNV_ERBB2_AMP']]
+df_all_merge = df_all_merge.sort_values(by='CNV_ERBB2_AMP', ascending = False)
+df_all_merge = df_all_merge[:-394] # Ahora hay el mismo número de pacientes con mutación y sin mutación
 df_all_merge.dropna(inplace=True)  # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['SNV_TP53'])
-train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['SNV_TP53'])
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['CNV_ERBB2_AMP'])
+train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['CNV_ERBB2_AMP'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -218,10 +344,10 @@ train_data = train_data.drop(['img_path'], axis = 1)
 valid_data = valid_data.drop(['img_path'], axis = 1)
 test_data = test_data.drop(['img_path'], axis = 1)
 
-""" Se extraen las etiquetas de salida para cada la mutación SNV de TP53 """
-train_labels_tp53 = train_data.iloc[:, -1]
-valid_labels_tp53 = valid_data.iloc[:, -1]
-test_labels_tp53 = test_data.iloc[:, -1]
+""" Se extraen las etiquetas de salida para cada la mutación CNV-A de ERBB2 """
+train_labels_erbb2 = train_data.iloc[:, -1]
+valid_labels_erbb2 = valid_data.iloc[:, -1]
+test_labels_erbb2 = test_data.iloc[:, -1]
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada, y se recopila la longitud de las imágenes de
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
@@ -233,14 +359,14 @@ batch_dimension = 32
 
 """ Para poder entrenar la red hace falta transformar las tablas en arrays. Para ello se utiliza 'numpy'. Las imágenes 
 YA están convertidas en 'arrays' numpy """
-train_labels_tp53 = np.asarray(train_labels_tp53).astype('float32')
-valid_labels_tp53 = np.asarray(valid_labels_tp53).astype('float32')
-test_labels_tp53 = np.asarray(test_labels_tp53).astype('float32')
+train_labels_erbb2 = np.asarray(train_labels_erbb2).astype('float32')
+valid_labels_erbb2 = np.asarray(valid_labels_erbb2).astype('float32')
+test_labels_erbb2 = np.asarray(test_labels_erbb2).astype('float32')
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
 #np.save('test_image', test_image_data)
-#np.save('test_labels_snv', test_labels_tp53)
+#np.save('test_labels_snv', test_labels_erbb2)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL CONVOLUCIONAL ---------------------------------------
@@ -256,9 +382,9 @@ all_model = layers.Dense(512)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 all_model = layers.Dense(256)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-tp53 = layers.Dense(1, activation="sigmoid", name='tp53')(all_model)
+erbb2 = layers.Dense(1, activation="sigmoid", name='erbb2')(all_model)
 
-model = Model(inputs=base_model.input, outputs = tp53)
+model = Model(inputs=base_model.input, outputs = erbb2)
 
 """ Se congelan todas las capas convolucionales del modelo base """
 # A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
@@ -277,20 +403,20 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC-ROC'),
            keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
-model.compile(loss= 'binary_crossentropy',
-              optimizer=keras.optimizers.Adam(learning_rate=0.00001),
-              metrics=metrics)
+model.compile(loss = 'binary_crossentropy',
+              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              metrics = metrics)
 model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
-checkpoint_path = '/home/avalderas/img_slides/mutations/image/SNV_TP53/inference/models/model_image_tp53_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath=checkpoint_path, monitor='val_loss', mode='min')
+checkpoint_path = '/home/avalderas/img_slides/mutations/image/CNV-A_ERBB2/inference/models/model_image_erbb2_{epoch:02d}_{val_loss:.2f}.h5'
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = train_image_data, y = train_labels_tp53,
-          epochs = 1, verbose = 1, validation_data=(valid_image_data, valid_labels_tp53),
-          steps_per_epoch=(train_image_data_len / batch_dimension),
-          validation_steps=(valid_image_data_len / batch_dimension))
+model.fit(x = train_image_data, y = train_labels_erbb2,
+          epochs = 1, verbose = 1, validation_data = (valid_image_data, valid_labels_erbb2),
+          steps_per_epoch = (train_image_data_len / batch_dimension),
+          validation_steps = (valid_image_data_len / batch_dimension))
 
 """ Una vez el modelo ya ha sido entrenado, se descongelan algunas capas convolucionales del modelo base de la red para 
 reeentrenar el modelo ('fine tuning'). Este es un último paso opcional que puede dar grandes mejoras o un rápido 
@@ -306,14 +432,14 @@ for layer in base_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer=keras.optimizers.Adam(learning_rate = 0.00001),
-              loss='binary_crossentropy',
-              metrics=metrics)
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              loss = 'binary_crossentropy',
+              metrics = metrics)
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_image_data, y = train_labels_tp53,
-                           epochs = 100, verbose = 1, validation_data = (valid_image_data, valid_labels_tp53),
+neural_network = model.fit(x = train_image_data, y = train_labels_erbb2,
+                           epochs = 20, verbose = 1, validation_data = (valid_image_data, valid_labels_erbb2),
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
