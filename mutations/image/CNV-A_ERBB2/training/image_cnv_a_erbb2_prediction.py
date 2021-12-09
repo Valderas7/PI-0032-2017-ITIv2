@@ -366,7 +366,7 @@ test_labels_erbb2 = np.asarray(test_labels_erbb2).astype('float32')
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
 #np.save('test_image', test_image_data)
-#np.save('test_labels_snv', test_labels_erbb2)
+#np.save('test_labels_erbb2', test_labels_erbb2)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL CONVOLUCIONAL ---------------------------------------
