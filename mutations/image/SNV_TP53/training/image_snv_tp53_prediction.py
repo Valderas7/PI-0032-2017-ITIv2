@@ -239,8 +239,16 @@ test_labels_tp53 = np.asarray(test_labels_tp53).astype('float32')
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image', test_image_data)
-#np.save('test_labels_snv', test_labels_tp53)
+np.save('test_image', test_image_data)
+np.save('test_labels_tp53', test_labels_tp53)
+
+""" Data augmentation """
+train_aug = ImageDataGenerator(horizontal_flip= True, zoom_range= 0.2, rotation_range= 20, vertical_flip= True)
+val_aug = ImageDataGenerator()
+
+""" Instanciar lotes """
+train_gen = train_aug.flow(x = train_image_data, y = train_labels_tp53, batch_size = 32)
+val_gen = val_aug.flow(x = valid_image_data, y = valid_labels_tp53, batch_size = 32, shuffle = False)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL CONVOLUCIONAL ---------------------------------------
@@ -287,8 +295,8 @@ checkpoint_path = '/home/avalderas/img_slides/mutations/image/SNV_TP53/inference
 mcp_save = ModelCheckpoint(filepath=checkpoint_path, monitor='val_loss', mode='min')
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = train_image_data, y = train_labels_tp53,
-          epochs = 1, verbose = 1, validation_data=(valid_image_data, valid_labels_tp53),
+model.fit(x = train_gen,
+          epochs = 1, verbose = 1, validation_data = val_gen,
           steps_per_epoch=(train_image_data_len / batch_dimension),
           validation_steps=(valid_image_data_len / batch_dimension))
 
@@ -312,9 +320,9 @@ model.compile(optimizer=keras.optimizers.Adam(learning_rate = 0.00001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_image_data, y = train_labels_tp53,
-                           epochs = 100, verbose = 1, validation_data = (valid_image_data, valid_labels_tp53),
-                           #callbacks = mcp_save,
+neural_network = model.fit(x = train_gen,
+                           epochs = 20, verbose = 1, validation_data = val_gen,
+                           callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

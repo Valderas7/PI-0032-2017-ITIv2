@@ -27,7 +27,7 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_02_0.34.h5')
+model = load_model('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_02_0.34_roc.h5')
 
 test_image_data = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/test_data/test_image.npy')
 test_labels_tumor_type = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/test_data/test_labels_tumor_type.npy')
@@ -36,7 +36,7 @@ test_labels_tumor_type = np.load('/home/avalderas/img_slides/anatomical_patholog
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_image_data, test_labels_tumor_type, verbose=0)
+results = model.evaluate(test_image_data, test_labels_tumor_type, verbose = 0)
 
 print("\n'Loss' del tipo histológico en el conjunto de prueba: {:.2f}\n""Sensibilidad del tipo histológico en el "
       "conjunto de prueba: {:.2f}%\n""Precisión del tipo histológico en el conjunto de prueba: {:.2f}%\n""Especifidad "

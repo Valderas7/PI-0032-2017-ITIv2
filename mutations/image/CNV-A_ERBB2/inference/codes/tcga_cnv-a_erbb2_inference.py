@@ -12,7 +12,7 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image/CNV-A_ERBB2/inference/models/model_image_erbb2_04_0.63.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/CNV-A_ERBB2/inference/models/model_image_erbb2_04_0.63_roc.h5')
 
 test_image_data = np.load('/home/avalderas/img_slides/mutations/image/CNV-A_ERBB2/inference/test_data/test_image.npy')
 test_labels_erbb2 = np.load('/home/avalderas/img_slides/mutations/image/CNV-A_ERBB2/inference/test_data/test_labels_erbb2.npy')

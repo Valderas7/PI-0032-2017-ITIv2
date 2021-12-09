@@ -12,7 +12,7 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image/SNV_PIK3CA/inference/models/model_image_pik3ca')
+model = load_model('/home/avalderas/img_slides/mutations/image/SNV_PIK3CA/inference/models/model_image_pik3ca_02_0.66_roc_f1.h5')
 
 test_image_data = np.load('/home/avalderas/img_slides/mutations/image/SNV_PIK3CA/inference/test_data/test_image.npy')
 test_labels_pik3ca = np.load('/home/avalderas/img_slides/mutations/image/SNV_PIK3CA/inference/test_data/test_labels_pik3ca.npy')

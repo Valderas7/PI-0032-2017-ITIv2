@@ -76,6 +76,8 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!= 'N0') & (df_all_merg
 """ Se eliminan todas las columnas de mutaciones excepto la de SNV_TP53 """
 df_all_merge = df_all_merge[['ID', 'tumor_type']]
 df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
+df_all_merge = df_all_merge.sort_values(by='tumor_type', ascending = False)
+df_all_merge = df_all_merge[:-297] # Ahora hay el mismo número de IDC y ILC
 
 """ Una vez la tabla tiene las columnas deseadas se procede a codificar las columnas categóricas del dataframe a valores
 numéricos mediante la técnica del 'One Hot Encoding' antes de hacer la repartición de subconjuntos para que no haya 
@@ -197,6 +199,14 @@ neuronal convolucional. """
 #np.save('test_image', test_image_data)
 #np.save('test_labels_tumor_type', test_labels_tumor_type)
 
+""" Data augmentation """
+train_aug = ImageDataGenerator(horizontal_flip= True, zoom_range= 0.2, rotation_range= 20, vertical_flip= True)
+val_aug = ImageDataGenerator()
+
+""" Instanciar lotes """
+train_gen = train_aug.flow(x = train_image_data, y = train_labels_tumor_type, batch_size = 32)
+val_gen = val_aug.flow(x = valid_image_data, y = valid_labels_tumor_type, batch_size = 32, shuffle = False)
+
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL (CNN) -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
@@ -241,8 +251,8 @@ checkpoint_path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tu
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = train_image_data, y = train_labels_tumor_type,
-          epochs = 3, verbose = 1, validation_data = (valid_image_data, valid_labels_tumor_type),
+model.fit(x = train_gen,
+          epochs = 3, verbose = 1, validation_data = val_gen,
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -266,9 +276,9 @@ model.compile(loss = 'categorical_crossentropy',
 model.summary()
 
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_image_data, y = train_labels_tumor_type,
-                           epochs = 100, verbose = 1, validation_data = (valid_image_data, valid_labels_tumor_type),
-                           #callbacks = mcp_save,
+neural_network = model.fit(x = train_gen,
+                           epochs = 20, verbose = 1, validation_data = val_gen,
+                           callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
