@@ -34,7 +34,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_05_0.63_loss_Bal&DA.h5'
+path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_05_0.63_Bal&DA.h5'
 model = load_model(path)
 epoch_model = 'Epoch_' + path.split('_')[10] + '_' + 'loss_' + path.split('_')[11]
 
@@ -74,8 +74,8 @@ el que se divide la WSI al dividirla en teselas de 210x210 en el nivel de resolu
 puntuaciones de color de cada tesela """
 tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
-""" Se crea una lista (una para cada uno de los datos anatomopatológicos) y un array 3D para recopilar
-los índices de cada uno de los datos anatomopatológicos. """
+""" Se crea una lista y un array 3D para recopilar las predicciones y las puntuaciones, respectivamente, de la 
+predicción del tipo histológico. """
 tumor_type_list = []
 tumor_type_scores = np.zeros((int(dim[1]/(alto * scale)),  int(dim[0] / (ancho * scale))))
 
@@ -138,9 +138,10 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 de todos los datos anatomopatológicos. Estos índices se guardan dentro del 'array' correspondiente del 
                 'array' 3D definido para cada tipo de dato anatomopatológico, para así poder realizar después los mapas 
                 de calor de todos los datos """
-                prediction_tumor_type = model.predict(tile)      # Tipo histológico
+                prediction_tumor_type = model.predict(tile)     # Tipo histológico
                 tumor_type_list.append(prediction_tumor_type)
-                tumor_type_scores[alto_slide][ancho_slide] = np.argmax(prediction_tumor_type)
+                idc_ilc_selection = np.take(prediction_tumor_type, [0, 1]) # Elegir solo IDC(0) o ILC(1) en tipos mixtos
+                tumor_type_scores[alto_slide][ancho_slide] = np.argmax(idc_ilc_selection)
 
 """ Se realiza la suma de las columnas para cada una de las predicciones de cada datos anatomopatológicos. Como 
 resultado, se obtiene un array de varias columnas (dependiendo del dato anatomopatológico habrá más o menos clases) y 
@@ -191,8 +192,8 @@ mask = np.zeros_like(tiles_scores_array)
 mask[np.where((tiles_scores_array < 0.09) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.3,
-                      zorder = 2, vmin = 0, vmax = 6)
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.2,
+                      zorder = 2)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """

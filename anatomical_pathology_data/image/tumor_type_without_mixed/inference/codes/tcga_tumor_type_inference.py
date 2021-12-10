@@ -27,8 +27,7 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model(
-    '/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_05_0.63_loss_Bal&DA.h5')
+model = load_model('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_05_0.63_loss_Bal&DA.h5')
 
 test_image_data = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/test_data/test_image.npy')
 test_labels_tumor_type = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/test_data/test_labels_tumor_type.npy')
