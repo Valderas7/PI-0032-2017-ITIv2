@@ -34,11 +34,9 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_05_0.63_loss_Bal&DA.h5'
+path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_05_0.63_loss_Bal&DA.h5'
 model = load_model(path)
-epoch_model = path.split('_')[6]
-print(epoch_model)
-quit()
+epoch_model = 'Epoch_' + path.split('_')[10] + '_' + 'loss_' + path.split('_')[11]
 
 """ Se abre WSI especificada """
 path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
@@ -76,16 +74,10 @@ el que se divide la WSI al dividirla en teselas de 210x210 en el nivel de resolu
 puntuaciones de color de cada tesela """
 tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
-""" Se crea una lista de seis listas (una para cada uno de los datos anatomopatológicos) y un array 3D para recopilar
+""" Se crea una lista (una para cada uno de los datos anatomopatológicos) y un array 3D para recopilar
 los índices de cada uno de los datos anatomopatológicos. """
-anatomical_pathology_list = []
-anatomical_pathology_data = 6
-
-for i in range(anatomical_pathology_data):
-    anatomical_pathology_list.append([])
-
-anatomical_pathology_data_scores = np.zeros((anatomical_pathology_data, int(dim[1]/(alto * scale)),
-                                             int(dim[0] / (ancho * scale))))
+tumor_type_list = []
+tumor_type_scores = np.zeros((int(dim[1]/(alto * scale)),  int(dim[0] / (ancho * scale))))
 
 """ Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x' """
 #@ancho_slide itera de (0 - nºcolumnas) [columnas] y @alto_slide de (0 - nºfilas) [filas]
@@ -146,74 +138,21 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 de todos los datos anatomopatológicos. Estos índices se guardan dentro del 'array' correspondiente del 
                 'array' 3D definido para cada tipo de dato anatomopatológico, para así poder realizar después los mapas 
                 de calor de todos los datos """
-                prediction_tumor_type = model.predict(tile)[0]      # Tipo histológico
-                prediction_STAGE = model.predict(tile)[1]           # STAGE
-                prediction_pT = model.predict(tile)[2]              # pT
-                prediction_pN = model.predict(tile)[3]              # pN
-                prediction_pM = model.predict(tile)[4]              # pM
-                prediction_IHQ = model.predict(tile)[5]             # IHQ
-
-                anatomical_pathology_list[0].append(prediction_tumor_type)
-                anatomical_pathology_list[1].append(prediction_STAGE)
-                anatomical_pathology_list[2].append(prediction_pT)
-                anatomical_pathology_list[3].append(prediction_pN)
-                anatomical_pathology_list[4].append(prediction_pM)
-                anatomical_pathology_list[5].append(prediction_IHQ)
-
-                anatomical_pathology_data_scores[0][alto_slide][ancho_slide] = np.argmax(prediction_tumor_type)
-                anatomical_pathology_data_scores[1][alto_slide][ancho_slide] = np.argmax(prediction_STAGE)
-                anatomical_pathology_data_scores[2][alto_slide][ancho_slide] = np.argmax(prediction_pT)
-                anatomical_pathology_data_scores[3][alto_slide][ancho_slide] = np.argmax(prediction_pN)
-                anatomical_pathology_data_scores[4][alto_slide][ancho_slide] = np.argmax(prediction_pM)
-                anatomical_pathology_data_scores[5][alto_slide][ancho_slide] = np.argmax(prediction_IHQ)
+                prediction_tumor_type = model.predict(tile)      # Tipo histológico
+                tumor_type_list.append(prediction_tumor_type)
+                tumor_type_scores[alto_slide][ancho_slide] = np.argmax(prediction_tumor_type)
 
 """ Se realiza la suma de las columnas para cada una de las predicciones de cada datos anatomopatológicos. Como 
 resultado, se obtiene un array de varias columnas (dependiendo del dato anatomopatológico habrá más o menos clases) y 
 una sola fila, ya que se han sumado las predicciones de todas las teselas. Este array se ordena por los índice de mayor 
 a menor puntuación, siendo el de mayor puntuación la predicción de la clase del dato anatomopatológico analizado """
 # Tipo histológico
-tumor_type_classes = ['Invasive Ductal Carcinoma', 'Invasive Lobular Carcinoma', 'Medullary', 'Metaplastic',
-                      'Mixed (NOS)', 'Mucinous', 'Other']
-tumor_type = np.concatenate(anatomical_pathology_list[0])
+tumor_type_classes = ['Invasive Ductal Carcinoma', 'Invasive Lobular Carcinoma', 'Medullary', 'Metaplastic', 'Mucinous']
+
+tumor_type = np.concatenate(tumor_type_list)
 tumor_type_sum = np.array(tumor_type.sum(axis = 0))
 max_tumor_type = int(np.argsort(tumor_type_sum)[::-1][:1])
 print("Tipo histológico: {}".format(tumor_type_classes[max_tumor_type]))
-
-# STAGE
-STAGE_classes = ['Stage IB', 'Stage II', 'Stage IIA', 'Stage IIB', 'Stage III', 'Stage IIIA', 'Stage IIIB',
-                 'Stage IIIC', 'Stage IV', 'STAGE X']
-STAGE = np.concatenate(anatomical_pathology_list[1])
-STAGE_sum = np.array(STAGE.sum(axis = 0))
-max_STAGE = int(np.argsort(STAGE_sum)[::-1][:1])
-print("Estadio anatomopatológico: {}".format(STAGE_classes[max_STAGE]))
-
-# pT
-pT_classes = ['T1', 'T1A', 'T1B', 'T1C', 'T2', 'T2B', 'T3', 'T4', 'T4B', 'T4D']
-pT = np.concatenate(anatomical_pathology_list[2])
-pT_sum = np.array(pT.sum(axis = 0))
-max_pT = int(np.argsort(pT_sum)[::-1][:1])
-print("Parámetro pT: {}".format(pT_classes[max_pT]))
-
-# pN
-pN_classes = ['N1', 'N1A', 'N1B', 'N1C', 'N1MI', 'N2', 'N2A', 'N3', 'N3A', 'N3B', 'N3C']
-pN = np.concatenate(anatomical_pathology_list[3])
-pN_sum = np.array(pN.sum(axis = 0))
-max_pN = int(np.argsort(pN_sum)[::-1][:1])
-print("Parámetro pN: {}".format(pN_classes[max_pN]))
-
-# pM
-pM_classes = ['M0', 'M1', 'MX']
-pM = np.concatenate(anatomical_pathology_list[4])
-pM_sum = np.array(pM.sum(axis = 0))
-max_pM = int(np.argsort(pM_sum)[::-1][:1])
-print("Parámetro pM: {}".format(pM_classes[max_pM]))
-
-# IHQ
-IHQ_classes = ['Basal', 'Her-2', 'Luminal A', 'Luminal B', 'Normal']
-IHQ = np.concatenate(anatomical_pathology_list[5])
-IHQ_sum = np.array(IHQ.sum(axis = 0))
-max_IHQ = int(np.argsort(IHQ_sum)[::-1][:1])
-print("Subtipo molecular: {}".format(IHQ_classes[max_IHQ]))
 
 """ Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle después el mapa de calor y lo 
 suficientemente alto para que tenga un buen nivel de resolución """
@@ -230,21 +169,15 @@ pixeles_y = slide.shape[0]
 dpi = 100
 
 """ Se crean las carpetas para guardar los mapas de calor que se corresponden con la 'epoch' del modelo elegido """
-new_snv_epoch_folder = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}'.format(epoch_model)
-new_cnv_a_epoch_folder = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}'.format(epoch_model)
-new_cnv_d_epoch_folder = '/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}'.format(epoch_model)
+new_tumor_type_epoch_folder = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/heatmaps/{}'.format(epoch_model)
 
-if not os.path.exists(new_snv_epoch_folder):
-    os.makedirs(new_snv_epoch_folder)
-if not os.path.exists(new_cnv_a_epoch_folder):
-    os.makedirs(new_cnv_a_epoch_folder)
-if not os.path.exists(new_cnv_d_epoch_folder):
-    os.makedirs(new_cnv_d_epoch_folder)
+if not os.path.exists(new_tumor_type_epoch_folder):
+    os.makedirs(new_tumor_type_epoch_folder)
 
 """ -------------------------------------------------------------------------------------------------------------------- 
 ---------------------------------------------------- Tipo histológico --------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------ """
-grid = anatomical_pathology_data_scores[0] # (nº filas, nº columnas)
+grid = tumor_type_scores # (nº filas, nº columnas)
 
 """ Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
 resolución del WSI """
@@ -267,5 +200,5 @@ redimensionado a las dimensiones de la imagen de mínima resolución del WSI) ""
                #aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # TIFF
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/inference/heatmaps/Epoch{}/tumor_type.png'.format(epoch_model))
+plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/heatmaps/{}/tumor_type.png'.format(epoch_model))
 #plt.show()

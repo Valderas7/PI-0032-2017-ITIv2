@@ -73,7 +73,7 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!= 'N0') & (df_all_merg
                             (df_all_merge["path_n_stage"]!= 'N0 (MOL+)') & (df_all_merge["tumor_type"]!= 'Other') &
                             (df_all_merge["tumor_type"]!= 'Mixed Histology (NOS)')]
 
-""" Se eliminan todas las columnas de mutaciones excepto la de SNV_TP53 """
+""" Se eliminan todas las columnas de mutaciones excepto la de tipo histológico """
 df_all_merge = df_all_merge[['ID', 'tumor_type']]
 df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
 df_all_merge = df_all_merge.sort_values(by='tumor_type', ascending = False)
@@ -200,7 +200,7 @@ neuronal convolucional. """
 #np.save('test_labels_tumor_type', test_labels_tumor_type)
 
 """ Data augmentation """
-train_aug = ImageDataGenerator(horizontal_flip= True, zoom_range= 0.2, rotation_range= 20, vertical_flip= True)
+train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 20, vertical_flip = True)
 val_aug = ImageDataGenerator()
 
 """ Instanciar lotes """
@@ -216,11 +216,11 @@ base_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tenso
                                                include_top = False, pooling = 'max')
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
-all_model = layers.Dense(256)(all_model)
+all_model = layers.Dense(128)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.Dense(32)(all_model)
+all_model = layers.Dense(16)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-tumor_type = layers.Dense(train_labels_tumor_type.shape[1], activation = "softmax", name= 'tumor_type')(all_model)
+tumor_type = layers.Dense(train_labels_tumor_type.shape[1], activation = "softmax", name = 'tumor_type')(all_model)
 
 model = keras.models.Model(inputs = base_model.input, outputs = tumor_type)
 
@@ -278,7 +278,7 @@ model.summary()
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = train_gen,
                            epochs = 20, verbose = 1, validation_data = val_gen,
-                           callbacks = mcp_save,
+                           #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
