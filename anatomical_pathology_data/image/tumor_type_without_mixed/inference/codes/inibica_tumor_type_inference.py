@@ -21,6 +21,7 @@ import pandas as pd
 import os
 from tensorflow.keras.models import load_model
 import seaborn as sns
+from matplotlib.colors import LinearSegmentedColormap
 
 """ Se carga el Excel de INiBICA ya transformado para variables anatomopatológicas, y se recopilan las salidas """
 data_inibica = pd.read_excel('/home/avalderas/img_slides/correlations/mutations-anatomopathologic/inference/test_data&models/inference_inibica_mutations-anatomopathologic.xlsx',
@@ -192,8 +193,9 @@ mask = np.zeros_like(tiles_scores_array)
 mask[np.where((tiles_scores_array < 0.09) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = False, cmap = "hsv", alpha = 0.2,
-                      zorder = 2)
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True,
+                      cmap = LinearSegmentedColormap.from_list('Custom', ((0.8, 0, 0, 1), (0.8, 0, 0, 1)), 2),
+                      alpha = 0.2, zorder = 2)
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
