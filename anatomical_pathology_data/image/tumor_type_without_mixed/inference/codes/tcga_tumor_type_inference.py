@@ -29,8 +29,10 @@ from sklearn.metrics import confusion_matrix
 'numpy' """
 model = load_model('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_02_0.34_unbalanced.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/test_data/test_image_balanced.npy')
-test_labels_tumor_type = np.load('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/test_data/test_labels_tumor_type_balanced.npy')
+test_image_data = np.load(
+    '/anatomical_pathology_data/image/tumor_type_without_mixed/inference/test_data/test_image_balanced_patients.npy')
+test_labels_tumor_type = np.load(
+    '/anatomical_pathology_data/image/tumor_type_without_mixed/inference/test_data/test_labels_tumor_type_balanced_patients.npy')
 
 """ Una vez entrenado el modelo se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

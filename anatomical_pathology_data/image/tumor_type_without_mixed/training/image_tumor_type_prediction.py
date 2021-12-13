@@ -73,19 +73,21 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!= 'N0') & (df_all_merg
                             (df_all_merge["path_n_stage"]!= 'N0 (MOL+)') & (df_all_merge["tumor_type"]!= 'Other') &
                             (df_all_merge["tumor_type"]!= 'Mixed Histology (NOS)')]
 
-""" Se eliminan todas las columnas de mutaciones excepto la de tipo histológico """
+""" Se eliminan todas las columnas de mutaciones excepto la de tipo histológico y se igualan los pacientes para que
+tengan el mismo número de IDC y el mismo número de ILC """
 df_all_merge = df_all_merge[['ID', 'tumor_type']]
-df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
-df_all_merge = df_all_merge.sort_values(by='tumor_type', ascending = False)
+df_all_merge.dropna(inplace = True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
+df_all_merge = df_all_merge.sort_values(by = 'tumor_type', ascending = False)
 df_all_merge = df_all_merge[:-297] # Ahora hay el mismo número de IDC y ILC
 
 """ Una vez la tabla tiene las columnas deseadas se procede a codificar las columnas categóricas del dataframe a valores
 numéricos mediante la técnica del 'One Hot Encoding' antes de hacer la repartición de subconjuntos para que no haya 
 problemas con las columnas. """
 #@ get_dummies: Aplica técnica de 'One Hot Encoding', creando columnas binarias para las columnas seleccionadas
-df_all_merge = pd.get_dummies(df_all_merge, columns=["tumor_type"])
+df_all_merge = pd.get_dummies(df_all_merge, columns = ["tumor_type"])
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento, validación y test. """
+# 147 pacientes en entrenamiento, 44 en test y 27 en validación.
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
 # @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_data, test_data = train_test_split(df_all_merge, test_size = 0.20)
@@ -136,6 +138,32 @@ for id_img in remove_img_list:
     train_data.drop(index_train, inplace = True)
     valid_data.drop(index_valid, inplace = True)
     test_data.drop(index_test, inplace = True)
+
+""" Se iguala el número de teselas con IDC y con ILC """
+# Entrenamiento
+train_idc_tiles = train_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1]
+train_ilc_tiles = train_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1]
+difference_train = train_idc_tiles - train_ilc_tiles
+
+train_data = train_data.sort_values(by = 'tumor_type_Infiltrating Ductal Carcinoma', ascending = True)
+train_data = train_data[:-difference_train] # Ahora hay el mismo número de IDC y ILC
+
+# Validación
+valid_idc_tiles = valid_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1]
+valid_ilc_tiles = valid_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1]
+difference_valid = valid_idc_tiles - valid_ilc_tiles
+
+valid_data = valid_data.sort_values(by = 'tumor_type_Infiltrating Ductal Carcinoma', ascending = True)
+valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de IDC y ILC
+
+
+# Test
+test_idc_tiles = test_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1]
+test_ilc_tiles = test_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1]
+difference_test = test_idc_tiles - test_ilc_tiles
+
+test_data = test_data.sort_values(by = 'tumor_type_Infiltrating Ductal Carcinoma', ascending = True)
+test_data = test_data[:-difference_test] # Ahora hay el mismo número de IDC y ILC
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -277,7 +305,7 @@ model.summary()
 
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = train_gen,
-                           epochs = 20, verbose = 1, validation_data = val_gen,
+                           epochs = 15, verbose = 1, validation_data = val_gen,
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
