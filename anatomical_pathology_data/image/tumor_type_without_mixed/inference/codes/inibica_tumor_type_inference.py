@@ -35,7 +35,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_06_0.56_Bal&DA_with_test.h5'
+path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_06_0.56_balanced_patients.h5'
 model = load_model(path)
 epoch_model = 'Epoch_' + path.split('_')[10] + '_' + 'loss_' + path.split('_')[11]
 
@@ -201,7 +201,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 y no números. """
 colorbar = heatmap.collections[0].colorbar
 colorbar.set_ticks([0.75, 0.25])
-colorbar.set_ticklabels(['IDC', 'ILC'])
+colorbar.set_ticklabels(['Ductal', 'Lobular'])
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
