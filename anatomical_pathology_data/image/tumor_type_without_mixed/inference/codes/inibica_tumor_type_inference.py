@@ -35,7 +35,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_05_0.85_balanced_tiles.h5'
+path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_06_0.56_balanced_patients.h5'
 model = load_model(path)
 epoch_model = 'Epoch_' + path.split('_')[10] + '_' + 'loss_' + path.split('_')[11]
 
@@ -195,7 +195,7 @@ mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9))] = True
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True,
                       cmap = LinearSegmentedColormap.from_list('Custom', ((0.8, 0, 0, 1), (0, 0, 0.8, 1)), 2),
-                      alpha = 0.2, zorder = 2, cbar_kws = {'shrink': 0.2})
+                      alpha = 0.2, zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False)
 
 """ Se edita la barra leyenda del mapa de calor para que muestre los nombres de las categorías de los tipos histológicos
 y no números. """
