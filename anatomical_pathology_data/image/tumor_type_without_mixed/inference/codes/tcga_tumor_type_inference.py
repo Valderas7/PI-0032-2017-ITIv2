@@ -92,7 +92,7 @@ auc_roc["micro"] = auc(fpr["micro"], tpr["micro"])
 """ Finalmente se dibuja la curva AUC-ROC """
 plt.figure()
 plt.plot(fpr["micro"], tpr["micro"],
-         label = 'Micro-average AUC-ROC curve (AUC = {0:.2f})'.format(auc_roc["micro"]),
+         label = 'AUC-ROC curve (AUC = {0:.2f})'.format(auc_roc["micro"]),
          color = 'blue', linewidth = 2)
 
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
@@ -122,7 +122,7 @@ auc_pr["micro"] = auc(recall["micro"], precision["micro"])
 """ Finalmente se dibuja la curva AUC-PR micro-promedio """
 plt.figure()
 plt.plot(recall["micro"], precision["micro"],
-         label = 'Micro-average AUC-PR curve (AUC = {0:.2f})'.format(auc_pr["micro"]),
+         label = 'AUC-PR curve (AUC = {0:.2f})'.format(auc_pr["micro"]),
          color = 'blue', linewidth = 2)
 
 plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
