@@ -106,21 +106,21 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             tres filas correspodientes en los tres canales de la tesela es cero, lo que indicaría que hay una fila 
             entera en la tesela de color negro, y por tanto, se hace que su puntuacion sea cero. """
             sub_img_array = cv2.cvtColor(np.array(sub_img), cv2.COLOR_RGBA2RGB)
-            r = 1; g = 2; b = 3
-            for index in range(210):
-                r = np.sum(sub_img_array[index, :, 0])
-                g = np.sum(sub_img_array[index, :, 1])
-                b = np.sum(sub_img_array[index, :, 2])
-                if r + g + b == 0:
-                    tiles_scores_array[alto_slide][ancho_slide] = 1.0
-                    break # Salta a la línea #147
-                """ Se realiza lo mismo que se ha realizado con las filas, pero esta vez con las columnas """
-                r = np.sum(sub_img_array[:, index, 0])
-                g = np.sum(sub_img_array[:, index, 1])
-                b = np.sum(sub_img_array[:, index, 2])
-                if r + g + b == 0:
-                    tiles_scores_array[alto_slide][ancho_slide] = 1.0
-                    break # Salta a la línea #147
+            r_row = 1; g_row = 2; b_row = 3; r_col= 1; g_col = 2; b_col = 3
+            for index_row in range(210):
+                for index_col in range(210):
+                    r_row = int(sub_img_array[index_row, index_col, 0])
+                    g_row = int(sub_img_array[index_row, index_col, 1])
+                    b_row = int(sub_img_array[index_row, index_col, 2])
+                    r_col = int(sub_img_array[index_col, index_row, 0])
+                    g_col = int(sub_img_array[index_col, index_row, 1])
+                    b_col = int(sub_img_array[index_col, index_row, 2])
+                    if (r_row + g_row + b_row == 0) | (r_col + g_col + b_col == 0):
+                        tiles_scores_array[alto_slide][ancho_slide] = 1.0
+                        break # Salta a la línea #123
+                else:
+                    continue
+                break # Salta a la línea #131
             """ Aunque estas imágenes que tienen líneas enteramente negras (ya sea horizontalmente o verticalmente) son
             leídas, al realizar la máscara del mapa de calor van a ser ocultadas, puesto que se les ha hecho que su
             puntuación sea uno. """
