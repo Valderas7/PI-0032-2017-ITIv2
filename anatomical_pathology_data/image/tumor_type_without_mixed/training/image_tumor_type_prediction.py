@@ -140,14 +140,6 @@ for id_img in remove_img_list:
     test_data.drop(index_test, inplace = True)
 
 """ Se iguala el número de teselas con IDC y con ILC """
-# Entrenamiento
-train_idc_tiles = train_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1]
-train_ilc_tiles = train_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1]
-difference_train = train_idc_tiles - train_ilc_tiles
-
-train_data = train_data.sort_values(by = 'tumor_type_Infiltrating Ductal Carcinoma', ascending = True)
-train_data = train_data[:-difference_train] # Ahora hay el mismo número de IDC y ILC
-
 # Validación
 valid_idc_tiles = valid_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1]
 valid_ilc_tiles = valid_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1]
@@ -155,7 +147,6 @@ difference_valid = valid_idc_tiles - valid_ilc_tiles
 
 valid_data = valid_data.sort_values(by = 'tumor_type_Infiltrating Ductal Carcinoma', ascending = True)
 valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de IDC y ILC
-
 
 # Test
 test_idc_tiles = test_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1]
@@ -279,8 +270,7 @@ checkpoint_path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tu
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = train_gen,
-          epochs = 3, verbose = 1, validation_data = val_gen,
+model.fit(x = train_gen, epochs = 3, verbose = 1, validation_data = val_gen,
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -304,8 +294,7 @@ model.compile(loss = 'categorical_crossentropy',
 model.summary()
 
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_gen,
-                           epochs = 15, verbose = 1, validation_data = val_gen,
+neural_network = model.fit(x = train_gen, epochs = 10, verbose = 1, validation_data = val_gen,
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))

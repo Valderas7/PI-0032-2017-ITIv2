@@ -39,7 +39,7 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 results = model.evaluate(test_image_data, test_labels_tumor_type, verbose = 0)
 
 print("\n'Loss' del tipo histológico en el conjunto de prueba: {:.2f}\n""Sensibilidad del tipo histológico en el "
-      "conjunto de prueba: {:.2f}%\n""Precisión del tipo histológico en el conjunto de prueba: {:.2f}%\n""Especifidad "
+      "conjunto de prueba: {:.2f}%\n""Precisión del tipo histológico en el conjunto de prueba: {:.2f}%\n""Especificidad "
       "del tipo histológico en el conjunto de prueba: {:.2f}% \n""Exactitud del tipo histológico en el conjunto de prueba: "
       "{:.2f}%\n""AUC-ROC del tipo histológico en el conjunto de prueba: {:.2f}\n""AUC-PR del tipo histológico en el "
       "conjunto de prueba: {:.2f}".format(results[0], results[5] * 100, results[6] * 100,
