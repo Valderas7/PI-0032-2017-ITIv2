@@ -209,5 +209,8 @@ redimensionado a las dimensiones de la imagen de mínima resolución del WSI) ""
                #aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # TIFF
 heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
-plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/heatmaps/{}/tumor_type.png'.format(epoch_model))
+
+""" Se guarda el mapa de calor, eliminando el espacio blanco que sobra en los ejes X e Y de la imagen """
+plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/heatmaps/{}/tumor_type.png'.format(epoch_model),
+            bbox_inches = 'tight')
 #plt.show()
