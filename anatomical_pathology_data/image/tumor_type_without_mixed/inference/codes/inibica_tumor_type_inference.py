@@ -170,12 +170,6 @@ pixeles_x = slide.shape[1]
 pixeles_y = slide.shape[0]
 dpi = 100
 
-""" Se crean las carpetas para guardar los mapas de calor que se corresponden con la 'epoch' del modelo elegido """
-new_tumor_type_epoch_folder = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/heatmaps/{}'.format(epoch_model)
-
-if not os.path.exists(new_tumor_type_epoch_folder):
-    os.makedirs(new_tumor_type_epoch_folder)
-
 """ -------------------------------------------------------------------------------------------------------------------- 
 ---------------------------------------------------- Tipo histológico --------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------ """
@@ -211,6 +205,6 @@ heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), asp
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
 
 """ Se guarda el mapa de calor, eliminando el espacio blanco que sobra en los ejes X e Y de la imagen """
-plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/heatmaps/{}/tumor_type.png'.format(epoch_model),
+plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/heatmaps/tumor_type_{}.png'.format(epoch_model),
             bbox_inches = 'tight')
 #plt.show()
