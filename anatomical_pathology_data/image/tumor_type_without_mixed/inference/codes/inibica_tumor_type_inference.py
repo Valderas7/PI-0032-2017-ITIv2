@@ -35,7 +35,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_06_0.56_balanced_patients.h5'
+path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_06_0.47_ultimate.h5'
 model = load_model(path)
 epoch_model = 'Epoch_' + path.split('_')[10] + '_' + 'loss_' + path.split('_')[11]
 
@@ -78,7 +78,7 @@ tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho *
 """ Se crea una lista y un array 3D para recopilar las predicciones y las puntuaciones, respectivamente, de la 
 predicción del tipo histológico. """
 tumor_type_list = []
-tumor_type_scores = np.zeros((int(dim[1]/(alto * scale)),  int(dim[0] / (ancho * scale))))
+tumor_type_scores = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
 """ Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x' """
 #@ancho_slide itera de (0 - nºcolumnas) [columnas] y @alto_slide de (0 - nºfilas) [filas]
