@@ -266,7 +266,7 @@ model.compile(loss = 'categorical_crossentropy',
 model.summary()
 
 """ Se implementan varios callbacks para guardar el mejor modelo. """
-checkpoint_path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/anatomical pathology/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """

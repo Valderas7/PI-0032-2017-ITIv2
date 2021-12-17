@@ -24,7 +24,7 @@ import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 
 """ Se carga el Excel de INiBICA ya transformado para variables anatomopatológicas, y se recopilan las salidas """
-data_inibica = pd.read_excel('/home/avalderas/img_slides/correlations/mutations-anatomopathologic/inference/test_data&models/inference_inibica_mutations-anatomopathologic.xlsx',
+data_inibica = pd.read_excel('/home/avalderas/img_slides/correlations/mutations-anatomopathologic/inference/excel/inference_inibica_mutations-anatomopathologic.xlsx',
                               engine='openpyxl')
 
 test_labels_tumor_type = data_inibica.iloc[:, 238:245]
@@ -35,13 +35,13 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_06_0.47_ultimate.h5'
+path = '/home/avalderas/img_slides/anatomical pathology/image/tumor type/inference/models/model_image_tumor_type_06_0.47_ultimate.h5'
 model = load_model(path)
-epoch_model = 'Epoch_' + path.split('_')[10] + '_' + 'loss_' + path.split('_')[11]
 
-""" Se abre WSI especificada """
+""" Se abre WSI especificada y extraemos el paciente del que se trata """
 path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
+patient_id = path_wsi.split('/')[4][:4]
 
 """" Se hallan las dimensiones (anchura, altura) del nivel de resolución '0' (máxima resolución) de la WSI """
 dim = wsi.dimensions
@@ -205,6 +205,6 @@ heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), asp
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
 
 """ Se guarda el mapa de calor, eliminando el espacio blanco que sobra en los ejes X e Y de la imagen """
-plt.savefig('/home/avalderas/img_slides/anatomical_pathology_data/image/tumor_type_without_mixed/inference/heatmaps/tumor_type_{}.png'.format(epoch_model),
+plt.savefig('/home/avalderas/img_slides/anatomical pathology/image/tumor type/inference/heatmaps/tumor_type_{}.png'.format(patient_id),
             bbox_inches = 'tight')
 #plt.show()
