@@ -421,7 +421,7 @@ model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentrop
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/correlations/anatomopathologic-mutations/inference/test_data&models/anatomopathologic-mutations.h5'
+checkpoint_path = '/correlations/anatomopathologic-mutations/inference/test_data/anatomopathologic-mutations.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'loss', mode= 'min')
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """

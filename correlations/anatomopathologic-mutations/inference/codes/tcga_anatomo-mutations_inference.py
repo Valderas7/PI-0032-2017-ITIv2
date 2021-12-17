@@ -11,13 +11,13 @@ from sklearn.metrics import multilabel_confusion_matrix # Para realizar la matri
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/correlations/anatomopathologic-mutations/inference/test_data&models/anatomopathologic-mutations.h5')
+model = load_model('/correlations/anatomopathologic-mutations/inference/test_data/anatomopathologic-mutations.h5')
 
-test_tabular_data = np.load('/home/avalderas/img_slides/correlations/anatomopathologic-mutations/inference/test_data&models/test_data.npy')
+test_tabular_data = np.load('/correlations/anatomopathologic-mutations/inference/test_data/test_data.npy')
 
-test_labels_snv = np.load('/home/avalderas/img_slides/correlations/anatomopathologic-mutations/inference/test_data&models/test_labels_snv.npy')
-test_labels_cnv_a = np.load('/home/avalderas/img_slides/correlations/anatomopathologic-mutations/inference/test_data&models/test_labels_cnv_a.npy')
-test_labels_cnv_d = np.load('/home/avalderas/img_slides/correlations/anatomopathologic-mutations/inference/test_data&models/test_labels_cnv_d.npy')
+test_labels_snv = np.load('/correlations/anatomopathologic-mutations/inference/test_data/test_labels_snv.npy')
+test_labels_cnv_a = np.load('/correlations/anatomopathologic-mutations/inference/test_data/test_labels_cnv_a.npy')
+test_labels_cnv_d = np.load('/correlations/anatomopathologic-mutations/inference/test_data/test_labels_cnv_d.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

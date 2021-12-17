@@ -12,13 +12,14 @@ import itertools
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/correlations/anatomopathologic-clinical/inference/test_data&models/anatomopathologic-clinical.h5')
+model = load_model('/correlations/anatomopathologic-clinical/inference/models/anatomopathologic-clinical.h5')
 
-test_tabular_data = np.load('/home/avalderas/img_slides/correlations/anatomopathologic-clinical/inference/test_data&models/test_data.npy')
+test_tabular_data = np.load('/correlations/anatomopathologic-clinical/inference/test_data/test_data.npy')
 
-test_labels_metastasis = np.load('/home/avalderas/img_slides/correlations/anatomopathologic-clinical/inference/test_data&models/test_labels_metastasis.npy')
-test_labels_survival = np.load('/home/avalderas/img_slides/correlations/anatomopathologic-clinical/inference/test_data&models/test_labels_survival.npy')
-test_labels_relapse = np.load('/home/avalderas/img_slides/correlations/anatomopathologic-clinical/inference/test_data&models/test_labels_relapse.npy')
+test_labels_metastasis = np.load(
+    '/correlations/anatomopathologic-clinical/inference/test_data/test_labels_metastasis.npy')
+test_labels_survival = np.load('/correlations/anatomopathologic-clinical/inference/test_data/test_labels_survival.npy')
+test_labels_relapse = np.load('/correlations/anatomopathologic-clinical/inference/test_data/test_labels_relapse.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
