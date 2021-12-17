@@ -18,6 +18,4 @@ En este repositorio se encuentran datos, archivos y códigos desarrollados para 
 
 - **mutations**: En esta carpeta se encuentran los códigos de entrenamiento e inferencia de predicciones de mutaciones `SNV` y de mutaciones `CNV-A` y `CNV-D`.
 
-- **screenshots**: En esta carpeta se recopilan capturas de pantalla que muestran distintos resultados (matriz de confusión, métricas, etc.) de las distintas redes neuronales realizadas.
-
 - **tiles**: Aquí se almacenan tanto los códigos para dividir en teselas las imágenes de la carpeta `images`, como las propias teselas.
