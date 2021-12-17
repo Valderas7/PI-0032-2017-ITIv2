@@ -433,7 +433,7 @@ model.compile(loss = {'tumor_type': 'categorical_crossentropy', 'STAGE': 'catego
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/correlations/mutations-anatomopathologic/inference/test_data&models/mutations-anatomopathologic.h5'
+checkpoint_path = '/correlations/mutations-anatomopathologic/inference/test_data/mutations-anatomopathologic.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """

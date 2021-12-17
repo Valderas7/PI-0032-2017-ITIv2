@@ -430,7 +430,7 @@ model.compile(loss = {'survival': 'binary_crossentropy', 'relapse': 'binary_cros
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/correlations/mutations-clinical/inference/test_data&models/mutations-clinical.h5'
+checkpoint_path = '/correlations/mutations-clinical/inference/test_data/mutations-clinical.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """

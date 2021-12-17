@@ -72,7 +72,7 @@ test_labels_cnv_d = np.asarray(test_labels_cnv_d).astype('float32')
 
 """ Una vez ya se tienen las entradas y las tres salidas correctamente en formato numpy, se carga el modelo de red para
 realizar la inferencia. """
-model = load_model('/home/avalderas/img_slides/correlations/clinical-mutations/inference/test_data&models/clinical-mutations.h5')
+model = load_model('/correlations/clinical-mutations/inference/test_data/clinical-mutations.h5')
 
 """ Se evalua los pacientes del INiBICA con los datos de test y se obtienen los resultados de las distintas métricas. """
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.

@@ -3,27 +3,62 @@ import pandas as pd
 import numpy as np
 import seaborn as sns # Para realizar gráficas sobre datos
 import matplotlib.pyplot as plt
-import cv2 #OpenCV
 import glob
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import load_model
-from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
+from sklearn.metrics import confusion_matrix
 import itertools
 
-""" Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
-'numpy' """
-model = load_model('/home/avalderas/img_slides/correlations/mutations-clinical/inference/test_data&models/mutations-clinical.h5')
+""" Se carga el Excel de los pacientes de INiBICA """
+data_inibica = pd.read_excel('/home/avalderas/img_slides/excel_genesOCA&inibica_patients/inference_inibica.xlsx',
+                             engine='openpyxl')
 
-test_tabular_data = np.load('/home/avalderas/img_slides/correlations/mutations-clinical/inference/test_data&models/test_data.npy')
+""" Se sustituyen los valores de la columna del estado de supervivencia, puesto que se entrenaron para valores de '1' 
+para los pacientes fallecidos, al contrario que en el Excel de los pacientes de INiBICA """
+data_inibica.loc[data_inibica.Estado_supervivencia == 1, "Estado_supervivencia"] = 2
+data_inibica.loc[data_inibica.Estado_supervivencia == 0, "Estado_supervivencia"] = 1
+data_inibica.loc[data_inibica.Estado_supervivencia == 2, "Estado_supervivencia"] = 0
 
-test_labels_survival = np.load('/home/avalderas/img_slides/correlations/mutations-clinical/inference/test_data&models/test_labels_survival.npy')
-test_labels_relapse = np.load('/home/avalderas/img_slides/correlations/mutations-clinical/inference/test_data&models/test_labels_relapse.npy')
-test_labels_metastasis = np.load('/home/avalderas/img_slides/correlations/mutations-clinical/inference/test_data&models/test_labels_metastasis.npy')
+""" Se eliminan las columnas de anatomía patológica, ya que no sirven en este caso, además de las mutaciones CNV de tipo 
+'NORMAL' y las variables clinicas no usadas """
+data_inibica = data_inibica.drop(['ER', 'PR', 'Ki-67', 'Her-2', 'Diagnóstico_previo', 'Tipo_tumor', 'STAGE', 'pT', 'pN',
+                                  'pM', 'Tratamiento_neoadyuvante', 'Edad'], axis = 1)
+data_inibica = data_inibica[data_inibica.columns.drop(list(data_inibica.filter(regex='NORMAL')))]
 
-""" Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
-especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
-la sensibilidad y la precisión del conjunto de datos de validación."""
+""" Se ordenan las columnas de igual manera en el que fueron colocadas durante el proceso de entrenamiento. """
+cols = data_inibica.columns.tolist()
+cols = cols[:1] + cols[4:] + cols[3:4] + cols[1:3]
+data_inibica = data_inibica[cols]
+
+#data_inibica.to_excel('inference_inibica_mutations-clinical.xlsx')
+
+""" Se carga el Excel de nuevo ya que anteriormente se ha guardado """
+data_inibica_complete = pd.read_excel('/home/avalderas/img_slides/correlations/mutations-clinical/inference/test_data&models/inference_inibica_mutations-clinical.xlsx',
+                                      engine='openpyxl')
+
+""" Ahora habría que eliminar la columna de pacientes y dividir las columnas en entradas (SNV, CNV-A, CNV-D) y salidas 
+(datos clinicos). """
+data_inibica_complete = data_inibica_complete.drop(['Paciente'], axis = 1)
+
+test_tabular_data = data_inibica_complete.iloc[:, :-3]
+
+test_labels_survival = data_inibica_complete.iloc[:, -3]
+test_labels_relapse = data_inibica_complete.iloc[:, -2]
+test_labels_metastasis = data_inibica_complete.iloc[:, -1]
+
+""" Para poder realizar la inferencia hace falta transformar los dataframes en arrays de numpy. """
+test_tabular_data = np.asarray(test_tabular_data).astype('float32')
+
+test_labels_survival = np.asarray(test_labels_survival).astype('float32')
+test_labels_relapse = np.asarray(test_labels_relapse).astype('float32')
+test_labels_metastasis = np.asarray(test_labels_metastasis).astype('float32')
+
+""" Una vez ya se tienen las entradas y las tres salidas correctamente en formato numpy, se carga el modelo de red para
+realizar la inferencia. """
+model = load_model('/correlations/mutations-clinical/inference/test_data/mutations-clinical.h5')
+
+""" Se evalua los pacientes del INiBICA con los datos de test y se obtienen los resultados de las distintas métricas. """
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_tabular_data, [test_labels_survival, test_labels_relapse, test_labels_metastasis],
                          verbose = 0)
