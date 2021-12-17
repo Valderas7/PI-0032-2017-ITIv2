@@ -205,6 +205,6 @@ heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), asp
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
 
 """ Se guarda el mapa de calor, eliminando el espacio blanco que sobra en los ejes X e Y de la imagen """
-plt.savefig('/home/avalderas/img_slides/anatomical pathology/image/tumor type/inference/heatmaps/tumor_type_{}.png'.format(patient_id),
+plt.savefig('/home/avalderas/img_slides/anatomical pathology/image/tumor type/inference/heatmaps/tumor type {}.png'.format(patient_id),
             bbox_inches = 'tight')
 #plt.show()
