@@ -35,7 +35,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/anatomical pathology/tumor type/inference/models/model_image_tumor_type_06_0.47_ultimate.h5'
+path = '/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_06_0.47_ultimate.h5'
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
@@ -149,12 +149,12 @@ resultado, se obtiene un array de varias columnas (dependiendo del dato anatomop
 una sola fila, ya que se han sumado las predicciones de todas las teselas. Este array se ordena por los índice de mayor 
 a menor puntuación, siendo el de mayor puntuación la predicción de la clase del dato anatomopatológico analizado """
 # Tipo histológico
-tumor_type_classes = ['Invasive Ductal Carcinoma', 'Invasive Lobular Carcinoma', 'Medullary', 'Metaplastic', 'Mucinous']
+#tumor_type_classes = ['Invasive Ductal Carcinoma', 'Invasive Lobular Carcinoma', 'Medullary', 'Metaplastic', 'Mucinous']
 
-tumor_type = np.concatenate(tumor_type_list)
-tumor_type_sum = np.array(tumor_type.sum(axis = 0))
-max_tumor_type = int(np.argsort(tumor_type_sum)[::-1][:1])
-print("Tipo histológico: {}".format(tumor_type_classes[max_tumor_type]))
+#tumor_type = np.concatenate(tumor_type_list)
+#tumor_type_sum = np.array(tumor_type.sum(axis = 0))
+#max_tumor_type = int(np.argsort(tumor_type_sum)[::-1][:1])
+#print("Tipo histológico: {}".format(tumor_type_classes[max_tumor_type]))
 
 """ Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle después el mapa de calor y lo 
 suficientemente alto para que tenga un buen nivel de resolución """
@@ -205,6 +205,6 @@ heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), asp
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
 
 """ Se guarda el mapa de calor, eliminando el espacio blanco que sobra en los ejes X e Y de la imagen """
-plt.savefig('/home/avalderas/img_slides/anatomical pathology/image/tumor type/inference/heatmaps/tumor type {}.png'.format(patient_id),
+plt.savefig('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/heatmaps/tumor type {}.png'.format(patient_id),
             bbox_inches = 'tight')
 #plt.show()
