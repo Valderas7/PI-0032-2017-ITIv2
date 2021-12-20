@@ -309,20 +309,30 @@ for id_img in remove_img_list:
 # Validación
 valid_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[1]
 valid_no_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[0]
-difference_valid = valid_no_erbb2_tiles - valid_erbb2_tiles
+
+if valid_no_erbb2_tiles >= valid_erbb2_tiles:
+    difference_valid = valid_no_erbb2_tiles - valid_erbb2_tiles
+    valid_data = valid_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = False)
+else:
+    difference_valid = valid_erbb2_tiles - valid_no_erbb2_tiles
+    valid_data = valid_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = True)
 #print(valid_no_erbb2_tiles, valid_erbb2_tiles)
 
-valid_data = valid_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = False)
 valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas mutadas y no mutadas
 #print(valid_data['CNV_ERBB2_AMP'].value_counts())
 
 # Test
 test_erbb2_tiles = test_data['CNV_ERBB2_AMP'].value_counts()[1]
 test_no_erbb2_tiles = test_data['CNV_ERBB2_AMP'].value_counts()[0]
-difference_test = test_no_erbb2_tiles - test_erbb2_tiles
+
+if test_no_erbb2_tiles >= test_erbb2_tiles:
+    difference_test = test_no_erbb2_tiles - test_erbb2_tiles
+    test_data = test_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = False)
+else:
+    difference_test = test_erbb2_tiles - test_no_erbb2_tiles
+    test_data = test_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = True)
 #print(test_no_erbb2_tiles, test_erbb2_tiles)
 
-test_data = test_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = False)
 test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas mutadas y no mutadas
 #print(test_data['CNV_ERBB2_AMP'].value_counts())
 

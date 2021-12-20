@@ -179,22 +179,36 @@ for id_img in remove_img_list:
     valid_data.drop(index_valid, inplace=True)
     test_data.drop(index_test, inplace=True)
 
-""" Se iguala el número de teselas con mutación SNV_TP53 y sin dicha mutación """
+""" Se iguala el número de teselas con mutación y sin mutación SNV del gen TP53 """
 # Validación
 valid_tp53_tiles = valid_data['SNV_TP53'].value_counts()[1]
 valid_no_tp53_tiles = valid_data['SNV_TP53'].value_counts()[0]
-difference_valid = valid_no_tp53_tiles - valid_tp53_tiles
 
-valid_data = valid_data.sort_values(by = 'SNV_TP53', ascending = False)
+if valid_no_tp53_tiles >= valid_tp53_tiles:
+    difference_valid = valid_no_tp53_tiles - valid_tp53_tiles
+    valid_data = valid_data.sort_values(by = 'SNV_TP53', ascending = False)
+else:
+    difference_valid = valid_tp53_tiles - valid_no_tp53_tiles
+    valid_data = valid_data.sort_values(by = 'SNV_TP53', ascending = True)
+#print(valid_no_tp53_tiles, valid_tp53_tiles)
+
 valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas mutadas y no mutadas
+#print(valid_data['SNV_TP53'].value_counts())
 
 # Test
 test_tp53_tiles = test_data['SNV_TP53'].value_counts()[1]
 test_no_tp53_tiles = test_data['SNV_TP53'].value_counts()[0]
-difference_test = test_no_tp53_tiles - test_tp53_tiles
 
-test_data = test_data.sort_values(by = 'SNV_TP53', ascending = False)
+if test_no_tp53_tiles >= test_tp53_tiles:
+    difference_test = test_no_tp53_tiles - test_tp53_tiles
+    test_data = test_data.sort_values(by = 'SNV_TP53', ascending = False)
+else:
+    difference_test = test_tp53_tiles - test_no_tp53_tiles
+    test_data = test_data.sort_values(by = 'SNV_TP53', ascending = True)
+#print(test_no_tp53_tiles, test_tp53_tiles)
+
 test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas mutadas y no mutadas
+#print(test_data['SNV_TP53'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
