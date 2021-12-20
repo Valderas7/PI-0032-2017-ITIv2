@@ -14,8 +14,8 @@ from sklearn.metrics import confusion_matrix
 'numpy' """
 model = load_model('/home/avalderas/img_slides/mutations/image/CNV-A_ERBB2/inference/models/model_image_erbb2_04_0.63_roc.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/mutations/image/CNV-A_ERBB2/inference/test_data/test_image.npy')
-test_labels_erbb2 = np.load('/home/avalderas/img_slides/mutations/image/CNV-A_ERBB2/inference/test_data/test_labels_erbb2.npy')
+test_image_data = np.load('/home/avalderas/img_slides/mutations/image/CNV-A_ERBB2/inference/test data/test_image.npy')
+test_labels_erbb2 = np.load('/home/avalderas/img_slides/mutations/image/CNV-A_ERBB2/inference/test data/test_labels_erbb2.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -28,11 +28,12 @@ results = model.evaluate(test_image_data, test_labels_erbb2, verbose = 0)
 --------------------------------------------------------------------------------------------------------------------"""
 print("\n'Loss' de las mutaciones CNV-A del gen ERBB2 en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
       "CNV-A del gen ERBB2 en el conjunto de prueba: {:.2f}%\n""Precisión de las mutaciones CNV-A del gen ERBB2 en el "
-      "conjunto de prueba: {:.2f}%\n""Especifidad de las mutaciones CNV-A del gen ERB2 en el conjunto de prueba: {:.2f}% \n"
-      "Exactitud de las mutaciones CNV-A del gen ERBB2 en el conjunto de prueba: {:.2f}%\n""AUC-ROC de las mutaciones "
-      "CNV-A del gen ERBB2 en el conjunto de prueba: {:.2f}\nAUC-PR de las mutaciones CNV-A del gen ERBB2 en el conjunto "
-      "de prueba: {:.2f}".format(results[0], results[5] * 100, results[6] * 100,
-                                 (results[3]/(results[3]+results[2])) * 100, results[7] * 100, results[8], results[9]))
+      "conjunto de prueba: {:.2f}%\n""Especificidad de las mutaciones CNV-A del gen ERB2 en el conjunto de prueba: "
+      "{:.2f}% \n""Exactitud de las mutaciones CNV-A del gen ERBB2 en el conjunto de prueba: {:.2f}%\n""AUC-ROC de las "
+      "mutaciones CNV-A del gen ERBB2 en el conjunto de prueba: {:.2f}\nAUC-PR de las mutaciones CNV-A del gen ERBB2 en "
+      "el conjunto de prueba: {:.2f}".format(results[0], results[5] * 100, results[6] * 100,
+                                             (results[3]/(results[3]+results[2])) * 100, results[7] * 100, results[8],
+                                             results[9]))
 
 if results[5] > 0 or results[6] > 0:
     print("Valor-F de las mutaciones CNV-A del gen ERBB2 en el conjunto de "

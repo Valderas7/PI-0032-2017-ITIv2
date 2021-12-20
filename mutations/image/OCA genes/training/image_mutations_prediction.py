@@ -498,7 +498,7 @@ model.compile(loss = {'snv': 'binary_crossentropy', 'cnv_a': 'binary_crossentrop
 model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
-checkpoint_path = '/home/avalderas/img_slides/mutations/image/OCA_genes/inference/models/model_image_mutations_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/mutations/image/OCA genes/inference/models/model_image_mutations_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """

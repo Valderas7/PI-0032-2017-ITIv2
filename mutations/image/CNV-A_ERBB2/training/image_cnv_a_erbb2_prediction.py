@@ -57,9 +57,7 @@ df_all_merge = reduce(lambda left, right: pd.merge(left, right, on=['ID'], how='
 """ Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para empezar se carga el archivo excel 
 donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y creamos una lista para
 los genes CNV."""
-mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genesOCA&inibica_patients/Panel_OCA.xlsx',
-                                 usecols='B:C', engine='openpyxl')
-
+mutations_target = pd.read_excel('/home/avalderas/img_slides/excels/Panel_OCA.xlsx', usecols='B:C', engine='openpyxl')
 cnv = mutations_target.loc[mutations_target['Scope'] == 'CNV', 'Gen']
 
 # CNV
@@ -307,6 +305,27 @@ for id_img in remove_img_list:
     valid_data.drop(index_valid, inplace=True)
     test_data.drop(index_test, inplace=True)
 
+""" Se iguala el número de teselas con mutación CNV-A_ERBB2 y sin dicha mutación """
+# Validación
+valid_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[1]
+valid_no_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[0]
+difference_valid = valid_no_erbb2_tiles - valid_erbb2_tiles
+#print(valid_no_erbb2_tiles, valid_erbb2_tiles)
+
+valid_data = valid_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = False)
+valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas mutadas y no mutadas
+#print(valid_data['CNV_ERBB2_AMP'].value_counts())
+
+# Test
+test_erbb2_tiles = test_data['CNV_ERBB2_AMP'].value_counts()[1]
+test_no_erbb2_tiles = test_data['CNV_ERBB2_AMP'].value_counts()[0]
+difference_test = test_no_erbb2_tiles - test_erbb2_tiles
+#print(test_no_erbb2_tiles, test_erbb2_tiles)
+
+test_data = test_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = False)
+test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas mutadas y no mutadas
+#print(test_data['CNV_ERBB2_AMP'].value_counts())
+
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
 alto = int(210)  # Eje Y: 630. Nº de filas. 210 x 3 = 630
@@ -378,9 +397,9 @@ base_model = keras.applications.EfficientNetB7(weights='imagenet', input_tensor=
 
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
-all_model = layers.Dense(512)(all_model)
+all_model = layers.Dense(128)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.Dense(256)(all_model)
+all_model = layers.Dense(32)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 erbb2 = layers.Dense(1, activation="sigmoid", name='erbb2')(all_model)
 
@@ -404,7 +423,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
 model.compile(loss = 'binary_crossentropy',
-              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 model.summary()
 
@@ -414,7 +433,7 @@ mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mod
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = train_labels_erbb2,
-          epochs = 1, verbose = 1, validation_data = (valid_image_data, valid_labels_erbb2),
+          epochs = 2, verbose = 1, validation_data = (valid_image_data, valid_labels_erbb2),
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -439,7 +458,7 @@ model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = train_image_data, y = train_labels_erbb2,
-                           epochs = 20, verbose = 1, validation_data = (valid_image_data, valid_labels_erbb2),
+                           epochs = 15, verbose = 1, validation_data = (valid_image_data, valid_labels_erbb2),
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
@@ -459,4 +478,4 @@ plt.title('Loss del entreno y de la validación')
 plt.ylabel('Loss')
 plt.xlabel('Epochs')
 plt.legend()
-plt.figure()  # Crea o activa una figura
+plt.figure() # Crea o activa una figura

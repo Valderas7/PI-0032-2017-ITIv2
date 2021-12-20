@@ -14,8 +14,8 @@ from sklearn.metrics import confusion_matrix
 'numpy' """
 model = load_model('/home/avalderas/img_slides/mutations/image/SNV_TP53/inference/models/model_image_tp53_06_0.61.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/mutations/image/SNV_TP53/inference/test_data/test_image.npy')
-test_labels_tp53 = np.load('/home/avalderas/img_slides/mutations/image/SNV_TP53/inference/test_data/test_labels_tp53.npy')
+test_image_data = np.load('/home/avalderas/img_slides/mutations/image/SNV_TP53/inference/test data/test_image.npy')
+test_labels_tp53 = np.load('/home/avalderas/img_slides/mutations/image/SNV_TP53/inference/test data/test_labels_tp53.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -28,7 +28,7 @@ results = model.evaluate(test_image_data, test_labels_tp53, verbose = 0)
 --------------------------------------------------------------------------------------------------------------------"""
 print("\n'Loss' de las mutaciones SNV del gen TP53 en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
       "SNV del gen TP53 en el conjunto de prueba: {:.2f}%\n""Precisión de las mutaciones SNV del gen TP53 en el "
-      "conjunto de prueba: {:.2f}%\n""Especifidad de las mutaciones SNV del gen TP53 en el conjunto de prueba: {:.2f}% \n"
+      "conjunto de prueba: {:.2f}%\n""Especificidad de las mutaciones SNV del gen TP53 en el conjunto de prueba: {:.2f}% \n"
       "Exactitud de las mutaciones SNV del gen TP53 en el conjunto de prueba: {:.2f}%\n""AUC-ROC de las mutaciones SNV"
       " del gen TP53 en el conjunto de prueba: {:.2f}\nAUC-PR de las mutaciones SNV del gen TP53 en el conjunto de "
       "prueba: {:.2f}".format(results[0], results[5] * 100, results[6] * 100, (results[3]/(results[3]+results[2])) * 100,

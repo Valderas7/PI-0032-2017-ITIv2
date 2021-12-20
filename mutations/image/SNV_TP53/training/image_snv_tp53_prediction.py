@@ -186,7 +186,7 @@ valid_no_tp53_tiles = valid_data['SNV_TP53'].value_counts()[0]
 difference_valid = valid_no_tp53_tiles - valid_tp53_tiles
 
 valid_data = valid_data.sort_values(by = 'SNV_TP53', ascending = False)
-valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de IDC y ILC
+valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas mutadas y no mutadas
 
 # Test
 test_tp53_tiles = test_data['SNV_TP53'].value_counts()[1]
@@ -194,7 +194,7 @@ test_no_tp53_tiles = test_data['SNV_TP53'].value_counts()[0]
 difference_test = test_no_tp53_tiles - test_tp53_tiles
 
 test_data = test_data.sort_values(by = 'SNV_TP53', ascending = False)
-test_data = test_data[:-difference_test] # Ahora hay el mismo número de IDC y ILC
+test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas mutadas y no mutadas
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -254,8 +254,8 @@ test_labels_tp53 = np.asarray(test_labels_tp53).astype('float32')
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-np.save('test_image', test_image_data)
-np.save('test_labels_tp53', test_labels_tp53)
+#np.save('test_image', test_image_data)
+#np.save('test_labels_tp53', test_labels_tp53)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip= True, zoom_range= 0.2, rotation_range= 10, vertical_flip= True)
@@ -335,7 +335,7 @@ model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = train_gen, epochs = 15, verbose = 1, validation_data = val_gen,
-                           callbacks = mcp_save,
+                           #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
