@@ -305,7 +305,7 @@ for id_img in remove_img_list:
     valid_data.drop(index_valid, inplace=True)
     test_data.drop(index_test, inplace=True)
 
-""" Se iguala el número de teselas con mutación CNV-A_ERBB2 y sin dicha mutación """
+""" Se iguala el número de teselas con mutación y sin mutación CNV-A del gen ERBB2 """
 # Validación
 valid_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[1]
 valid_no_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[0]
