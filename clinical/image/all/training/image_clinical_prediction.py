@@ -97,7 +97,7 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.20)
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de teselas con cáncer normalizadas: """
-image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
+image_dir = '/tiles/TCGA_normalizadas_cáncer'
 
 """ Se seleccionan todas las rutas de las teselas: """
 cancer_dir = glob.glob(image_dir + "/img_lotes_tiles*/*") # 34421

@@ -438,7 +438,7 @@ model.compile(loss = 'binary_crossentropy',
 model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
-checkpoint_path = '/home/avalderas/img_slides/mutations/image/CNV-A_ERBB2/inference/models/model_image_erbb2_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/mutations/image/ERBB2 CNV-A/inference/models/model_image_erbb2_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """

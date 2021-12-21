@@ -272,7 +272,7 @@ neuronal convolucional. """
 #np.save('test_labels_tp53', test_labels_tp53)
 
 """ Data augmentation """
-train_aug = ImageDataGenerator(horizontal_flip= True, zoom_range= 0.2, rotation_range= 10, vertical_flip= True)
+train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 10, vertical_flip = True)
 val_aug = ImageDataGenerator()
 
 """ Instanciar lotes """
@@ -289,9 +289,9 @@ base_model = keras.applications.EfficientNetB7(weights='imagenet', input_tensor=
 
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
-all_model = layers.Dense(128)(all_model)
+all_model = layers.Dense(64)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.Dense(32)(all_model)
+all_model = layers.Dense(16)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 tp53 = layers.Dense(1, activation="sigmoid", name='tp53')(all_model)
 
@@ -307,20 +307,20 @@ ha sido definido anteriormente, así que ahora hay que compilarlo. Para ello se 
 optimizador. Con la función de loss se estimará la 'loss' del modelo. Por su parte, el optimizador actualizará los
 parámetros de la red neuronal con el objetivo de minimizar la función de 'loss'. """
 # @lr: tamaño de pasos para alcanzar el mínimo global de la función de loss.
-metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(name='fp'),
-           keras.metrics.TrueNegatives(name='tn'), keras.metrics.FalseNegatives(name='fn'),
-           keras.metrics.Recall(name='recall'),  # TP / (TP + FN)
-           keras.metrics.Precision(name='precision'),  # TP / (TP + FP)
-           keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC-ROC'),
-           keras.metrics.AUC(curve='PR', name='AUC-PR')]
+metrics = [keras.metrics.TruePositives(name = 'tp'), keras.metrics.FalsePositives(name = 'fp'),
+           keras.metrics.TrueNegatives(name = 'tn'), keras.metrics.FalseNegatives(name = 'fn'),
+           keras.metrics.Recall(name = 'recall'),  # TP / (TP + FN)
+           keras.metrics.Precision(name = 'precision'),  # TP / (TP + FP)
+           keras.metrics.BinaryAccuracy(name = 'accuracy'), keras.metrics.AUC(name = 'AUC-ROC'),
+           keras.metrics.AUC(curve = 'PR', name = 'AUC-PR')]
 
 model.compile(loss = 'binary_crossentropy',
-              optimizer = keras.optimizers.Adam(learning_rate=0.0001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
-checkpoint_path = '/home/avalderas/img_slides/mutations/image/SNV_TP53/inference/models/model_image_tp53_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/home/avalderas/img_slides/mutations/image/TP53 SNV/inference/models/model_image_tp53_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath=checkpoint_path, monitor='val_loss', mode='min')
 
 """ Una vez definido el modelo, se entrena: """
@@ -342,13 +342,13 @@ for layer in base_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_gen, epochs = 15, verbose = 1, validation_data = val_gen,
+neural_network = model.fit(x = train_gen, epochs = 30, verbose = 1, validation_data = val_gen,
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
