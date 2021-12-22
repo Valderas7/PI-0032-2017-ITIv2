@@ -4,6 +4,8 @@ import seaborn as sns  # Para realizar gráficas sobre datos
 import matplotlib.pyplot as plt
 import cv2  # OpenCV
 import glob
+import itertools
+from tensorflow.keras.models import load_model
 from tensorflow import keras
 from tensorflow.keras import *
 from tensorflow.keras.layers import *
@@ -11,10 +13,10 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/clinical/image/survival/inference/models/')
+model = load_model('/home/avalderas/img_slides/clinical/image/survival/inference/models/model_image_survival_02_0.71_try1.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/clinical/image/survival/inference/test data/test_image.npy')
-test_labels_survival = np.load('/home/avalderas/img_slides/clinical/image/survival/inference/test data/test_labels_erbb2.npy')
+test_image_data = np.load('/home/avalderas/img_slides/clinical/image/survival/inference/test data/test_image_try1.npy')
+test_labels_survival = np.load('/home/avalderas/img_slides/clinical/image/survival/inference/test data/test_labels_survival_try1.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -67,7 +69,7 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
 
 # Supervivencia
 y_true_survival = test_labels_survival
-y_pred_survival = np.round(model.predict(test_tabular_data)[0])
+y_pred_survival = np.round(model.predict(test_image_data))
 
 matrix_survival = confusion_matrix(y_true_survival, y_pred_survival, labels = [0, 1])
 matrix_survival_classes = ['Viviendo', 'Fallecida']
@@ -83,7 +85,7 @@ Para implementarlas, se importan los paquetes necesarios, se definen las variabl
 # @ravel: Aplana el vector a 1D
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
-y_pred_prob_survival = model.predict(test_image_data)[0].ravel()
+y_pred_prob_survival = model.predict(test_image_data).ravel()
 fpr, tpr, thresholds = roc_curve(test_labels_survival, y_pred_prob_survival)
 auc_roc = auc(fpr, tpr)
 

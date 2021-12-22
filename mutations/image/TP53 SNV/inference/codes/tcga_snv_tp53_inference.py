@@ -12,10 +12,10 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/mutations/image/TP53 SNV/inference/models/model_image_tp53_06_0.61.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/TP53 SNV/inference/models/model_image_tp53_29_0.59.h5')
 
-test_image_data = np.load('/mutations/image/TP53 SNV/inference/test data/test_image.npy')
-test_labels_tp53 = np.load('/mutations/image/TP53 SNV/inference/test data/test_labels_tp53.npy')
+test_image_data = np.load('/home/avalderas/img_slides/mutations/image/TP53 SNV/inference/test data/test_image.npy')
+test_labels_tp53 = np.load('/home/avalderas/img_slides/mutations/image/TP53 SNV/inference/test data/test_labels_tp53.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

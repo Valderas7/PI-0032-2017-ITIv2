@@ -215,8 +215,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image', test_image_data)
-#np.save('test_labels_survival', test_labels_survival)
+np.save('test_image_try2', test_image_data)
+np.save('test_labels_survival_try2', test_labels_survival)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 10, vertical_flip = True)
@@ -268,7 +268,7 @@ model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
 checkpoint_path = '/home/avalderas/img_slides/clinical/image/survival/inference/models/model_image_survival_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, save_best_only = True, monitor = 'val_loss', mode = 'min')
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_gen, epochs = 2, verbose = 1, validation_data = val_gen,
@@ -297,7 +297,7 @@ model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_gen, epochs = 15, verbose = 1, validation_data = val_gen,
+neural_network = model.fit(x = train_gen, epochs = 30, verbose = 1, validation_data = val_gen,
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
