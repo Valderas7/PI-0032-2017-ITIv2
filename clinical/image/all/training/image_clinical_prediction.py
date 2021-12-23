@@ -213,7 +213,7 @@ batch_dimension = 32
 neuronal convolucional. """
 # np.save('test_image', test_image_data)
 # np.save('test_labels_survival', test_labels_survival)
-# np.save('test_labels_relapse', test_labels_relapse)
+# np.save('test_labels_metastasis', test_labels_metastasis)
 # np.save('test_labels_metastasis', test_labels_metastasis)
 
 """ -------------------------------------------------------------------------------------------------------------------

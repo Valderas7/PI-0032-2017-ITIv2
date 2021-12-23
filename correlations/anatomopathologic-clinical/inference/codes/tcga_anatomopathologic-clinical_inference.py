@@ -19,7 +19,7 @@ test_tabular_data = np.load('/correlations/anatomopathologic-clinical/inference/
 test_labels_metastasis = np.load(
     '/correlations/anatomopathologic-clinical/inference/test_data/test_labels_metastasis.npy')
 test_labels_survival = np.load('/correlations/anatomopathologic-clinical/inference/test_data/test_labels_survival.npy')
-test_labels_relapse = np.load('/correlations/anatomopathologic-clinical/inference/test_data/test_labels_relapse.npy')
+test_labels_relapse = np.load('/correlations/anatomopathologic-clinical/inference/test_data/test_labels_metastasis.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

@@ -215,8 +215,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-np.save('test_image_try2', test_image_data)
-np.save('test_labels_survival_try2', test_labels_survival)
+#np.save('test_image_try1', test_image_data)
+#np.save('test_labels_survival_try1', test_labels_survival)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 10, vertical_flip = True)
@@ -268,7 +268,7 @@ model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
 checkpoint_path = '/home/avalderas/img_slides/clinical/image/survival/inference/models/model_image_survival_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_gen, epochs = 2, verbose = 1, validation_data = val_gen,
@@ -283,7 +283,7 @@ Para ello, primero se descongela el modelo base."""
 set_trainable = 0
 
 for layer in base_model.layers:
-    if layer.name == 'block3a_expand_conv':
+    if layer.name == 'block2a_expand_conv':
         set_trainable = True
     if set_trainable:
         if not isinstance(layer, layers.BatchNormalization):
@@ -291,7 +291,7 @@ for layer in base_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()

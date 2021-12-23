@@ -13,29 +13,30 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/clinical/image/survival/inference/models/model_image_survival_')
+model = load_model('/home/avalderas/img_slides/clinical/image/distant metastasis/inference/models/model_image_metastasis_02_0.54.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/clinical/image/survival/inference/test data/test_image.npy')
-test_labels_survival = np.load('/home/avalderas/img_slides/clinical/image/survival/inference/test data/test_labels_survival.npy')
+test_image_data = np.load('/home/avalderas/img_slides/clinical/image/distant metastasis/inference/test data/test_image_try1.npy')
+test_labels_metastasis = np.load('/home/avalderas/img_slides/clinical/image/distant metastasis/inference/test data/test_labels_metastasis_try1.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_image_data, test_labels_survival, verbose = 0)
+results = model.evaluate(test_image_data, test_labels_metastasis, verbose = 0)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-print("\n'Loss' de la supervivencia en el conjunto de prueba: {:.2f}\n""Sensibilidad de la supervivencia en el conjunto "
-      "de prueba: {:.2f}%\n""Precisión de la supervivencia en el conjunto de prueba: {:.2f}%\n""Especificidad de la "
-      "supervivencia en el conjunto de prueba: {:.2f}% \n""Exactitud de la supervivencia en el conjunto de prueba: {:.2f}%\n"
-      "AUC-ROC de la supervivenvicia en el conjunto de prueba: {:.2f}\nAUC-PR de la supervivencia en el conjunto de "
+print("\n'Loss' de metástasis a distancia en el conjunto de prueba: {:.2f}\n""Sensibilidad de metástasis a distancia en "
+      "el conjunto de prueba: {:.2f}%\n""Precisión de metástasis a distancia en el conjunto de prueba: {:.2f}%\n"
+      "Especificidad de metástasis a distancia en el conjunto de prueba: {:.2f}% \n""Exactitud de metástasis a distancia "
+      "en el conjunto de prueba: {:.2f}%\n""AUC-ROC de metástasis a distancia en el conjunto de prueba: {:.2f}\nAUC-PR "
+      "de metástasis a distancia en el conjunto de "
       "prueba: {:.2f}".format(results[0], results[5] * 100, results[6] * 100, (results[3]/(results[3]+results[2])) * 100,
                               results[7] * 100, results[8], results[9]))
 
 if results[5] > 0 or results[6] > 0:
-    print("Valor-F de la supervivencia en el conjunto de "
+    print("Valor-F de metástasis a distancia en el conjunto de "
           "prueba: {:.2f}".format((2 * results[5] * results[6]) / (results[5] + results[6])))
 
 """ Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
@@ -67,15 +68,15 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
     plt.ylabel('Clase verdadera')
     plt.xlabel('Predicción')
 
-# Supervivencia
-y_true_survival = test_labels_survival
-y_pred_survival = np.round(model.predict(test_image_data))
+# Recidivas
+y_true_metastasis = test_labels_metastasis
+y_pred_metastasis = np.round(model.predict(test_image_data))
 
-matrix_survival = confusion_matrix(y_true_survival, y_pred_survival, labels = [0, 1])
-matrix_survival_classes = ['Viviendo', 'Fallecida']
+matrix_metastasis = confusion_matrix(y_true_metastasis, y_pred_metastasis, labels = [0, 1])
+matrix_metastasis_classes = ['Sin metástasis a distancia', 'Con metástasis a distancia']
 
-plot_confusion_matrix(matrix_survival, classes = matrix_survival_classes, title = 'Matriz de confusión de supervivencia '
-                                                                                  'del paciente')
+plot_confusion_matrix(matrix_metastasis, classes = matrix_metastasis_classes, title ='Matriz de confusión de metástasis '
+                                                                                     'a distancia de pacientes')
 plt.show()
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
@@ -85,8 +86,8 @@ Para implementarlas, se importan los paquetes necesarios, se definen las variabl
 # @ravel: Aplana el vector a 1D
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
-y_pred_prob_survival = model.predict(test_image_data).ravel()
-fpr, tpr, thresholds = roc_curve(test_labels_survival, y_pred_prob_survival)
+y_pred_prob_metastasis = model.predict(test_image_data).ravel()
+fpr, tpr, thresholds = roc_curve(test_labels_metastasis, y_pred_prob_metastasis)
 auc_roc = auc(fpr, tpr)
 
 plt.figure(1)
@@ -94,13 +95,13 @@ plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve for survival prediction')
+plt.title('AUC-ROC curve for distant metastasis prediction')
 plt.legend(loc = 'best')
 plt.show()
 
 """ Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
 del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
-precision, recall, threshold_survival = precision_recall_curve(test_labels_survival, y_pred_prob_survival)
+precision, recall, threshold_metastasis = precision_recall_curve(test_labels_metastasis, y_pred_prob_metastasis)
 auc_pr = auc(recall, precision)
 
 plt.figure(2)
@@ -108,6 +109,6 @@ plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('AUC-PR curve for survival prediction')
+plt.title('AUC-PR curve for distant metastasis prediction')
 plt.legend(loc = 'best')
 plt.show()

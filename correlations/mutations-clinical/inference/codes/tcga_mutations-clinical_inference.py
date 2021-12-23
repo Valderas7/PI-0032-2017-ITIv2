@@ -18,7 +18,7 @@ model = load_model('/correlations/mutations-clinical/inference/test_data/mutatio
 test_tabular_data = np.load('/correlations/mutations-clinical/inference/test_data/test_data.npy')
 
 test_labels_survival = np.load('/correlations/mutations-clinical/inference/test_data/test_labels_survival.npy')
-test_labels_relapse = np.load('/correlations/mutations-clinical/inference/test_data/test_labels_relapse.npy')
+test_labels_relapse = np.load('/correlations/mutations-clinical/inference/test_data/test_labels_metastasis.npy')
 test_labels_metastasis = np.load('/correlations/mutations-clinical/inference/test_data/test_labels_metastasis.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
