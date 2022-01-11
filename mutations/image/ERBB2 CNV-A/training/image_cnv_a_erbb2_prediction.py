@@ -307,8 +307,8 @@ for id_img in remove_img_list:
 
 """ Se iguala el número de teselas con mutación y sin mutación CNV-A del gen ERBB2 """
 # Validación
-valid_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[1]
-valid_no_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[0]
+valid_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[1] # Con mutación
+valid_no_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[0] # Sin mutación
 
 if valid_no_erbb2_tiles >= valid_erbb2_tiles:
     difference_valid = valid_no_erbb2_tiles - valid_erbb2_tiles
@@ -322,8 +322,8 @@ valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de tese
 #print(valid_data['CNV_ERBB2_AMP'].value_counts())
 
 # Test
-test_erbb2_tiles = test_data['CNV_ERBB2_AMP'].value_counts()[1]
-test_no_erbb2_tiles = test_data['CNV_ERBB2_AMP'].value_counts()[0]
+test_erbb2_tiles = test_data['CNV_ERBB2_AMP'].value_counts()[1] # Con mutación
+test_no_erbb2_tiles = test_data['CNV_ERBB2_AMP'].value_counts()[0] # Sin mutación
 
 if test_no_erbb2_tiles >= test_erbb2_tiles:
     difference_test = test_no_erbb2_tiles - test_erbb2_tiles
@@ -394,8 +394,8 @@ test_labels_erbb2 = np.asarray(test_labels_erbb2).astype('float32')
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image', test_image_data)
-#np.save('test_labels_erbb2', test_labels_erbb2)
+#np.save('test_image_try2', test_image_data)
+#np.save('test_labels_erbb2_try2', test_labels_erbb2)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL CONVOLUCIONAL ---------------------------------------
@@ -433,13 +433,13 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
 model.compile(loss = 'binary_crossentropy',
-              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
-checkpoint_path = '/mutations/image/ERBB2 CNV-A/inference/models/model_image_erbb2_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
+checkpoint_path = '/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/models/model_image_erbb2_{epoch:02d}_{val_loss:.2f}.h5'
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = train_labels_erbb2,
@@ -453,7 +453,7 @@ sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
 set_trainable = 0
 
 for layer in base_model.layers:
-    if layer.name == 'block3a_expand_conv':
+    if layer.name == 'block2a_expand_conv':
         set_trainable = True
     if set_trainable:
         if not isinstance(layer, layers.BatchNormalization):
@@ -461,14 +461,14 @@ for layer in base_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = train_image_data, y = train_labels_erbb2,
-                           epochs = 15, verbose = 1, validation_data = (valid_image_data, valid_labels_erbb2),
+                           epochs = 50, verbose = 1, validation_data = (valid_image_data, valid_labels_erbb2),
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))

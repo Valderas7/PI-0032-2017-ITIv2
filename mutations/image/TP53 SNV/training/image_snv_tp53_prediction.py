@@ -181,8 +181,8 @@ for id_img in remove_img_list:
 
 """ Se iguala el número de teselas con mutación y sin mutación SNV del gen TP53 """
 # Validación
-valid_tp53_tiles = valid_data['SNV_TP53'].value_counts()[1]
-valid_no_tp53_tiles = valid_data['SNV_TP53'].value_counts()[0]
+valid_tp53_tiles = valid_data['SNV_TP53'].value_counts()[1] # Con mutación
+valid_no_tp53_tiles = valid_data['SNV_TP53'].value_counts()[0] # Sin mutación
 
 if valid_no_tp53_tiles >= valid_tp53_tiles:
     difference_valid = valid_no_tp53_tiles - valid_tp53_tiles
@@ -196,8 +196,8 @@ valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de tese
 #print(valid_data['SNV_TP53'].value_counts())
 
 # Test
-test_tp53_tiles = test_data['SNV_TP53'].value_counts()[1]
-test_no_tp53_tiles = test_data['SNV_TP53'].value_counts()[0]
+test_tp53_tiles = test_data['SNV_TP53'].value_counts()[1] # Con mutación
+test_no_tp53_tiles = test_data['SNV_TP53'].value_counts()[0] # Sin mutación
 
 if test_no_tp53_tiles >= test_tp53_tiles:
     difference_test = test_no_tp53_tiles - test_tp53_tiles
@@ -268,8 +268,8 @@ test_labels_tp53 = np.asarray(test_labels_tp53).astype('float32')
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image', test_image_data)
-#np.save('test_labels_tp53', test_labels_tp53)
+#np.save('test_image_try2', test_image_data)
+#np.save('test_labels_tp53_try2', test_labels_tp53)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 10, vertical_flip = True)
@@ -321,7 +321,7 @@ model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
 checkpoint_path = '/home/avalderas/img_slides/mutations/image/TP53 SNV/inference/models/model_image_tp53_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_gen, epochs = 2, verbose = 1, validation_data = val_gen,
@@ -334,7 +334,7 @@ sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
 set_trainable = 0
 
 for layer in base_model.layers:
-    if layer.name == 'block3a_expand_conv':
+    if layer.name == 'block2a_expand_conv':
         set_trainable = True
     if set_trainable:
         if not isinstance(layer, layers.BatchNormalization):
@@ -348,7 +348,7 @@ model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_gen, epochs = 30, verbose = 1, validation_data = val_gen,
+neural_network = model.fit(x = train_gen, epochs = 50, verbose = 1, validation_data = val_gen,
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
