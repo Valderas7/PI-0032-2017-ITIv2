@@ -13,10 +13,10 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/clinical/image/distant metastasis/inference/models/model_image_metastasis_02_0.54.h5')
+model = load_model('/home/avalderas/img_slides/clinical/image/distant metastasis/inference/models/model_image_metastasis_39_0.35_try2.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/clinical/image/distant metastasis/inference/test data/test_image_try1.npy')
-test_labels_metastasis = np.load('/home/avalderas/img_slides/clinical/image/distant metastasis/inference/test data/test_labels_metastasis_try1.npy')
+test_image_data = np.load('/home/avalderas/img_slides/clinical/image/distant metastasis/inference/test data/test_image_try2.npy')
+test_labels_metastasis = np.load('/home/avalderas/img_slides/clinical/image/distant metastasis/inference/test data/test_labels_metastasis_try2.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -62,7 +62,7 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
 
     thresh = cm.max() / 2.
     for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, il, cm[il, j], horizontalalignment="center", color="white" if cm[il, j] > thresh else "black")
+        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "white" if cm[il, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('Clase verdadera')
@@ -73,10 +73,10 @@ y_true_metastasis = test_labels_metastasis
 y_pred_metastasis = np.round(model.predict(test_image_data))
 
 matrix_metastasis = confusion_matrix(y_true_metastasis, y_pred_metastasis, labels = [0, 1])
-matrix_metastasis_classes = ['Sin metástasis a distancia', 'Con metástasis a distancia']
+matrix_metastasis_classes = ['Sin metástasis distante', 'Con metástasis distante']
 
 plot_confusion_matrix(matrix_metastasis, classes = matrix_metastasis_classes, title ='Matriz de confusión de metástasis '
-                                                                                     'a distancia de pacientes')
+                                                                                     'a distancia')
 plt.show()
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 

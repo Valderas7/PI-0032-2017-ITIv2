@@ -18,7 +18,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/clinical/image/survival/inference/models/model_image_survival_02_0.71_try1.h5'
+path = '/home/avalderas/img_slides/clinical/image/survival/inference/models/model_image_survival_27_0.55.h5'
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
@@ -130,7 +130,6 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
 resultado, se obtiene un array de varias columnas (dependiendo del dato anatomopatológico habrá más o menos clases) y 
 una sola fila, ya que se han sumado las predicciones de todas las teselas. Este array se ordena por los índice de mayor 
 a menor puntuación, siendo el de mayor puntuación la predicción de la clase del dato anatomopatológico analizado """
-
 #tumor_type = np.concatenate(tumor_type_list)
 #tumor_type_sum = np.array(tumor_type.sum(axis = 0))
 #max_tumor_type = int(np.argsort(tumor_type_sum)[::-1][:1])
@@ -153,7 +152,7 @@ dpi = 100
 """ -------------------------------------------------------------------------------------------------------------------- 
 -------------------------------------------------- Supervivencia -------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------ """
-grid = survival_scores
+grid = survival_scores * 1000
 
 """ Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
 resolución del WSI """
@@ -173,7 +172,7 @@ heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = 
 """ Se edita la barra leyenda del mapa de calor para que muestre los nombres de las categorías de los tipos histológicos
 y no números. """
 colorbar = heatmap.collections[0].colorbar
-colorbar.set_ticks([0.75, 0.25])
+colorbar.set_ticks([750, 250]) # Esto hay que cambiarlo dependiendo de los valores máximos y mínimos del mapa de calor
 colorbar.set_ticklabels(['<Supervivencia', '>Supervivencia'])
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
