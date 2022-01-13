@@ -11,6 +11,7 @@ import os
 from tensorflow.keras.models import load_model
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
+import staintools
 
 """ Parámetros de las teselas """
 ancho = 210
@@ -52,6 +53,8 @@ for level in range(levels):
         dimensions_map = wsi.level_dimensions[level]
         level_map = level
         break
+
+# target = staintools.read_image('/home/avalderas/img_slides/img_lotes/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
 
 """ Se crea un 'array' con forma (alto, ancho), que son el número de filas y el número de columnas, respectivamente, en 
 el que se divide la WSI al dividirla en teselas de 210x210 en el nivel de resolucion máximo, para recopilar asi las 
@@ -113,7 +116,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             predicción """
             if 0.1 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
-                                               (ancho, alto)))
+                                                   (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
                 tile = np.expand_dims(sub_img, axis = 0)
 
@@ -152,7 +155,7 @@ dpi = 100
 """ -------------------------------------------------------------------------------------------------------------------- 
 -------------------------------------------------- Supervivencia -------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------ """
-grid = survival_scores * 1000
+grid = survival_scores
 
 """ Se reescala el mapa de calor que se va a implementar posteriormente a las dimensiones de la imagen de mínima 
 resolución del WSI """
@@ -163,16 +166,16 @@ plt.tight_layout()
 """ Se crea una máscara para las puntuaciones menores de 0.09 y mayores de 0.9, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
-mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9))] = True
+mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9) | (survival_scores > 0.5))] = True
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = 'Reds',
-                      alpha = 0.5, zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False)
+                      alpha = 0.5, zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False, annot = True)
 
 """ Se edita la barra leyenda del mapa de calor para que muestre los nombres de las categorías de los tipos histológicos
 y no números. """
 colorbar = heatmap.collections[0].colorbar
-colorbar.set_ticks([750, 250]) # Esto hay que cambiarlo dependiendo de los valores máximos y mínimos del mapa de calor
+colorbar.set_ticks([0.75, 0.25]) # Esto hay que cambiarlo dependiendo de los valores máximos y mínimos del mapa de calor
 colorbar.set_ticklabels(['<Supervivencia', '>Supervivencia'])
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
