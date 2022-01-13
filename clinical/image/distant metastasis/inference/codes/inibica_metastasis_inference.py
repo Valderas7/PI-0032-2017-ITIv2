@@ -10,7 +10,7 @@ import pandas as pd
 import os
 from tensorflow.keras.models import load_model
 import seaborn as sns
-from matplotlib.colors import LinearSegmentedColormap
+import staintools
 
 """ Parámetros de las teselas """
 ancho = 210
@@ -22,7 +22,7 @@ path = '/home/avalderas/img_slides/clinical/image/distant metastasis/inference/m
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P071-HE-235-IV_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -52,6 +52,13 @@ for level in range(levels):
         dimensions_map = wsi.level_dimensions[level]
         level_map = level
         break
+
+""" Se añade el método de normalización 'vahadane' que es el que ha sido usado en el proceso de entrenamiento. Se ajusta
+este método con la misma imagen que se usó en el proceso de entrenamiento """
+target = staintools.read_image('/home/avalderas/img_slides/images/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
+target = staintools.LuminosityStandardizer.standardize(target)
+normalizer = staintools.StainNormalizer(method = 'vahadane')
+normalizer.fit(target)
 
 """ Se crea un 'array' con forma (alto, ancho), que son el número de filas y el número de columnas, respectivamente, en 
 el que se divide la WSI al dividirla en teselas de 210x210 en el nivel de resolucion máximo, para recopilar asi las 
@@ -100,10 +107,10 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                     b_col = int(sub_img_array[index_col, index_row, 2])
                     if (r_row + g_row + b_row == 0) | (r_col + g_col + b_col == 0):
                         tiles_scores_array[alto_slide][ancho_slide] = 1.0
-                        break # Salta a la línea #123
+                        break # Salta a la línea #113
                 else:
                     continue
-                break # Salta a la línea #131
+                break # Salta a la línea #121
             """ Aunque estas imágenes que tienen líneas enteramente negras (ya sea horizontalmente o verticalmente) son
             leídas, al realizar la máscara del mapa de calor van a ser ocultadas, puesto que se les ha hecho que su
             puntuación sea uno. """
@@ -115,6 +122,8 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
+                sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
+                sub_img = normalizer.transform(sub_img)
                 tile = np.expand_dims(sub_img, axis = 0)
 
                 """ Se va guardando la predicción de los datos anatomopatológicos para cada tesela en su lista 
@@ -150,7 +159,7 @@ pixeles_y = slide.shape[0]
 dpi = 100
 
 """ -------------------------------------------------------------------------------------------------------------------- 
--------------------------------------------------- Supervivencia -------------------------------------------------------
+-------------------------------------------------- Metástasis a distancia ----------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------ """
 grid = metastasis_scores
 
@@ -167,7 +176,7 @@ mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9) | (metast
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = 'Reds',
-                      alpha = 0.5, zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False, annot = True)
+                      alpha = 0.5, zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False)
 
 """ Se edita la barra leyenda del mapa de calor para que muestre los nombres de las categorías de los tipos histológicos
 y no números. """

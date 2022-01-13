@@ -97,7 +97,7 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.15)
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de imágenes con cáncer y sin cáncer: """
-image_dir = '/tiles/TCGA_normalizadas_cáncer'
+image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
 #image_dir = 'C:\\Users\\valde\Desktop\Datos_repositorio\img_slides\img_lotes'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """

@@ -54,7 +54,12 @@ for level in range(levels):
         level_map = level
         break
 
-# target = staintools.read_image('/home/avalderas/img_slides/img_lotes/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
+""" Se añade el método de normalización 'vahadane' que es el que ha sido usado en el proceso de entrenamiento. Se ajusta
+este método con la misma imagen que se usó en el proceso de entrenamiento """
+target = staintools.read_image('/home/avalderas/img_slides/images/img_lote1_cancer/TCGA-A2-A25D-01Z-00-DX1.2.JPG')
+target = staintools.LuminosityStandardizer.standardize(target)
+normalizer = staintools.StainNormalizer(method = 'vahadane')
+normalizer.fit(target)
 
 """ Se crea un 'array' con forma (alto, ancho), que son el número de filas y el número de columnas, respectivamente, en 
 el que se divide la WSI al dividirla en teselas de 210x210 en el nivel de resolucion máximo, para recopilar asi las 
@@ -103,21 +108,23 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                     b_col = int(sub_img_array[index_col, index_row, 2])
                     if (r_row + g_row + b_row == 0) | (r_col + g_col + b_col == 0):
                         tiles_scores_array[alto_slide][ancho_slide] = 1.0
-                        break # Salta a la línea #123
+                        break # Salta a la línea #114
                 else:
                     continue
-                break # Salta a la línea #131
+                break # Salta a la línea #122
             """ Aunque estas imágenes que tienen líneas enteramente negras (ya sea horizontalmente o verticalmente) son
             leídas, al realizar la máscara del mapa de calor van a ser ocultadas, puesto que se les ha hecho que su
             puntuación sea uno. """
 
             """ Ahora se lee de nuevo cada tesela de 210x210, convirtiéndolas en un array para pasarlas de formato RGBA 
-            a formato RGB con OpenCV. A partir de aquí, se expande la dimensión de la tesela para poder realizarle la
-            predicción """
+            a formato RGB con OpenCV. A partir de aquí, se normaliza la tesela en color y se expande su dimensión para 
+            poder realizarle la predicción """
             if 0.1 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                    (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
+                sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
+                sub_img = normalizer.transform(sub_img)
                 tile = np.expand_dims(sub_img, axis = 0)
 
                 """ Se va guardando la predicción de los datos anatomopatológicos para cada tesela en su lista 
@@ -166,11 +173,12 @@ plt.tight_layout()
 """ Se crea una máscara para las puntuaciones menores de 0.09 y mayores de 0.9, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
-mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9) | (survival_scores > 0.5))] = True
+mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = 'Reds',
-                      alpha = 0.5, zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False, annot = True)
+                      alpha = 0.5, zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False,
+                      annot = True)
 
 """ Se edita la barra leyenda del mapa de calor para que muestre los nombres de las categorías de los tipos histológicos
 y no números. """
