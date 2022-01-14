@@ -11,6 +11,8 @@ import os
 from tensorflow.keras.models import load_model
 import seaborn as sns
 import staintools
+from sklearn.metrics import confusion_matrix
+import itertools
 
 """ Parámetros de las teselas """
 ancho = 210
@@ -22,7 +24,7 @@ path = '/home/avalderas/img_slides/clinical/image/distant metastasis/inference/m
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P071-HE-235-IV_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P008-HE-141-A2_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -69,6 +71,12 @@ tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho *
 predicción del tipo histológico. """
 metastasis_list = []
 metastasis_scores = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
+
+""" Además, se crean otra lista para ir recopilando las teselas de la WSI, las clases verdaderas de cada tesela y las
+predicciones de cada tesela. """
+test_image_data = []
+test_labels_true = []
+test_labels_prediction = []
 
 """ Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x' """
 #@ancho_slide itera de (0 - nºcolumnas) [columnas] y @alto_slide de (0 - nºfilas) [filas]
@@ -122,18 +130,21 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-                sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
-                sub_img = normalizer.transform(sub_img)
+                #sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
+                #sub_img = normalizer.transform(sub_img)
+                test_image_data.append(sub_img)
                 tile = np.expand_dims(sub_img, axis = 0)
+                test_labels_true.append(1) # Porque P008 tiene metástasis a distancia
 
                 """ Se va guardando la predicción de los datos anatomopatológicos para cada tesela en su lista 
                 correspondiente. Además, para cada una de las teselas, se guarda el índice más alto de las predicciones 
                 de todos los datos anatomopatológicos. Estos índices se guardan dentro del 'array' correspondiente del 
                 'array' 3D definido para cada tipo de dato anatomopatológico, para así poder realizar después los mapas 
                 de calor de todos los datos """
-                prediction_metastasis = model.predict(tile)
+                prediction_metastasis = model.predict(tile) # [[Número]]
                 metastasis_list.append(prediction_metastasis)
-                metastasis_scores[alto_slide][ancho_slide] = prediction_metastasis
+                metastasis_scores[alto_slide][ancho_slide] = prediction_metastasis # Número
+                test_labels_prediction.append(metastasis_scores[alto_slide][ancho_slide])
 
 """ Se realiza la suma de las columnas para cada una de las predicciones de cada datos anatomopatológicos. Como 
 resultado, se obtiene un array de varias columnas (dependiendo del dato anatomopatológico habrá más o menos clases) y 
@@ -157,6 +168,131 @@ pulgadas. """
 pixeles_x = slide.shape[1]
 pixeles_y = slide.shape[0]
 dpi = 100
+
+""" Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
+especificadas en el proceso de entrenamiento. """
+# @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
+test_labels_metastasis = np.asarray(test_labels_true)
+test_image_data = np.asarray(test_image_data)
+
+results = model.evaluate(test_image_data, test_labels_metastasis, verbose = 0)
+
+""" -------------------------------------------------------------------------------------------------------------------
+------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------"""
+# Loss
+print("\n'Loss' de metástasis a distancia en el conjunto de prueba: {:.2f}".format(results[0]))
+
+# Sensibilidad
+if results[1] + results[4] > 0:
+    recall = results[5] * 100
+    print("Sensibilidad de metástasis a distancia en el conjunto de prueba: {:.2f}%".format(recall))
+else:
+    recall = "No definido"
+    print("Sensibilidad de metástasis a distancia en el conjunto de prueba: {}".format(recall))
+
+# Precisión
+if results[1] + results[2] > 0:
+    precision = results[6] * 100
+    print("Precisión de metástasis a distancia en el conjunto de prueba: {:.2f}%".format(precision))
+else:
+    precision = "No definido"
+    print("Precisión de metástasis a distancia en el conjunto de prueba: {}".format(precision))
+
+# Valor-F
+if results[5] > 0 or results[6] > 0:
+    print("Valor-F de metástasis a distancia en el conjunto de "
+          "prueba: {:.2f}".format((2 * results[5] * results[6]) / (results[5] + results[6])))
+
+# Especificidad
+if results[2] + results[3] > 0:
+    specifity = (results[3]/(results[3]+results[2])) * 100
+    print("Especificidad de metástasis a distancia en el conjunto de prueba: {:.2f}%".format(specifity))
+else:
+    specifity = "No definido"
+    print("Especifidad de metástasis a distancia en el conjunto de prueba: {}".format(specifity))
+
+# Exactitud
+accuracy = results[7]
+print("Exactitud de metástasis a distancia en el conjunto de prueba: {:.2f}%".format(accuracy * 100))
+
+# Curvas ROC (CAMBIAR PARA NO EJEMPLOS NEGATIVOS EN Y_TRUE)
+print("AUC-ROC de metástasis a distancia en el conjunto de prueba: {:.2f}".format(results[8]))
+print("AUC-PR de metástasis a distancia en el conjunto de prueba: {:.2f}".format(results[9]))
+
+""" Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
+conjunto de datos de test que se definió anteriormente al repartir los datos.
+Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
+red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
+def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de confusión', cmap = plt.cm.Blues):
+    """ Imprime y dibuja la matriz de confusión. Se puede normalizar escribiendo el parámetro `normalize=True`. """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes)
+    plt.yticks(tick_marks, classes)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        cm = cm.round(2)
+        #print("Normalized confusion matrix")
+    else:
+        cm=cm
+        #print('Confusion matrix, without normalization')
+
+    thresh = cm.max() / 2.
+    for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "white" if cm[il, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('Clase verdadera')
+    plt.xlabel('Predicción')
+
+# Metástasis
+y_true_metastasis = test_labels_metastasis
+y_pred_metastasis = np.round(np.array(test_labels_prediction))
+
+matrix_metastasis = confusion_matrix(y_true_metastasis, y_pred_metastasis, labels = [0, 1])
+matrix_metastasis_classes = ['Sin metástasis distante', 'Con metástasis distante']
+
+plot_confusion_matrix(matrix_metastasis, classes = matrix_metastasis_classes, title ='Matriz de confusión de metástasis '
+                                                                                     'a distancia')
+plt.show()
+
+""" Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
+documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
+tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
+Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
+# @ravel: Aplana el vector a 1D
+from sklearn.metrics import roc_curve, auc, precision_recall_curve
+
+y_pred_prob_metastasis = model.predict(test_image_data).ravel()
+fpr, tpr, thresholds = roc_curve(test_labels_metastasis, y_pred_prob_metastasis)
+auc_roc = auc(fpr, tpr)
+
+plt.figure(1)
+plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
+plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
+plt.xlabel('False positive rate')
+plt.ylabel('True positive rate')
+plt.title('AUC-ROC curve for distant metastasis prediction')
+plt.legend(loc = 'best')
+plt.show()
+
+""" Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
+del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
+precision, recall, threshold_metastasis = precision_recall_curve(test_labels_metastasis, y_pred_prob_metastasis)
+auc_pr = auc(recall, precision)
+
+plt.figure(2)
+plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
+plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('AUC-PR curve for distant metastasis prediction')
+plt.legend(loc = 'best')
+plt.show()
 
 """ -------------------------------------------------------------------------------------------------------------------- 
 -------------------------------------------------- Metástasis a distancia ----------------------------------------------
