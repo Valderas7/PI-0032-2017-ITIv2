@@ -40,7 +40,7 @@ path = '/home/avalderas/img_slides/anatomical pathology/tumor type/inference/mod
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P052-HE-217-XI_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -48,7 +48,7 @@ patient_id = path_wsi.split('/')[4][:4]
 dim = wsi.dimensions
 
 """ Se averigua cual es el mejor nivel de resolución de la WSI para mostrar el factor de reduccion deseado """
-best_level = wsi.get_best_level_for_downsample(10) # factor de reducción deseado
+best_level = wsi.get_best_level_for_downsample(5) # factor de reducción deseado
 
 """ Se averigua cual es el factor de reducción de dicho nivel para usarlo posteriormente al multiplicar las dimensiones
 en la función @read_region """
