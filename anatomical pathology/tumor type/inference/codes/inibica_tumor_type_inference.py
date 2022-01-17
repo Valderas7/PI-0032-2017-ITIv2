@@ -40,7 +40,7 @@ path = '/home/avalderas/img_slides/anatomical pathology/tumor type/inference/mod
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P052-HE-217-XI_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -125,10 +125,10 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                     b_col = int(sub_img_array[index_col, index_row, 2])
                     if (r_row + g_row + b_row == 0) | (r_col + g_col + b_col == 0):
                         tiles_scores_array[alto_slide][ancho_slide] = 1.0
-                        break # Salta a la línea #130
+                        break # Salta a la línea #131
                 else:
                     continue
-                break # Salta a la línea #138
+                break # Salta a la línea #139
             """ Aunque estas imágenes que tienen líneas enteramente negras (ya sea horizontalmente o verticalmente) son
             leídas, al realizar la máscara del mapa de calor van a ser ocultadas, puesto que se les ha hecho que su
             puntuación sea uno. """
