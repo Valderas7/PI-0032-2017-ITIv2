@@ -43,12 +43,14 @@ model = load_model(path)
 path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
+mag = int(wsi.properties[openslide.PROPERTY_NAME_OBJECTIVE_POWER])
+print(mag/10)
 
 """" Se hallan las dimensiones (anchura, altura) del nivel de resolución '0' (máxima resolución) de la WSI """
 dim = wsi.dimensions
 
 """ Se averigua cual es el mejor nivel de resolución de la WSI para mostrar el factor de reduccion deseado """
-best_level = wsi.get_best_level_for_downsample(5) # factor de reducción deseado
+best_level = wsi.get_best_level_for_downsample(2) # factor de reducción deseado
 
 """ Se averigua cual es el factor de reducción de dicho nivel para usarlo posteriormente al multiplicar las dimensiones
 en la función @read_region """
@@ -140,8 +142,8 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-                sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
-                sub_img = normalizer.transform(sub_img)
+                #sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
+                #sub_img = normalizer.transform(sub_img)
                 tile = np.expand_dims(sub_img, axis = 0)
 
                 """ Se va guardando la predicción de los datos anatomopatológicos para cada tesela en su lista 
@@ -149,7 +151,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 de todos los datos anatomopatológicos. Estos índices se guardan dentro del 'array' correspondiente del 
                 'array' 3D definido para cada tipo de dato anatomopatológico, para así poder realizar después los mapas 
                 de calor de todos los datos """
-                prediction_tumor_type = model.predict(tile)     # Tipo histológico
+                prediction_tumor_type = model.predict(tile) # Tipo histológico
                 tumor_type_list.append(prediction_tumor_type)
                 idc_ilc_selection = np.take(prediction_tumor_type, [0, 1]) # Elegir solo IDC(0) o ILC(1) en tipos mixtos
                 tumor_type_scores[alto_slide][ancho_slide] = np.argmax(idc_ilc_selection)

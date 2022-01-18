@@ -216,9 +216,43 @@ else:
 accuracy = results[7]
 print("Exactitud de metástasis a distancia en el conjunto de prueba: {:.2f}%".format(accuracy * 100))
 
-# Curvas ROC (CAMBIAR PARA NO EJEMPLOS NEGATIVOS EN Y_TRUE)
-print("AUC-ROC de metástasis a distancia en el conjunto de prueba: {:.2f}".format(results[8]))
-print("AUC-PR de metástasis a distancia en el conjunto de prueba: {:.2f}".format(results[9]))
+# Curvas ROC
+if (len(np.unique(test_labels_metastasis))) > 1:
+    print("AUC-ROC de metástasis a distancia en el conjunto de prueba: {:.2f}".format(results[8]))
+    print("AUC-PR de metástasis a distancia en el conjunto de prueba: {:.2f}".format(results[9]))
+
+    """ Se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
+    documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y 
+    la tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases: """
+    # @ravel: Aplana el vector a 1D
+    from sklearn.metrics import roc_curve, auc, precision_recall_curve
+
+    y_pred_prob_metastasis = model.predict(test_image_data).ravel()
+    fpr, tpr, thresholds = roc_curve(test_labels_metastasis, y_pred_prob_metastasis)
+    auc_roc = auc(fpr, tpr)
+
+    plt.figure(1)
+    plt.plot([0, 1], [0, 1], 'k--', label='No Skill')
+    plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
+    plt.xlabel('False positive rate')
+    plt.ylabel('True positive rate')
+    plt.title('AUC-ROC curve for distant metastasis prediction')
+    plt.legend(loc='best')
+    plt.show()
+
+    """ Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
+    del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
+    precision, recall, threshold_metastasis = precision_recall_curve(test_labels_metastasis, y_pred_prob_metastasis)
+    auc_pr = auc(recall, precision)
+
+    plt.figure(2)
+    plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
+    plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('AUC-PR curve for distant metastasis prediction')
+    plt.legend(loc='best')
+    plt.show()
 
 """ Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
 conjunto de datos de test que se definió anteriormente al repartir los datos.
@@ -258,40 +292,6 @@ matrix_metastasis_classes = ['Sin metástasis distante', 'Con metástasis distan
 
 plot_confusion_matrix(matrix_metastasis, classes = matrix_metastasis_classes, title ='Matriz de confusión de metástasis '
                                                                                      'a distancia')
-plt.show()
-
-""" Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
-documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
-tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
-Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
-# @ravel: Aplana el vector a 1D
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
-y_pred_prob_metastasis = model.predict(test_image_data).ravel()
-fpr, tpr, thresholds = roc_curve(test_labels_metastasis, y_pred_prob_metastasis)
-auc_roc = auc(fpr, tpr)
-
-plt.figure(1)
-plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
-plt.xlabel('False positive rate')
-plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve for distant metastasis prediction')
-plt.legend(loc = 'best')
-plt.show()
-
-""" Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
-del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
-precision, recall, threshold_metastasis = precision_recall_curve(test_labels_metastasis, y_pred_prob_metastasis)
-auc_pr = auc(recall, precision)
-
-plt.figure(2)
-plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
-plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('AUC-PR curve for distant metastasis prediction')
-plt.legend(loc = 'best')
 plt.show()
 
 """ -------------------------------------------------------------------------------------------------------------------- 
