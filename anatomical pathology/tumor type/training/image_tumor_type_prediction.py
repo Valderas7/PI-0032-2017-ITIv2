@@ -96,8 +96,8 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.15)
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-""" Directorios de imágenes con cáncer y sin cáncer: """
-image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
+""" Directorios de imágenes con cáncer: """
+image_dir = '/home/avalderas/img_slides/tiles/TCGA_no_normalizadas_cáncer'
 #image_dir = 'C:\\Users\\valde\Desktop\Datos_repositorio\img_slides\img_lotes'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
@@ -141,20 +141,36 @@ for id_img in remove_img_list:
 
 """ Se iguala el número de teselas con IDC y con ILC """
 # Validación
-valid_idc_tiles = valid_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1]
-valid_ilc_tiles = valid_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1]
-difference_valid = valid_idc_tiles - valid_ilc_tiles
+valid_idc_tiles = valid_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1] # Pacientes con IDC
+valid_ilc_tiles = valid_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1] # Pacientes con ILC
 
-valid_data = valid_data.sort_values(by = 'tumor_type_Infiltrating Ductal Carcinoma', ascending = True)
-valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de IDC y ILC
+if valid_idc_tiles >= valid_ilc_tiles:
+    difference_valid = valid_idc_tiles - valid_ilc_tiles
+    valid_data = valid_data.sort_values(by = 'tumor_type_Infiltrating Ductal Carcinoma', ascending = True)
+else:
+    difference_valid = valid_ilc_tiles - valid_idc_tiles
+    valid_data = valid_data.sort_values(by = 'tumor_type_Infiltrating Lobular Carcinoma', ascending = True)
+#print(valid_idc_tiles, valid_ilc_tiles)
+
+valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas con IDC e ILC
+#print(valid_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts())
+#print(valid_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts())
 
 # Test
-test_idc_tiles = test_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1]
-test_ilc_tiles = test_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1]
-difference_test = test_idc_tiles - test_ilc_tiles
+test_idc_tiles = test_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1] # Pacientes con IDC
+test_ilc_tiles = test_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1] # Pacientes con ILC
 
-test_data = test_data.sort_values(by = 'tumor_type_Infiltrating Ductal Carcinoma', ascending = True)
-test_data = test_data[:-difference_test] # Ahora hay el mismo número de IDC y ILC
+if test_idc_tiles >= test_ilc_tiles:
+    difference_test = test_idc_tiles - test_ilc_tiles
+    test_data = test_data.sort_values(by = 'tumor_type_Infiltrating Ductal Carcinoma', ascending = True)
+else:
+    difference_test = test_ilc_tiles - test_idc_tiles
+    test_data = test_data.sort_values(by = 'tumor_type_Infiltrating Lobular Carcinoma', ascending = True)
+#print(test_idc_tiles, test_ilc_tiles)
+
+test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas con IDC e ILC
+#print(test_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts())
+#print(test_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -215,8 +231,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image', test_image_data)
-#np.save('test_labels_tumor_type', test_labels_tumor_type)
+#np.save('test_image_definitive', test_image_data)
+#np.save('test_labels_tumor_type_definitive', test_labels_tumor_type)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 20, vertical_flip = True)
@@ -235,9 +251,9 @@ base_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tenso
                                                include_top = False, pooling = 'max')
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
-all_model = layers.Dense(128)(all_model)
+all_model = layers.Dense(128, activation = "relu")(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.Dense(16)(all_model)
+all_model = layers.Dense(16, activation = "relu")(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 tumor_type = layers.Dense(train_labels_tumor_type.shape[1], activation = "softmax", name = 'tumor_type')(all_model)
 
@@ -261,13 +277,13 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.AUC(curve = 'PR', name = 'AUC-PR')]
 
 model.compile(loss = 'categorical_crossentropy',
-              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 model.summary()
 
 """ Se implementan varios callbacks para guardar el mejor modelo. """
-checkpoint_path = '/anatomical pathology/image/tumor_type_without_mixed/inference/models/model_image_tumor_type_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
+checkpoint_path = '/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_{epoch:02d}_{val_loss:.2f}.h5'
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_gen, epochs = 3, verbose = 1, validation_data = val_gen,
@@ -280,7 +296,7 @@ sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
 set_trainable = 0
 
 for layer in base_model.layers:
-    if layer.name == 'block3a_expand_conv':
+    if layer.name == 'block2a_expand_conv':
         set_trainable = True
     if set_trainable:
         if not isinstance(layer, layers.BatchNormalization):
@@ -289,12 +305,12 @@ for layer in base_model.layers:
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta """
 model.compile(loss = 'categorical_crossentropy',
-              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
               metrics = metrics)
 model.summary()
 
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_gen, epochs = 10, verbose = 1, validation_data = val_gen,
+neural_network = model.fit(x = train_gen, epochs = 50, verbose = 1, validation_data = val_gen,
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))

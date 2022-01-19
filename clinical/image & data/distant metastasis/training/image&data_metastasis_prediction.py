@@ -448,12 +448,16 @@ train_data = train_data.drop(['img_path', 'ID'], axis = 1)
 valid_data = valid_data.drop(['img_path', 'ID'], axis = 1)
 test_data = test_data.drop(['img_path', 'ID'], axis = 1)
 
-""" Se extraen los datos de salida de la red neuronal """
-train_labels_metastasis = train_data.iloc[:, 5]
-valid_labels_metastasis = valid_data.iloc[:, 5]
-test_labels_metastasis = test_data.iloc[:, 5]
+""" Se extraen los datos de salida de la red neuronal y se guardan en otra variable. """
+train_labels_metastasis = train_data.pop('distant_metastasis')
+valid_labels_metastasis = valid_data.pop('distant_metastasis')
+test_labels_metastasis = test_data.pop('distant_metastasis')
 
 """ Para poder entrenar la red hace falta transformar los dataframes en arrays de numpy. """
+train_data = np.asarray(train_data).astype('float32')
+valid_data = np.asarray(valid_data).astype('float32')
+test_data = np.asarray(test_data).astype('float32')
+
 train_labels_metastasis = np.asarray(train_labels_metastasis).astype('float32')
 valid_labels_metastasis = np.asarray(valid_labels_metastasis).astype('float32')
 test_labels_metastasis = np.asarray(test_labels_metastasis).astype('float32')
@@ -466,41 +470,59 @@ train_image_data_len = len(train_image_data)
 valid_image_data_len = len(valid_image_data)
 batch_dimension = 32
 
-""" Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
-neuronal convolucional. """
-#np.save('test_image_try2', test_image_data)
-#np.save('test_labels_metastasis_try2', test_labels_metastasis)
+""" Se pueden guardar en formato de 'numpy' las imágenes, los datos y las etiquetas de test para usarlas después de 
+entrenar el modelo. """
+#np.save('test_image_try1', test_image_data)
+#np.save('test_data_try1', test_data)
+#np.save('test_labels_metastasis_try1', test_labels_metastasis)
 
-""" Data augmentation """
-train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 10, vertical_flip = True)
-val_aug = ImageDataGenerator()
+""" --------------------------------------------------------------------------------------------------------------------
+------------------------------------------- SECCIÓN MODELO DE RED ------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------- """
+""" Se definen dos entradas para dos ramas distintas: una para la red perceptrón multicapa; y otra para la red neuronal 
+convolucional """
+input_data = Input(shape = (train_data.shape[1]),)
+input_image = Input(shape = (alto, ancho, canales))
 
-""" Instanciar lotes """
-train_gen = train_aug.flow(x = train_image_data, y = train_labels_metastasis, batch_size = 32)
-val_gen = val_aug.flow(x = valid_image_data, y = valid_labels_metastasis, batch_size = 32, shuffle = False)
+""" La primera rama del modelo (Perceptrón multicapa) opera con la entrada de datos: """
+mlp = layers.Dense(train_data.shape[1], activation = "relu")(input_data)
+mlp = layers.Dense(32, activation = "relu")(mlp)
+mlp = layers.Dense(1, activation = "sigmoid")(mlp)
 
-""" -------------------------------------------------------------------------------------------------------------------
----------------------------------- SECCIÓN MODELO DE RED NEURONAL CONVOLUCIONAL ---------------------------------------
---------------------------------------------------------------------------------------------------------------------"""
-""" En esta ocasión, se crea un modelo secuencial para la red neuronal convolucional que será la encargada de procesar
-todas las imágenes: """
-base_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = Input(shape = (alto, ancho, canales)),
-                                               include_top = False, pooling = 'max')
+final_mlp = keras.models.Model(inputs = input_data, outputs = mlp)
 
-all_model = base_model.output
-all_model = layers.Flatten()(all_model)
-all_model = layers.Dense(128)(all_model)
-all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.Dense(32)(all_model)
-all_model = layers.Dropout(0.5)(all_model)
-metastasis = layers.Dense(1, activation = "sigmoid", name = 'metastasis')(all_model)
+""" La segunda rama del modelo será la encargada de procesar las imágenes: """
+cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = Input(shape = (alto, ancho, canales)),
+                                              include_top = False, pooling = 'max')
 
-model = Model(inputs = base_model.input, outputs = metastasis)
-
-""" Se congelan todas las capas convolucionales del modelo base """
+""" Se congelan todas las capas convolucionales del modelo base de la red convolucional. """
 # A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
-for layer in base_model.layers:
+for layer in cnn_model.layers:
     layer.trainable = False
+
+""" Se añaden capas de clasificación después de las capas congeladas de convolución. """
+all_cnn_model = cnn_model(input_image, training = False)
+all_cnn_model = layers.Flatten()(all_cnn_model)
+all_cnn_model = layers.Dense(128, activation = "relu")(all_cnn_model)
+all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
+all_cnn_model = layers.Dense(32, activation = "relu")(all_cnn_model)
+all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
+all_cnn_model = layers.Dense(1, activation = "sigmoid")(all_cnn_model)
+
+final_cnn_model = Model(inputs = input_image, outputs = all_cnn_model)
+
+""" Se combina la salida de ambas ramas. """
+combined = keras.layers.concatenate([final_mlp.output, final_cnn_model.output])
+
+""" Una vez se ha concatenado la salida de ambas ramas, se aplica dos capas densamente conectadas, la última de ellas
+siendo la de la predicción final con activación 'sigmoid', puesto que la salida será binaria. """
+multi_input_model = layers.Dense(32, activation="relu")(combined)
+multi_input_model = layers.Dropout(0.5)(multi_input_model)
+multi_input_model = layers.Dense(1, activation="sigmoid")(multi_input_model)
+
+""" El modelo final aceptará datos numéricos/categóricos en la entrada de la red perceptrón multicapa e imágenes en la
+red neuronal convolucional, de forma que a la salida solo se obtenga la predicción de la metástasis a distancia. """
+model = keras.models.Model(inputs = [final_mlp.input, final_cnn_model.input], outputs = multi_input_model)
 
 """ Hay que definir las métricas de la red y configurar los distintos hiperparámetros para entrenar la red. El modelo ya
 ha sido definido anteriormente, así que ahora hay que compilarlo. Para ello se define una función de loss y un 
@@ -520,12 +542,12 @@ model.compile(loss = 'binary_crossentropy',
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/clinical/image/distant metastasis/inference/models/model_image_metastasis_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/home/avalderas/img_slides/clinical/image & data/distant metastasis/inference/models/model_image&data_metastasis_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = train_gen, epochs = 2, verbose = 1, validation_data = val_gen,
-          steps_per_epoch = (train_image_data_len / batch_dimension),
+model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 2, verbose = 1,
+          validation_data = [valid_data, valid_image_data], steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
 """ Una vez el modelo ya ha sido entrenado, se resetean los generadores de data augmentation de los conjuntos de 
@@ -535,7 +557,7 @@ rápido sobreentrenamiento y que solo debe ser realizado después de entrenar el
 Para ello, primero se descongela el modelo base."""
 set_trainable = 0
 
-for layer in base_model.layers:
+for layer in cnn_model.layers:
     if layer.name == 'block2a_expand_conv':
         set_trainable = True
     if set_trainable:
@@ -550,7 +572,8 @@ model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_gen, epochs = 40, verbose = 1, validation_data = val_gen,
+neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 10, verbose = 1,
+                           validation_data = [valid_data, valid_image_data],
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
