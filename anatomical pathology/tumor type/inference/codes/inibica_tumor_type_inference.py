@@ -142,8 +142,8 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-                sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
-                sub_img = normalizer.transform(sub_img)
+                #sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
+                #sub_img = normalizer.transform(sub_img)
                 tile = np.expand_dims(sub_img, axis = 0)
 
                 """ Se va guardando la predicción de los datos anatomopatológicos para cada tesela en su lista 
@@ -155,6 +155,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 tumor_type_list.append(prediction_tumor_type)
                 idc_ilc_selection = np.take(prediction_tumor_type, [0, 1]) # Elegir solo IDC(0) o ILC(1) en tipos mixtos
                 tumor_type_scores[alto_slide][ancho_slide] = np.argmax(idc_ilc_selection)
+                print(prediction_tumor_type)
 
 """ Se realiza la suma de las columnas para cada una de las predicciones de cada datos anatomopatológicos. Como 
 resultado, se obtiene un array de varias columnas (dependiendo del dato anatomopatológico habrá más o menos clases) y 

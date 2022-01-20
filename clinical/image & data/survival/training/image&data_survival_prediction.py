@@ -363,13 +363,13 @@ cols = cols[:7] + cols[-43:] + cols[7:-43]
 df_all_merge = df_all_merge[cols]
 
 """ Se eliminan filas para que queden el mismo de número de pacientes con y sin metástasis """
-df_all_merge = df_all_merge.sort_values(by = 'distant_metastasis', ascending = False)
-df_all_merge = df_all_merge[:-402] # Ahora hay el mismo número de pacientes con y sin metástasis a distancia
+df_all_merge = df_all_merge.sort_values(by = 'os_status', ascending = False)
+df_all_merge = df_all_merge[:-328] # Ahora hay el mismo número de pacientes con y sin supervivencia
 df_all_merge.dropna(inplace = True)  # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split. """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.30, stratify = df_all_merge['distant_metastasis'])
-train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['distant_metastasis'])
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['os_status'])
+train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['os_status'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -416,36 +416,36 @@ for id_img in remove_img_list:
     valid_data.drop(index_valid, inplace = True)
     test_data.drop(index_test, inplace = True)
 
-""" Se iguala el número de teselas con y sin metástasis a distancia """
+""" Se iguala el número de teselas con supervivencia y sin supervivencia """
 # Validación
-valid_metastasis_tiles = valid_data['distant_metastasis'].value_counts()[1] # Con metástasis a distancia
-valid_no_metastasis_tiles = valid_data['distant_metastasis'].value_counts()[0] # Sin metástasis a distancia
+valid_no_survival_tiles = valid_data['os_status'].value_counts()[1] # Fallecidas
+valid_survival_tiles = valid_data['os_status'].value_counts()[0] # Vivas
 
-if valid_no_metastasis_tiles >= valid_metastasis_tiles:
-    difference_valid = valid_no_metastasis_tiles - valid_metastasis_tiles
-    valid_data = valid_data.sort_values(by = 'distant_metastasis', ascending = False)
+if valid_no_survival_tiles >= valid_survival_tiles:
+    difference_valid = valid_no_survival_tiles - valid_survival_tiles
+    valid_data = valid_data.sort_values(by = 'os_status', ascending = True)
 else:
-    difference_valid = valid_metastasis_tiles - valid_no_metastasis_tiles
-    valid_data = valid_data.sort_values(by = 'distant_metastasis', ascending = True)
-#print(valid_no_metastasis_tiles, valid_metastasis_tiles)
+    difference_valid = valid_survival_tiles - valid_no_survival_tiles
+    valid_data = valid_data.sort_values(by = 'os_status', ascending = False)
+#print(valid_no_survival_tiles, valid_survival_tiles)
 
-valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas con y sin metástasis a distancia
-#print(valid_data['distant_metastasis'].value_counts())
+valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas con y sin supervivencia
+#print(valid_data['os_status'].value_counts())
 
 # Test
-test_metastasis_tiles = test_data['distant_metastasis'].value_counts()[1] # Con metástasis a distancia
-test_no_metastasis_tiles = test_data['distant_metastasis'].value_counts()[0] # Sin metástasis a distancia
+test_no_survival_tiles = test_data['os_status'].value_counts()[1] # Fallecidas
+test_survival_tiles = test_data['os_status'].value_counts()[0] # Vivas
 
-if test_no_metastasis_tiles >= test_metastasis_tiles:
-    difference_test = test_no_metastasis_tiles - test_metastasis_tiles
-    test_data = test_data.sort_values(by = 'distant_metastasis', ascending = False)
+if test_no_survival_tiles >= test_survival_tiles:
+    difference_test = test_no_survival_tiles - test_survival_tiles
+    test_data = test_data.sort_values(by = 'os_status', ascending = True)
 else:
-    difference_test = test_metastasis_tiles - test_no_metastasis_tiles
-    test_data = test_data.sort_values(by = 'distant_metastasis', ascending = True)
-#print(test_no_metastasis_tiles, test_metastasis_tiles)
+    difference_test = test_survival_tiles - test_no_survival_tiles
+    test_data = test_data.sort_values(by = 'os_status', ascending = False)
+#print(test_no_survival_tiles, test_survival_tiles)
 
-test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas con y sin metástasis a distancia
-#print(test_data['distant_metastasis'].value_counts())
+test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas con y sin supervivencia
+#print(test_data['os_status'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -485,18 +485,18 @@ valid_data = valid_data.drop(['img_path', 'ID'], axis = 1)
 test_data = test_data.drop(['img_path', 'ID'], axis = 1)
 
 """ Se extraen los datos de salida de la red neuronal y se guardan en otra variable. """
-train_labels_metastasis = train_data.pop('distant_metastasis')
-valid_labels_metastasis = valid_data.pop('distant_metastasis')
-test_labels_metastasis = test_data.pop('distant_metastasis')
+train_labels_survival = train_data.pop('os_status')
+valid_labels_survival = valid_data.pop('os_status')
+test_labels_survival = test_data.pop('os_status')
 
 """ Para poder entrenar la red hace falta transformar los dataframes en arrays de numpy. """
 train_data = np.asarray(train_data).astype('float32')
 valid_data = np.asarray(valid_data).astype('float32')
 test_data = np.asarray(test_data).astype('float32')
 
-train_labels_metastasis = np.asarray(train_labels_metastasis).astype('float32')
-valid_labels_metastasis = np.asarray(valid_labels_metastasis).astype('float32')
-test_labels_metastasis = np.asarray(test_labels_metastasis).astype('float32')
+train_labels_survival = np.asarray(train_labels_survival).astype('float32')
+valid_labels_survival = np.asarray(valid_labels_survival).astype('float32')
+test_labels_survival = np.asarray(test_labels_survival).astype('float32')
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada, y se recopila la longitud de las imágenes de
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
@@ -510,7 +510,7 @@ batch_dimension = 32
 entrenar el modelo. """
 #np.save('test_image_try1', test_image_data)
 #np.save('test_data_try1', test_data)
-#np.save('test_labels_metastasis_try1', test_labels_metastasis)
+#np.save('test_labels_metastasis_try1', test_labels_survival)
 
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------- SECCIÓN MODELO DE RED ------------------------------------------------------
@@ -523,21 +523,17 @@ input_image = Input(shape = (alto, ancho, canales))
 """ La primera rama del modelo (Perceptrón multicapa) opera con la entrada de datos: """
 mlp = layers.Dense(train_data.shape[1], activation = "relu")(input_data)
 mlp = layers.Dense(32, activation = "relu")(mlp)
+mlp = layers.Dropout(0.5)(mlp)
 mlp = layers.Dense(1, activation = "sigmoid")(mlp)
 
 final_mlp = keras.models.Model(inputs = input_data, outputs = mlp)
 
 """ La segunda rama del modelo será la encargada de procesar las imágenes: """
-cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = Input(shape = (alto, ancho, canales)),
+cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = input_image,
                                               include_top = False, pooling = 'max')
 
-""" Se congelan todas las capas convolucionales del modelo base de la red convolucional. """
-# A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
-for layer in cnn_model.layers:
-    layer.trainable = False
-
 """ Se añaden capas de clasificación después de las capas congeladas de convolución. """
-all_cnn_model = cnn_model(input_image, training = False)
+all_cnn_model = cnn_model.output
 all_cnn_model = layers.Flatten()(all_cnn_model)
 all_cnn_model = layers.Dense(128, activation = "relu")(all_cnn_model)
 all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
@@ -545,7 +541,12 @@ all_cnn_model = layers.Dense(32, activation = "relu")(all_cnn_model)
 all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
 all_cnn_model = layers.Dense(1, activation = "sigmoid")(all_cnn_model)
 
-final_cnn_model = Model(inputs = input_image, outputs = all_cnn_model)
+final_cnn_model = Model(inputs = cnn_model.input, outputs = all_cnn_model)
+
+""" Se congelan todas las capas convolucionales del modelo base de la red convolucional. """
+# A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
+for layer in cnn_model.layers:
+    layer.trainable = False
 
 """ Se combina la salida de ambas ramas. """
 combined = keras.layers.concatenate([final_mlp.output, final_cnn_model.output])
@@ -582,7 +583,7 @@ checkpoint_path = '/home/avalderas/img_slides/clinical/image & data/distant meta
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 2, verbose = 1,
+model.fit(x = [train_data, train_image_data], y = train_labels_survival, epochs = 2, verbose = 1,
           validation_data = [valid_data, valid_image_data], steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -608,7 +609,7 @@ model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 10, verbose = 1,
+neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_survival, epochs = 10, verbose = 1,
                            validation_data = [valid_data, valid_image_data],
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),

@@ -99,7 +99,7 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de teselas con cáncer normalizadas: """
-image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
+image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer' # Hazlo después sin normalizar
 
 """ Se seleccionan todas las rutas de las teselas: """
 cancer_dir = glob.glob(image_dir + "/img_lotes_tiles*/*") # 34421
@@ -249,9 +249,9 @@ base_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tenso
 
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
-all_model = layers.Dense(128)(all_model)
+all_model = layers.Dense(128, activation = 'relu')(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.Dense(32)(all_model)
+all_model = layers.Dense(32, activation = 'relu')(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 metastasis = layers.Dense(1, activation = "sigmoid", name = 'metastasis')(all_model)
 
@@ -289,10 +289,14 @@ model.fit(x = train_gen, epochs = 2, verbose = 1, validation_data = val_gen,
           validation_steps = (valid_image_data_len / batch_dimension))
 
 """ Una vez el modelo ya ha sido entrenado, se resetean los generadores de data augmentation de los conjuntos de 
-entrenamiento y validacion y se descongelan algunas capas convolucionales del modelo base de la red para reeentrenar
+entrenamiento y validacion """
+train_gen.reset()
+val_gen.reset()
+
+""" Se descongelan algunas capas convolucionales del modelo base de la red para reeentrenar
 todo el modelo de principio a fin ('fine tuning'). Este es un último paso opcional que puede dar grandes mejoras o un 
 rápido sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo con las capas congeladas. 
-Para ello, primero se descongela el modelo base."""
+Para ello, primero se descongela el modelo base. """
 set_trainable = 0
 
 for layer in base_model.layers:

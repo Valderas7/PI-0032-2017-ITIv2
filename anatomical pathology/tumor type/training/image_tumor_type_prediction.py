@@ -140,6 +140,22 @@ for id_img in remove_img_list:
     test_data.drop(index_test, inplace = True)
 
 """ Se iguala el número de teselas con IDC y con ILC """
+# Entrenamiento
+train_idc_tiles = train_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1] # Pacientes con IDC
+train_ilc_tiles = train_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1] # Pacientes con ILC
+
+if train_idc_tiles >= train_ilc_tiles:
+    difference_train = train_idc_tiles - train_ilc_tiles
+    train_data = train_data.sort_values(by = 'tumor_type_Infiltrating Ductal Carcinoma', ascending = True)
+else:
+    difference_train = train_ilc_tiles - train_idc_tiles
+    train_data = train_data.sort_values(by = 'tumor_type_Infiltrating Lobular Carcinoma', ascending = True)
+#print(train_idc_tiles, train_ilc_tiles)
+
+train_data = train_data[:-difference_train] # Ahora hay el mismo número de teselas con IDC e ILC
+#print(train_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts())
+#print(train_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts())
+
 # Validación
 valid_idc_tiles = valid_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1] # Pacientes con IDC
 valid_ilc_tiles = valid_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1] # Pacientes con ILC
@@ -231,8 +247,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image_definitive', test_image_data)
-#np.save('test_labels_tumor_type_definitive', test_labels_tumor_type)
+#np.save('test_image_last', test_image_data)
+#np.save('test_labels_tumor_type_last', test_labels_tumor_type)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 20, vertical_flip = True)
@@ -290,9 +306,15 @@ model.fit(x = train_gen, epochs = 3, verbose = 1, validation_data = val_gen,
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
-""" Una vez el modelo ya ha sido entrenado, se descongelan algunas capas convolucionales del modelo base de la red para 
-reeentrenar el modelo ('fine tuning'). Este es un último paso opcional que puede dar grandes mejoras o un rápido 
-sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo con las capas congeladas """
+""" Una vez el modelo ya ha sido entrenado, se resetean los generadores de data augmentation de los conjuntos de 
+entrenamiento y validacion """
+train_gen.reset()
+val_gen.reset()
+
+""" Se descongelan algunas capas convolucionales del modelo base de la red para reeentrenar
+todo el modelo de principio a fin ('fine tuning'). Este es un último paso opcional que puede dar grandes mejoras o un 
+rápido sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo con las capas congeladas. 
+Para ello, primero se descongela el modelo base. """
 set_trainable = 0
 
 for layer in base_model.layers:
