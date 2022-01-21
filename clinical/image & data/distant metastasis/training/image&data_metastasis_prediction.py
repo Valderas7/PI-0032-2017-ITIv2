@@ -528,16 +528,11 @@ mlp = layers.Dense(1, activation = "sigmoid")(mlp)
 final_mlp = keras.models.Model(inputs = input_data, outputs = mlp)
 
 """ La segunda rama del modelo será la encargada de procesar las imágenes: """
-cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = Input(shape = (alto, ancho, canales)),
+cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = input_image,
                                               include_top = False, pooling = 'max')
 
-""" Se congelan todas las capas convolucionales del modelo base de la red convolucional. """
-# A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
-for layer in cnn_model.layers:
-    layer.trainable = False
-
 """ Se añaden capas de clasificación después de las capas congeladas de convolución. """
-all_cnn_model = cnn_model(input_image, training = False)
+all_cnn_model = cnn_model.output
 all_cnn_model = layers.Flatten()(all_cnn_model)
 all_cnn_model = layers.Dense(128, activation = "relu")(all_cnn_model)
 all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
@@ -545,7 +540,12 @@ all_cnn_model = layers.Dense(32, activation = "relu")(all_cnn_model)
 all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
 all_cnn_model = layers.Dense(1, activation = "sigmoid")(all_cnn_model)
 
-final_cnn_model = Model(inputs = input_image, outputs = all_cnn_model)
+final_cnn_model = Model(inputs = cnn_model.input, outputs = all_cnn_model)
+
+""" Se congelan todas las capas convolucionales del modelo base de la red convolucional. """
+# A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
+for layer in cnn_model.layers:
+    layer.trainable = False
 
 """ Se combina la salida de ambas ramas. """
 combined = keras.layers.concatenate([final_mlp.output, final_cnn_model.output])
@@ -583,7 +583,8 @@ mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mod
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 2, verbose = 1,
-          validation_data = [valid_data, valid_image_data], steps_per_epoch = (train_image_data_len / batch_dimension),
+          validation_data = ([valid_data, valid_image_data], valid_labels_metastasis),
+          steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
 """ Una vez el modelo ya ha sido entrenado, se resetean los generadores de data augmentation de los conjuntos de 
@@ -609,7 +610,7 @@ model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 10, verbose = 1,
-                           validation_data = [valid_data, valid_image_data],
+                           validation_data = ([valid_data, valid_image_data], valid_labels_metastasis),
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))

@@ -584,7 +584,8 @@ mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mod
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = [train_data, train_image_data], y = train_labels_survival, epochs = 2, verbose = 1,
-          validation_data = [valid_data, valid_image_data], steps_per_epoch = (train_image_data_len / batch_dimension),
+          validation_data = ([valid_data, valid_image_data], valid_labels_survival),
+          steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
 """ Una vez el modelo ya ha sido entrenado, se resetean los generadores de data augmentation de los conjuntos de 
@@ -610,7 +611,7 @@ model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_survival, epochs = 10, verbose = 1,
-                           validation_data = [valid_data, valid_image_data],
+                           validation_data = ([valid_data, valid_image_data], valid_labels_survival),
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))

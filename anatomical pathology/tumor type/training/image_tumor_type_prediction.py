@@ -247,8 +247,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image_last', test_image_data)
-#np.save('test_labels_tumor_type_last', test_labels_tumor_type)
+#np.save('test_image_final', test_image_data)
+#np.save('test_labels_tumor_type_final', test_labels_tumor_type)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 20, vertical_flip = True)
@@ -269,7 +269,7 @@ all_model = base_model.output
 all_model = layers.Flatten()(all_model)
 all_model = layers.Dense(128, activation = "relu")(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.Dense(16, activation = "relu")(all_model)
+all_model = layers.Dense(32, activation = "relu")(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 tumor_type = layers.Dense(train_labels_tumor_type.shape[1], activation = "softmax", name = 'tumor_type')(all_model)
 
@@ -302,7 +302,7 @@ checkpoint_path = '/home/avalderas/img_slides/anatomical pathology/tumor type/in
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = train_gen, epochs = 3, verbose = 1, validation_data = val_gen,
+model.fit(x = train_gen, epochs = 2, verbose = 1, validation_data = val_gen,
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -332,7 +332,7 @@ model.compile(loss = 'categorical_crossentropy',
 model.summary()
 
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_gen, epochs = 50, verbose = 1, validation_data = val_gen,
+neural_network = model.fit(x = train_gen, epochs = 150, verbose = 1, validation_data = val_gen,
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
