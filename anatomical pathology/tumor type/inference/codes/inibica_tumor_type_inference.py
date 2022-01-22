@@ -192,7 +192,7 @@ plt.tight_layout()
 """ Se crea una máscara para las puntuaciones menores de 0.09 y mayores de 0.9, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
-mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9))] = True
+mask[np.where((tiles_scores_array <= 0.15) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True,

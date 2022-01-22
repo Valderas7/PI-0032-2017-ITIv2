@@ -20,7 +20,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/clinical/image/distant metastasis/inference/models/model_image_metastasis_39_0.35_try2.h5'
+path = '/clinical/image/distant metastasis/inference/models/model_image_metastasis_39_0.35_normalized.h5'
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """

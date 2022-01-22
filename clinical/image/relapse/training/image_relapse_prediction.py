@@ -237,9 +237,9 @@ base_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tenso
 
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
-all_model = layers.Dense(128)(all_model)
+all_model = layers.Dense(128, activation = 'relu')(all_model)
 all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.Dense(32)(all_model)
+all_model = layers.Dense(32, activation = 'relu')(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 relapse = layers.Dense(1, activation = "sigmoid", name = 'relapse')(all_model)
 
