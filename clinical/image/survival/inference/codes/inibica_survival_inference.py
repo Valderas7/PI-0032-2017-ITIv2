@@ -19,7 +19,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/clinical/image/survival/inference/models/model_image_survival_27_0.55.h5'
+path = '/home/avalderas/img_slides/clinical/image/survival/inference/models/model_image_survival_27_0.55_normalized.h5'
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
