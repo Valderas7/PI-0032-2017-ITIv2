@@ -20,7 +20,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/clinical/image/distant metastasis/inference/models/model_image_metastasis_39_0.35_normalized.h5'
+path = '/home/avalderas/img_slides/clinical/image/distant metastasis/inference/models/model_image_metastasis_19_0.51_unnormalized.h5'
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
@@ -31,8 +31,11 @@ patient_id = path_wsi.split('/')[4][:4]
 """" Se hallan las dimensiones (anchura, altura) del nivel de resolución '0' (máxima resolución) de la WSI """
 dim = wsi.dimensions
 
-""" Se averigua cual es el mejor nivel de resolución de la WSI para mostrar el factor de reduccion deseado """
-best_level = wsi.get_best_level_for_downsample(10) # factor de reducción deseado
+""" Se averigua cual es el mejor nivel de resolución de la WSI para mostrar el factor de reduccion deseado. Las WSI de
+los pacientes de la provincia de Cádiz tienen su nivel de máxima resolución a una magnificación de 40x. Por lo que si
+se aplica un factor de reducción de 4, se hallará el mejor nivel para una magnificación 10x (40x/4 = 10x), que es la que 
+interesa buscar puesto que es la magnificación con la que se entrenó la red neuronal. """
+best_level = wsi.get_best_level_for_downsample(4)
 
 """ Se averigua cual es el factor de reducción de dicho nivel para usarlo posteriormente al multiplicar las dimensiones
 en la función @read_region """
