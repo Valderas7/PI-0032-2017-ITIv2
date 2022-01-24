@@ -30,7 +30,7 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_06_0.47_ultimate.h5'
+path = '/anatomical pathology/tumor type/inference/models/model_image_tumor_type_06_0.47_normalized.h5'
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """

@@ -247,8 +247,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image_final', test_image_data)
-#np.save('test_labels_tumor_type_final', test_labels_tumor_type)
+np.save('test_image_unnormalized', test_image_data)
+np.save('test_labels_tumor_type_unnormalized', test_labels_tumor_type)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 20, vertical_flip = True)
@@ -327,13 +327,13 @@ for layer in base_model.layers:
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta """
 model.compile(loss = 'categorical_crossentropy',
-              optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 model.summary()
 
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_gen, epochs = 150, verbose = 1, validation_data = val_gen,
-                           #callbacks = mcp_save,
+neural_network = model.fit(x = train_gen, epochs = 50, verbose = 1, validation_data = val_gen,
+                           callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

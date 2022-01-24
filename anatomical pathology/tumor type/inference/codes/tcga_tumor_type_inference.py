@@ -27,10 +27,10 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_06_0.47_ultimate.h5')
+model = load_model('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_04_0.67_unnormalized.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/test data/test_image_ultimate.npy')
-test_labels_tumor_type = np.load('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/test data/test_labels_tumor_type_ultimate.npy')
+test_image_data = np.load('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/test data/test_image_unnormalized.npy')
+test_labels_tumor_type = np.load('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/test data/test_labels_tumor_type_unnormalized.npy')
 
 """ Una vez entrenado el modelo se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -139,11 +139,11 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Matriz de confusi
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
+    plt.xticks(tick_marks, classes, rotation = 45)
     plt.yticks(tick_marks, classes)
 
     if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        cm = cm.astype('float') / cm.sum(axis = 1)[:, np.newaxis]
         cm = cm.round(2)
         #print("Normalized confusion matrix")
     else:
