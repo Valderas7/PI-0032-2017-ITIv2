@@ -30,11 +30,11 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/anatomical pathology/tumor type/inference/models/model_image_tumor_type_06_0.47_normalized.h5'
+path = '/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_04_0.67_unnormalized.h5'
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P166-HE-278-VII_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -137,8 +137,10 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-                sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
-                sub_img = normalizer.transform(sub_img)
+                #sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
+                #sub_img = normalizer.transform(sub_img)
+                #cv2.imshow('tile', sub_img)
+                #cv2.waitKey(0)
                 tile = np.expand_dims(sub_img, axis = 0)
 
                 """ Se va guardando la predicción de los datos anatomopatológicos para cada tesela en su lista 
