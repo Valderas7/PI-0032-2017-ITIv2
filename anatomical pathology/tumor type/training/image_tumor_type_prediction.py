@@ -94,7 +94,7 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.15)
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de imágenes con cáncer: """
-image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
+image_dir = '/home/avalderas/img_slides/tiles/TCGA_no_normalizadas_cáncer'
 #image_dir = 'C:\\Users\\valde\Desktop\Datos_repositorio\img_slides\img_lotes'
 
 """ Se seleccionan todas las rutas de las imágenes que tienen cáncer: """
@@ -241,8 +241,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image_normalized', test_image_data)
-#np.save('test_labels_tumor_type_normalized', test_labels_tumor_type)
+np.save('test_image_unnormalized_v2', test_image_data)
+np.save('test_labels_tumor_type_unnormalized_v2', test_labels_tumor_type)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 20, vertical_flip = True)

@@ -34,7 +34,7 @@ path = '/home/avalderas/img_slides/anatomical pathology/tumor type/inference/mod
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P049-HE-214-IV_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P052-HE-217-XI_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
