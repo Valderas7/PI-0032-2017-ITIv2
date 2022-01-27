@@ -72,16 +72,13 @@ df_all_merge.loc[df_all_merge.dfs_status == "1:Recurred/Progressed", "dfs_status
 
 """ Se eliminan todas las columnas de mutaciones excepto la de recidivas """
 df_all_merge = df_all_merge[['ID', 'dfs_status']]
-df_all_merge = df_all_merge.sort_values(by = 'dfs_status', ascending = False)
-df_all_merge = df_all_merge[:-446] # Ahora hay el mismo número de pacientes con y sin recaída
-df_all_merge.dropna(inplace = True)  # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
 df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split. """
 train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['dfs_status'])
-train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['dfs_status'])
+train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['dfs_status'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -129,9 +126,23 @@ for id_img in remove_img_list:
     test_data.drop(index_test, inplace = True)
 
 """ Se iguala el número de teselas con supervivencia y sin recaída """
-# Validación
-valid_relapse_tiles = valid_data['dfs_status'].value_counts()[1] # Con recidivas
-valid_no_relapse_tiles = valid_data['dfs_status'].value_counts()[0] # Sin recidivas
+""" Entrenamiento """
+train_relapse_tiles = train_data['dfs_status'].value_counts()[1] # Recaídas
+train_no_relapse_tiles = train_data['dfs_status'].value_counts()[0] # Sin recaídas
+
+if train_no_relapse_tiles >= train_relapse_tiles:
+    difference_train = train_no_relapse_tiles - train_relapse_tiles
+    train_data = train_data.sort_values(by = 'dfs_status', ascending = False)
+else:
+    difference_train = train_relapse_tiles - train_no_relapse_tiles
+    train_data = train_data.sort_values(by = 'dfs_status', ascending = True)
+
+train_data = train_data[:-difference_train]
+#print(train_data['dfs_status'].value_counts())
+
+""" Validación """
+valid_relapse_tiles = valid_data['dfs_status'].value_counts()[1] # Recaídas
+valid_no_relapse_tiles = valid_data['dfs_status'].value_counts()[0] # Sin recaídas
 
 if valid_no_relapse_tiles >= valid_relapse_tiles:
     difference_valid = valid_no_relapse_tiles - valid_relapse_tiles
@@ -139,14 +150,13 @@ if valid_no_relapse_tiles >= valid_relapse_tiles:
 else:
     difference_valid = valid_relapse_tiles - valid_no_relapse_tiles
     valid_data = valid_data.sort_values(by = 'dfs_status', ascending = True)
-#print(valid_no_relapse_tiles, valid_relapse_tiles)
 
-valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas con y sin recidivas
+valid_data = valid_data[:-difference_valid]
 #print(valid_data['dfs_status'].value_counts())
 
-# Test
-test_relapse_tiles = test_data['dfs_status'].value_counts()[1] # Con recidivas
-test_no_relapse_tiles = test_data['dfs_status'].value_counts()[0] # Sin recidivas
+""" Test """
+test_relapse_tiles = test_data['dfs_status'].value_counts()[1] # Recaídas
+test_no_relapse_tiles = test_data['dfs_status'].value_counts()[0] # Sin recaídas
 
 if test_no_relapse_tiles >= test_relapse_tiles:
     difference_test = test_no_relapse_tiles - test_relapse_tiles
@@ -154,9 +164,8 @@ if test_no_relapse_tiles >= test_relapse_tiles:
 else:
     difference_test = test_relapse_tiles - test_no_relapse_tiles
     test_data = test_data.sort_values(by = 'dfs_status', ascending = True)
-#print(test_no_relapse_tiles, test_relapse_tiles)
 
-test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas con y sin supervivencia
+test_data = test_data[:-difference_test]
 #print(test_data['dfs_status'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 

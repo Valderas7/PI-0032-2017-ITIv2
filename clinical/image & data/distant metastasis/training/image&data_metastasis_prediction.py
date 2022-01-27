@@ -418,6 +418,7 @@ for id_img in remove_img_list:
 
 """ Se iguala el número de teselas con y sin metástasis a distancia """
 # Validación
+"""
 valid_metastasis_tiles = valid_data['distant_metastasis'].value_counts()[1] # Con metástasis a distancia
 valid_no_metastasis_tiles = valid_data['distant_metastasis'].value_counts()[0] # Sin metástasis a distancia
 
@@ -446,6 +447,7 @@ else:
 
 test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas con y sin metástasis a distancia
 #print(test_data['distant_metastasis'].value_counts())
+"""
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """

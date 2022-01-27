@@ -125,9 +125,9 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"] != 'N0') & (df_all_mer
 
 """ Se eliminan todas las columnas de mutaciones excepto la de SNV_PIK3CA """
 df_all_merge = df_all_merge[['ID', 'SNV_PIK3CA']]
-df_all_merge = df_all_merge.sort_values(by='SNV_PIK3CA', ascending = False)
-df_all_merge = df_all_merge[:-210] # Ahora hay el mismo número de pacientes con mutación y sin mutación
-df_all_merge.dropna(inplace=True)  # Mantiene el DataFrame con las entradas válidas en la misma variable.
+
+""" Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
+df_all_merge.dropna(inplace = True)
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
@@ -180,9 +180,23 @@ for id_img in remove_img_list:
     test_data.drop(index_test, inplace=True)
 
 """ Se iguala el número de teselas con mutación y sin mutación SNV del gen PIK3CA """
+# Entrenamiento
+train_pik3ca_tiles = train_data['SNV_PIK3CA'].value_counts()[1] # Con mutación
+train_no_pik3ca_tiles = train_data['SNV_PIK3CA'].value_counts()[0] # Sin mutación
+
+if train_no_pik3ca_tiles >= train_pik3ca_tiles:
+    difference_train = train_no_pik3ca_tiles - train_pik3ca_tiles
+    train_data = train_data.sort_values(by = 'SNV_PIK3CA', ascending = False)
+else:
+    difference_train = train_pik3ca_tiles - train_no_pik3ca_tiles
+    train_data = train_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
+
+train_data = train_data[:-difference_train]
+#print(train_data['SNV_PIK3CA'].value_counts())
+
 # Validación
-valid_pik3ca_tiles = valid_data['SNV_PIK3CA'].value_counts()[1]
-valid_no_pik3ca_tiles = valid_data['SNV_PIK3CA'].value_counts()[0]
+valid_pik3ca_tiles = valid_data['SNV_PIK3CA'].value_counts()[1] # Con mutación
+valid_no_pik3ca_tiles = valid_data['SNV_PIK3CA'].value_counts()[0] # Sin mutación
 
 if valid_no_pik3ca_tiles >= valid_pik3ca_tiles:
     difference_valid = valid_no_pik3ca_tiles - valid_pik3ca_tiles
@@ -190,14 +204,13 @@ if valid_no_pik3ca_tiles >= valid_pik3ca_tiles:
 else:
     difference_valid = valid_pik3ca_tiles - valid_no_pik3ca_tiles
     valid_data = valid_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
-#print(valid_no_pik3ca_tiles, valid_pik3ca_tiles)
 
-valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas mutadas y no mutadas
+valid_data = valid_data[:-difference_valid]
 #print(valid_data['SNV_PIK3CA'].value_counts())
 
 # Test
-test_pik3ca_tiles = test_data['SNV_PIK3CA'].value_counts()[1]
-test_no_pik3ca_tiles = test_data['SNV_PIK3CA'].value_counts()[0]
+test_pik3ca_tiles = test_data['SNV_PIK3CA'].value_counts()[1] # Con mutación
+test_no_pik3ca_tiles = test_data['SNV_PIK3CA'].value_counts()[0] # Sin mutación
 
 if test_no_pik3ca_tiles >= test_pik3ca_tiles:
     difference_test = test_no_pik3ca_tiles - test_pik3ca_tiles
@@ -205,9 +218,8 @@ if test_no_pik3ca_tiles >= test_pik3ca_tiles:
 else:
     difference_test = test_pik3ca_tiles - test_no_pik3ca_tiles
     test_data = test_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
-#print(test_no_pik3ca_tiles, test_pik3ca_tiles)
 
-test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas mutadas y no mutadas
+test_data = test_data[:-difference_test]
 #print(test_data['SNV_PIK3CA'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 

@@ -27,10 +27,10 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_06_0.47_normalized.h5')
+model = load_model('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_04_0.61_normalized_v2.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/test data/test_image_normalized.npy')
-test_labels_tumor_type = np.load('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/test data/test_labels_tumor_type_normalized.npy')
+test_image_data = np.load('/anatomical pathology/tumor type/training/test_image_normalized_v2.npy')
+test_labels_tumor_type = np.load('/anatomical pathology/tumor type/training/test_labels_tumor_type_normalized_v2.npy')
 
 """ Una vez entrenado el modelo se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

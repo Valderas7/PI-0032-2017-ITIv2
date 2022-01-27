@@ -13,6 +13,7 @@ import seaborn as sns
 import staintools
 from sklearn.metrics import confusion_matrix
 import itertools
+from matplotlib.colors import LinearSegmentedColormap
 
 """ Parámetros de las teselas """
 ancho = 210
@@ -24,7 +25,7 @@ path = '/home/avalderas/img_slides/clinical/image/distant metastasis/inference/m
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P008-HE-141-A2_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P017-HE-069-2_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -101,7 +102,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = score
 
-        if 0.1 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+        if 0.15 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
             """ Primero se intenta hallar si hay una línea recta negra que dura todo el ancho de la tesela. Para ello se
             itera sobre todas las filas de los tres canales RGB de la tesela para saber si en algún momento la suma de 
             tres filas correspodientes en los tres canales de la tesela es cero, lo que indicaría que hay una fila 
@@ -129,7 +130,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             """ Ahora se lee de nuevo cada tesela de 210x210, convirtiéndolas en un array para pasarlas de formato RGBA 
             a formato RGB con OpenCV. A partir de aquí, se expande la dimensión de la tesela para poder realizarle la
             predicción """
-            if 0.1 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+            if 0.15 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
@@ -137,7 +138,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 #sub_img = normalizer.transform(sub_img)
                 test_image_data.append(sub_img)
                 tile = np.expand_dims(sub_img, axis = 0)
-                test_labels_true.append(1) # Porque P008 tiene metástasis a distancia
+                test_labels_true.append(0) # Porque P008 tiene metástasis a distancia
 
                 """ Se va guardando la predicción de los datos anatomopatológicos para cada tesela en su lista 
                 correspondiente. Además, para cada una de las teselas, se guarda el índice más alto de las predicciones 
@@ -148,6 +149,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 metastasis_list.append(prediction_metastasis)
                 metastasis_scores[alto_slide][ancho_slide] = prediction_metastasis # Número
                 test_labels_prediction.append(metastasis_scores[alto_slide][ancho_slide])
+                print(prediction_metastasis)
 
 """ Se realiza la suma de las columnas para cada una de las predicciones de cada datos anatomopatológicos. Como 
 resultado, se obtiene un array de varias columnas (dependiendo del dato anatomopatológico habrá más o menos clases) y 
@@ -311,11 +313,16 @@ plt.tight_layout()
 """ Se crea una máscara para las puntuaciones menores de 0.09 y mayores de 0.9, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
-mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9) | (metastasis_scores > 0.5))] = True
+mask[np.where((tiles_scores_array <= 0.15) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = 'Reds',
-                      alpha = 0.5, zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False)
+cmaps = LinearSegmentedColormap.from_list('Custom', ((0.0, 0.0, 0.0), (0.7, 0.7, 0.7), (1.0, 1.0, 1.0),
+                                                     (0.0, 1.0, 1.0), (0.5, 0.5, 0.5),(0.7, 0.1, 0.1), (1.0, 0.0, 0.0)),
+                                          2)
+
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = 'jet', alpha = 0.2,
+                      zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False, vmin = 0.0,
+                      vmax = 1.0)
 
 """ Se edita la barra leyenda del mapa de calor para que muestre los nombres de las categorías de los tipos histológicos
 y no números. """

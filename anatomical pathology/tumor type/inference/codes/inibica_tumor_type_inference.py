@@ -30,11 +30,11 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_04_0.67_unnormalized.h5'
+path = '/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_04_0.61_normalized_v2.h5'
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P166-HE-278-VII_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P049-HE-214-IV_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -105,7 +105,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = score
 
-        if 0.15 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+        if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
             """ Primero se intenta hallar si hay una línea recta negra que dura todo el ancho de la tesela. Para ello se
             itera sobre todas las filas de los tres canales RGB de la tesela para saber si en algún momento la suma de 
             tres filas correspodientes en los tres canales de la tesela es cero, lo que indicaría que hay una fila 
@@ -133,12 +133,12 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             """ Ahora se lee de nuevo cada tesela de 210x210, convirtiéndolas en un array para pasarlas de formato RGBA 
             a formato RGB con OpenCV. A partir de aquí, se expande la dimensión de la tesela para poder realizarle la
             predicción """
-            if 0.15 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+            if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-                #sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
-                #sub_img = normalizer.transform(sub_img)
+                sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
+                sub_img = normalizer.transform(sub_img)
                 #cv2.imshow('tile', sub_img)
                 #cv2.waitKey(0)
                 tile = np.expand_dims(sub_img, axis = 0)
@@ -194,7 +194,7 @@ plt.tight_layout()
 """ Se crea una máscara para las puntuaciones menores de 0.09 y mayores de 0.9, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
-mask[np.where((tiles_scores_array <= 0.15) | (tiles_scores_array > 0.9))] = True
+mask[np.where((tiles_scores_array <= 0.10) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True,
@@ -215,6 +215,6 @@ heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), asp
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
 
 """ Se guarda el mapa de calor, eliminando el espacio blanco que sobra en los ejes X e Y de la imagen """
-plt.savefig('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/heatmaps/tumor type {}.png'.format(patient_id),
+plt.savefig('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/heatmaps/tumor type {}_v2.png'.format(patient_id),
             bbox_inches = 'tight')
 #plt.show()

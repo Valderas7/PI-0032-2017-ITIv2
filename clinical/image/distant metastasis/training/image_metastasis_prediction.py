@@ -85,8 +85,6 @@ df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'distant_metastasis'] = 1
 """ Se eliminan todas las columnas de mutaciones excepto la de metástasis a distancia. """
 df_all_merge = df_all_merge[['ID', 'distant_metastasis']]
 df_all_merge = df_all_merge.sort_values(by = 'distant_metastasis', ascending = False)
-df_all_merge = df_all_merge[:-502] # Ahora hay el mismo número de pacientes con y sin metástasis a distancia
-df_all_merge.dropna(inplace = True)  # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
 df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
@@ -141,7 +139,21 @@ for id_img in remove_img_list:
     test_data.drop(index_test, inplace = True)
 
 """ Se iguala el número de teselas con y sin metástasis a distancia """
-# Validación
+""" Entrenamiento """
+train_metastasis_tiles = train_data['distant_metastasis'].value_counts()[1] # Con metástasis a distancia
+train_no_metastasis_tiles = train_data['distant_metastasis'].value_counts()[0] # Sin metástasis a distancia
+
+if train_no_metastasis_tiles >= train_metastasis_tiles:
+    difference_train = train_no_metastasis_tiles - train_metastasis_tiles
+    train_data = train_data.sort_values(by = 'distant_metastasis', ascending = False)
+else:
+    difference_train = train_metastasis_tiles - train_no_metastasis_tiles
+    train_data = train_data.sort_values(by = 'distant_metastasis', ascending = True)
+
+train_data = train_data[:-difference_train]
+#print(train_data['distant_metastasis'].value_counts())
+
+""" Validación """
 valid_metastasis_tiles = valid_data['distant_metastasis'].value_counts()[1] # Con metástasis a distancia
 valid_no_metastasis_tiles = valid_data['distant_metastasis'].value_counts()[0] # Sin metástasis a distancia
 
@@ -151,12 +163,11 @@ if valid_no_metastasis_tiles >= valid_metastasis_tiles:
 else:
     difference_valid = valid_metastasis_tiles - valid_no_metastasis_tiles
     valid_data = valid_data.sort_values(by = 'distant_metastasis', ascending = True)
-#print(valid_no_metastasis_tiles, valid_metastasis_tiles)
 
-valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas con y sin metástasis a distancia
+valid_data = valid_data[:-difference_valid]
 #print(valid_data['distant_metastasis'].value_counts())
 
-# Test
+""" Test """
 test_metastasis_tiles = test_data['distant_metastasis'].value_counts()[1] # Con metástasis a distancia
 test_no_metastasis_tiles = test_data['distant_metastasis'].value_counts()[0] # Sin metástasis a distancia
 
@@ -166,7 +177,6 @@ if test_no_metastasis_tiles >= test_metastasis_tiles:
 else:
     difference_test = test_metastasis_tiles - test_no_metastasis_tiles
     test_data = test_data.sort_values(by = 'distant_metastasis', ascending = True)
-#print(test_no_metastasis_tiles, test_metastasis_tiles)
 
 test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas con y sin metástasis a distancia
 #print(test_data['distant_metastasis'].value_counts())

@@ -73,12 +73,11 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!= 'N0') & (df_all_merg
                             (df_all_merge["path_n_stage"]!= 'N0 (MOL+)') & (df_all_merge["tumor_type"]!= 'Other') &
                             (df_all_merge["tumor_type"]!= 'Mixed Histology (NOS)')]
 
-""" Se eliminan todas las columnas de mutaciones excepto la de tipo histológico y se igualan los pacientes para que
-tengan el mismo número de IDC y el mismo número de ILC """
+""" Se eliminan todas las columnas de mutaciones excepto la de tipo histológico """
 df_all_merge = df_all_merge[['ID', 'tumor_type']]
-df_all_merge.dropna(inplace = True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
-df_all_merge = df_all_merge.sort_values(by = 'tumor_type', ascending = False)
-df_all_merge = df_all_merge[:-297] # Ahora hay el mismo número de IDC y ILC
+
+""" Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
+df_all_merge.dropna(inplace = True)
 
 """ Una vez la tabla tiene las columnas deseadas se procede a codificar las columnas categóricas del dataframe a valores
 numéricos mediante la técnica del 'One Hot Encoding' antes de hacer la repartición de subconjuntos para que no haya 
@@ -87,9 +86,7 @@ problemas con las columnas. """
 df_all_merge = pd.get_dummies(df_all_merge, columns = ["tumor_type"])
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento, validación y test. """
-# 147 pacientes en entrenamiento, 44 en test y 27 en validación.
 # @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
-# @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
 train_data, test_data = train_test_split(df_all_merge, test_size = 0.20)
 train_data, valid_data = train_test_split(train_data, test_size = 0.15)
 
@@ -140,7 +137,7 @@ for id_img in remove_img_list:
     test_data.drop(index_test, inplace = True)
 
 """ Se iguala el número de teselas con IDC y con ILC """
-# Entrenamiento
+""" Entrenamiento """
 train_idc_tiles = train_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1] # Pacientes con IDC
 train_ilc_tiles = train_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1] # Pacientes con ILC
 
@@ -150,13 +147,12 @@ if train_idc_tiles >= train_ilc_tiles:
 else:
     difference_train = train_ilc_tiles - train_idc_tiles
     train_data = train_data.sort_values(by = 'tumor_type_Infiltrating Lobular Carcinoma', ascending = True)
-#print(train_idc_tiles, train_ilc_tiles)
 
-train_data = train_data[:-difference_train] # Ahora hay el mismo número de teselas con IDC e ILC
+train_data = train_data[:-difference_train]
 #print(train_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts())
 #print(train_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts())
 
-# Validación
+""" Validación """
 valid_idc_tiles = valid_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1] # Pacientes con IDC
 valid_ilc_tiles = valid_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1] # Pacientes con ILC
 
@@ -166,13 +162,12 @@ if valid_idc_tiles >= valid_ilc_tiles:
 else:
     difference_valid = valid_ilc_tiles - valid_idc_tiles
     valid_data = valid_data.sort_values(by = 'tumor_type_Infiltrating Lobular Carcinoma', ascending = True)
-#print(valid_idc_tiles, valid_ilc_tiles)
 
-valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas con IDC e ILC
+valid_data = valid_data[:-difference_valid]
 #print(valid_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts())
 #print(valid_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts())
 
-# Test
+""" Test """
 test_idc_tiles = test_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts()[1] # Pacientes con IDC
 test_ilc_tiles = test_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts()[1] # Pacientes con ILC
 
@@ -182,9 +177,8 @@ if test_idc_tiles >= test_ilc_tiles:
 else:
     difference_test = test_ilc_tiles - test_idc_tiles
     test_data = test_data.sort_values(by = 'tumor_type_Infiltrating Lobular Carcinoma', ascending = True)
-#print(test_idc_tiles, test_ilc_tiles)
 
-test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas con IDC e ILC
+test_data = test_data[:-difference_test]
 #print(test_data['tumor_type_Infiltrating Ductal Carcinoma'].value_counts())
 #print(test_data['tumor_type_Infiltrating Lobular Carcinoma'].value_counts())
 
@@ -247,8 +241,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-np.save('test_image_normalized', test_image_data)
-np.save('test_labels_tumor_type_normalized', test_labels_tumor_type)
+#np.save('test_image_normalized', test_image_data)
+#np.save('test_labels_tumor_type_normalized', test_labels_tumor_type)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 20, vertical_flip = True)
@@ -293,7 +287,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.AUC(curve = 'PR', name = 'AUC-PR')]
 
 model.compile(loss = 'categorical_crossentropy',
-              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 model.summary()
 
@@ -302,7 +296,7 @@ checkpoint_path = '/home/avalderas/img_slides/anatomical pathology/tumor type/in
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = train_gen, epochs = 2, verbose = 1, validation_data = val_gen,
+model.fit(x = train_gen, epochs = 3, verbose = 1, validation_data = val_gen,
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -332,8 +326,8 @@ model.compile(loss = 'categorical_crossentropy',
 model.summary()
 
 """ Una vez descongeladas las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_gen, epochs = 30, verbose = 1, validation_data = val_gen,
-                           callbacks = mcp_save,
+neural_network = model.fit(x = train_gen, epochs = 100, verbose = 1, validation_data = val_gen,
+                           #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

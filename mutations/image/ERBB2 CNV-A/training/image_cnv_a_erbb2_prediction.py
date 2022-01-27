@@ -251,12 +251,11 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"] != 'N0') & (df_all_mer
 
 """ Se eliminan todas las columnas de mutaciones excepto la de CNV-A_ERBB2 """
 df_all_merge = df_all_merge[['ID', 'CNV_ERBB2_AMP']]
-df_all_merge = df_all_merge.sort_values(by='CNV_ERBB2_AMP', ascending = False)
-df_all_merge = df_all_merge[:-394] # Ahora hay el mismo número de pacientes con mutación y sin mutación
+
+""" Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
 df_all_merge.dropna(inplace=True)  # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
-""" Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
-Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
+""" Se dividen los datos conjuntos de entrenamiento y test con @train_test_split """
 train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['CNV_ERBB2_AMP'])
 train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['CNV_ERBB2_AMP'])
 
@@ -301,11 +300,25 @@ for id_img in remove_img_list:
     index_train = train_data.loc[df_all_merge['ID'] == id_img].index
     index_valid = valid_data.loc[df_all_merge['ID'] == id_img].index
     index_test = test_data.loc[df_all_merge['ID'] == id_img].index
-    train_data.drop(index_train, inplace=True)
-    valid_data.drop(index_valid, inplace=True)
-    test_data.drop(index_test, inplace=True)
+    train_data.drop(index_train, inplace = True)
+    valid_data.drop(index_valid, inplace = True)
+    test_data.drop(index_test, inplace = True)
 
 """ Se iguala el número de teselas con mutación y sin mutación CNV-A del gen ERBB2 """
+# Entrenamiento
+train_erbb2_tiles = train_data['CNV_ERBB2_AMP'].value_counts()[1] # Con mutación
+train_no_erbb2_tiles = train_data['CNV_ERBB2_AMP'].value_counts()[0] # Sin mutación
+
+if train_no_erbb2_tiles >= train_erbb2_tiles:
+    difference_train = train_no_erbb2_tiles - train_erbb2_tiles
+    train_data = train_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = False)
+else:
+    difference_train = train_erbb2_tiles - train_no_erbb2_tiles
+    train_data = train_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = True)
+
+train_data = train_data[:-difference_train]
+#print(train_data['CNV_ERBB2_AMP'].value_counts())
+
 # Validación
 valid_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[1] # Con mutación
 valid_no_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[0] # Sin mutación
@@ -316,9 +329,8 @@ if valid_no_erbb2_tiles >= valid_erbb2_tiles:
 else:
     difference_valid = valid_erbb2_tiles - valid_no_erbb2_tiles
     valid_data = valid_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = True)
-#print(valid_no_erbb2_tiles, valid_erbb2_tiles)
 
-valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas mutadas y no mutadas
+valid_data = valid_data[:-difference_valid]
 #print(valid_data['CNV_ERBB2_AMP'].value_counts())
 
 # Test
@@ -331,9 +343,8 @@ if test_no_erbb2_tiles >= test_erbb2_tiles:
 else:
     difference_test = test_erbb2_tiles - test_no_erbb2_tiles
     test_data = test_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = True)
-#print(test_no_erbb2_tiles, test_erbb2_tiles)
 
-test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas mutadas y no mutadas
+test_data = test_data[:-difference_test]
 #print(test_data['CNV_ERBB2_AMP'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 

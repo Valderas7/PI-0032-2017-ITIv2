@@ -69,18 +69,15 @@ df_all_merge = df_all_merge[(df_all_merge["path_n_stage"] != 'N0') & (df_all_mer
 """ Se convierten las columnas de pocos valores en columnas binarias: """
 df_all_merge.loc[df_all_merge.os_status == "0:LIVING", "os_status"] = 0; df_all_merge.loc[df_all_merge.os_status == "1:DECEASED", "os_status"] = 1
 
-""" Se eliminan todas las columnas de mutaciones excepto la de SNV_TP53 """
+""" Se eliminan todas las columnas de mutaciones excepto la de supervivencia """
 df_all_merge = df_all_merge[['ID', 'os_status']]
-df_all_merge = df_all_merge.sort_values(by = 'os_status', ascending = False)
-df_all_merge = df_all_merge[:-360] # Ahora hay el mismo número de pacientes supervivientes y fallecidos
-df_all_merge.dropna(inplace = True)  # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
 df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split. """
 train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['os_status'])
-train_data, valid_data = train_test_split(train_data, test_size = 0.20, stratify = train_data['os_status'])
+train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['os_status'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -128,7 +125,21 @@ for id_img in remove_img_list:
     test_data.drop(index_test, inplace = True)
 
 """ Se iguala el número de teselas con supervivencia y sin supervivencia """
-# Validación
+""" Entrenamiento """
+train_no_survival_tiles = train_data['os_status'].value_counts()[1] # Fallecidas
+train_survival_tiles = train_data['os_status'].value_counts()[0] # Vivas
+
+if train_no_survival_tiles >= train_survival_tiles:
+    difference_train = train_no_survival_tiles - train_survival_tiles
+    train_data = train_data.sort_values(by = 'os_status', ascending = True)
+else:
+    difference_train = train_survival_tiles - train_no_survival_tiles
+    train_data = train_data.sort_values(by = 'os_status', ascending = False)
+
+train_data = train_data[:-difference_train]
+#print(train_data['os_status'].value_counts())
+
+""" Validación """
 valid_no_survival_tiles = valid_data['os_status'].value_counts()[1] # Fallecidas
 valid_survival_tiles = valid_data['os_status'].value_counts()[0] # Vivas
 
@@ -138,12 +149,11 @@ if valid_no_survival_tiles >= valid_survival_tiles:
 else:
     difference_valid = valid_survival_tiles - valid_no_survival_tiles
     valid_data = valid_data.sort_values(by = 'os_status', ascending = False)
-#print(valid_no_survival_tiles, valid_survival_tiles)
 
-valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas con y sin supervivencia
+valid_data = valid_data[:-difference_valid]
 #print(valid_data['os_status'].value_counts())
 
-# Test
+""" Test """
 test_no_survival_tiles = test_data['os_status'].value_counts()[1] # Fallecidas
 test_survival_tiles = test_data['os_status'].value_counts()[0] # Vivas
 
@@ -153,9 +163,8 @@ if test_no_survival_tiles >= test_survival_tiles:
 else:
     difference_test = test_survival_tiles - test_no_survival_tiles
     test_data = test_data.sort_values(by = 'os_status', ascending = False)
-#print(test_no_survival_tiles, test_survival_tiles)
 
-test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas con y sin supervivencia
+test_data = test_data[:-difference_test]
 #print(test_data['os_status'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
