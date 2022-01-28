@@ -1,15 +1,12 @@
 """ Programa para hacer una clasificación por teselas de las WSI (.mrxs) del proyecto. Se crean mapas de calor con las
-predicciones de tipo histológico en tumores mixtos.
+predicciones de tipo histológico.
 
 Table 2. Tumor type samples in TCGA dataset with lymph node patients
-
-|       Tumor Type  |
-|   Type  | Samples |
-    IDC       105
-    ILC       105
-Mucinous        6
-Medillary       1
-Metaplastic     1
+P166 - Ductal
+P002 - Lobulillar
+P049 - Lobulillar
+P077 - Ductal
+P019 - Lobulillar
 """
 
 """ Se importan librerías """
@@ -30,11 +27,11 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_06_0.47_normalized.h5'
+path = '/home/avalderas/img_slides/anatomical pathology/tumor type/inference/models/model_image_tumor_type_04_0.61_normalized_v2.h5'
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P002-HE-033-2_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P077-HE-029-5_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -215,6 +212,6 @@ heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), asp
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
 
 """ Se guarda el mapa de calor, eliminando el espacio blanco que sobra en los ejes X e Y de la imagen """
-plt.savefig('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/heatmaps/tumor type {}_v3.png'.format(patient_id),
+plt.savefig('/home/avalderas/img_slides/anatomical pathology/tumor type/inference/heatmaps/tumor type {}_v2.png'.format(patient_id),
             bbox_inches = 'tight')
 #plt.show()
