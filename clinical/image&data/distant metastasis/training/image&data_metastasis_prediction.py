@@ -362,20 +362,18 @@ cols = df_all_merge.columns.tolist()
 cols = cols[:7] + cols[-43:] + cols[7:-43]
 df_all_merge = df_all_merge[cols]
 
-""" Se eliminan filas para que queden el mismo de número de pacientes con y sin metástasis """
-df_all_merge = df_all_merge.sort_values(by = 'distant_metastasis', ascending = False)
-df_all_merge = df_all_merge[:-402] # Ahora hay el mismo número de pacientes con y sin metástasis a distancia
-df_all_merge.dropna(inplace = True)  # Mantiene el DataFrame con las entradas válidas en la misma variable.
+""" Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
+df_all_merge.dropna(inplace = True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split. """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.30, stratify = df_all_merge['distant_metastasis'])
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['distant_metastasis'])
 train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['distant_metastasis'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de teselas con cáncer normalizadas: """
-image_dir = '/home/avalderas/img_slides/tiles/TCGA_no_normalizadas_cáncer'
+image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
 
 """ Se seleccionan todas las rutas de las teselas: """
 cancer_dir = glob.glob(image_dir + "/img_lotes_tiles*/*") # 34421
@@ -417,8 +415,21 @@ for id_img in remove_img_list:
     test_data.drop(index_test, inplace = True)
 
 """ Se iguala el número de teselas con y sin metástasis a distancia """
+""" Entrenamiento """
+train_metastasis_tiles = train_data['distant_metastasis'].value_counts()[1] # Con metástasis a distancia
+train_no_metastasis_tiles = train_data['distant_metastasis'].value_counts()[0] # Sin metástasis a distancia
+
+if train_no_metastasis_tiles >= train_metastasis_tiles:
+    difference_train = train_no_metastasis_tiles - train_metastasis_tiles
+    train_data = train_data.sort_values(by = 'distant_metastasis', ascending = False)
+else:
+    difference_train = train_metastasis_tiles - train_no_metastasis_tiles
+    train_data = train_data.sort_values(by = 'distant_metastasis', ascending = True)
+
+train_data = train_data[:-difference_train]
+print(train_data['distant_metastasis'].value_counts())
+
 # Validación
-"""
 valid_metastasis_tiles = valid_data['distant_metastasis'].value_counts()[1] # Con metástasis a distancia
 valid_no_metastasis_tiles = valid_data['distant_metastasis'].value_counts()[0] # Sin metástasis a distancia
 
@@ -428,10 +439,9 @@ if valid_no_metastasis_tiles >= valid_metastasis_tiles:
 else:
     difference_valid = valid_metastasis_tiles - valid_no_metastasis_tiles
     valid_data = valid_data.sort_values(by = 'distant_metastasis', ascending = True)
-#print(valid_no_metastasis_tiles, valid_metastasis_tiles)
 
-valid_data = valid_data[:-difference_valid] # Ahora hay el mismo número de teselas con y sin metástasis a distancia
-#print(valid_data['distant_metastasis'].value_counts())
+valid_data = valid_data[:-difference_valid]
+print(valid_data['distant_metastasis'].value_counts())
 
 # Test
 test_metastasis_tiles = test_data['distant_metastasis'].value_counts()[1] # Con metástasis a distancia
@@ -443,11 +453,10 @@ if test_no_metastasis_tiles >= test_metastasis_tiles:
 else:
     difference_test = test_metastasis_tiles - test_no_metastasis_tiles
     test_data = test_data.sort_values(by = 'distant_metastasis', ascending = True)
-#print(test_no_metastasis_tiles, test_metastasis_tiles)
 
-test_data = test_data[:-difference_test] # Ahora hay el mismo número de teselas con y sin metástasis a distancia
-#print(test_data['distant_metastasis'].value_counts())
-"""
+test_data = test_data[:-difference_test]
+print(test_data['distant_metastasis'].value_counts())
+
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -510,9 +519,9 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes, los datos y las etiquetas de test para usarlas después de 
 entrenar el modelo. """
-#np.save('test_image_try1', test_image_data)
-#np.save('test_data_try1', test_data)
-#np.save('test_labels_metastasis_try1', test_labels_metastasis)
+np.save('test_image_normalized_50', test_image_data)
+np.save('test_data_normalized_50', test_data)
+np.save('test_labels_metastasis_normalized_50', test_labels_metastasis)
 
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------- SECCIÓN MODELO DE RED ------------------------------------------------------
@@ -580,7 +589,7 @@ model.compile(loss = 'binary_crossentropy',
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '/clinical/image&data/distant metastasis/inference/models/model_image&data_metastasis_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/home/avalderas/img_slides/clinical/image&data/distant metastasis/inference/models/model_image&data_metastasis_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
@@ -611,9 +620,9 @@ model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 10, verbose = 1,
+neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 100, verbose = 1,
                            validation_data = ([valid_data, valid_image_data], valid_labels_metastasis),
-                           #callbacks = mcp_save,
+                           callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
