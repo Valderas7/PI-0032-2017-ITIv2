@@ -365,8 +365,8 @@ df_all_merge.dropna(inplace = True) # Mantiene el DataFrame con las entradas vá
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['SNV_PIK3CA'])
-train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['SNV_PIK3CA'])
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['SNV_TP53'])
+train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['SNV_TP53'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -413,48 +413,48 @@ for id_img in remove_img_list:
     valid_data.drop(index_valid, inplace=True)
     test_data.drop(index_test, inplace=True)
 
-""" Se iguala el número de teselas con mutación y sin mutación SNV del gen PIK3CA """
+""" Se iguala el número de teselas con mutación y sin mutación SNV del gen TP53 """
 # Entrenamiento
-train_pik3ca_tiles = train_data['SNV_PIK3CA'].value_counts()[1] # Con mutación
-train_no_pik3ca_tiles = train_data['SNV_PIK3CA'].value_counts()[0] # Sin mutación
+train_tp53_tiles = train_data['SNV_TP53'].value_counts()[1] # Con mutación
+train_no_tp53_tiles = train_data['SNV_TP53'].value_counts()[0] # Sin mutación
 
-if train_no_pik3ca_tiles >= train_pik3ca_tiles:
-    difference_train = train_no_pik3ca_tiles - train_pik3ca_tiles
-    train_data = train_data.sort_values(by = 'SNV_PIK3CA', ascending = False)
+if train_no_tp53_tiles >= train_tp53_tiles:
+    difference_train = train_no_tp53_tiles - train_tp53_tiles
+    train_data = train_data.sort_values(by = 'SNV_TP53', ascending = False)
 else:
-    difference_train = train_pik3ca_tiles - train_no_pik3ca_tiles
-    train_data = train_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
+    difference_train = train_tp53_tiles - train_no_tp53_tiles
+    train_data = train_data.sort_values(by = 'SNV_TP53', ascending = True)
 
 train_data = train_data[:-difference_train]
-#print(train_data['SNV_PIK3CA'].value_counts())
+#print(train_data['SNV_TP53'].value_counts())
 
 # Validación
-valid_pik3ca_tiles = valid_data['SNV_PIK3CA'].value_counts()[1] # Con mutación
-valid_no_pik3ca_tiles = valid_data['SNV_PIK3CA'].value_counts()[0] # Sin mutación
+valid_tp53_tiles = valid_data['SNV_TP53'].value_counts()[1] # Con mutación
+valid_no_tp53_tiles = valid_data['SNV_TP53'].value_counts()[0] # Sin mutación
 
-if valid_no_pik3ca_tiles >= valid_pik3ca_tiles:
-    difference_valid = valid_no_pik3ca_tiles - valid_pik3ca_tiles
-    valid_data = valid_data.sort_values(by = 'SNV_PIK3CA', ascending = False)
+if valid_no_tp53_tiles >= valid_tp53_tiles:
+    difference_valid = valid_no_tp53_tiles - valid_tp53_tiles
+    valid_data = valid_data.sort_values(by = 'SNV_TP53', ascending = False)
 else:
-    difference_valid = valid_pik3ca_tiles - valid_no_pik3ca_tiles
-    valid_data = valid_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
+    difference_valid = valid_tp53_tiles - valid_no_tp53_tiles
+    valid_data = valid_data.sort_values(by = 'SNV_TP53', ascending = True)
 
 valid_data = valid_data[:-difference_valid]
-#print(valid_data['SNV_PIK3CA'].value_counts())
+#print(valid_data['SNV_TP53'].value_counts())
 
 # Test
-test_pik3ca_tiles = test_data['SNV_PIK3CA'].value_counts()[1] # Con mutación
-test_no_pik3ca_tiles = test_data['SNV_PIK3CA'].value_counts()[0] # Sin mutación
+test_tp53_tiles = test_data['SNV_TP53'].value_counts()[1] # Con mutación
+test_no_tp53_tiles = test_data['SNV_TP53'].value_counts()[0] # Sin mutación
 
-if test_no_pik3ca_tiles >= test_pik3ca_tiles:
-    difference_test = test_no_pik3ca_tiles - test_pik3ca_tiles
-    test_data = test_data.sort_values(by = 'SNV_PIK3CA', ascending = False)
+if test_no_tp53_tiles >= test_tp53_tiles:
+    difference_test = test_no_tp53_tiles - test_tp53_tiles
+    test_data = test_data.sort_values(by = 'SNV_TP53', ascending = False)
 else:
-    difference_test = test_pik3ca_tiles - test_no_pik3ca_tiles
-    test_data = test_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
+    difference_test = test_tp53_tiles - test_no_tp53_tiles
+    test_data = test_data.sort_values(by = 'SNV_TP53', ascending = True)
 
 test_data = test_data[:-difference_test]
-#print(test_data['SNV_PIK3CA'].value_counts())
+#print(test_data['SNV_TP53'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -493,19 +493,19 @@ train_data = train_data.drop(['img_path', 'ID'], axis = 1)
 valid_data = valid_data.drop(['img_path', 'ID'], axis = 1)
 test_data = test_data.drop(['img_path', 'ID'], axis = 1)
 
-""" Se extraen los datos de salida de mutación SNV de PIK3CA """
-train_labels_pik3ca = train_data.pop('SNV_PIK3CA')
-valid_labels_pik3ca = valid_data.pop('SNV_PIK3CA')
-test_labels_pik3ca = test_data.pop('SNV_PIK3CA')
+""" Se extraen los datos de salida de mutación SNV de TP53 """
+train_labels_tp53 = train_data.pop('SNV_TP53')
+valid_labels_tp53 = valid_data.pop('SNV_TP53')
+test_labels_tp53 = test_data.pop('SNV_TP53')
 
 """ Para poder entrenar la red hace falta transformar las tablas en arrays. Para ello se utiliza 'numpy' """
 train_data = np.asarray(train_data).astype('float32')
 valid_data = np.asarray(valid_data).astype('float32')
 test_data = np.asarray(test_data).astype('float32')
 
-train_labels_pik3ca = np.asarray(train_labels_pik3ca).astype('float32')
-valid_labels_pik3ca = np.asarray(valid_labels_pik3ca).astype('float32')
-test_labels_pik3ca = np.asarray(test_labels_pik3ca).astype('float32')
+train_labels_tp53 = np.asarray(train_labels_tp53).astype('float32')
+valid_labels_tp53 = np.asarray(valid_labels_tp53).astype('float32')
+test_labels_tp53 = np.asarray(test_labels_tp53).astype('float32')
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada, y se recopila la longitud de las imágenes de
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
@@ -519,7 +519,7 @@ batch_dimension = 32
 neuronal convolucional. """
 #np.save('test_data', test_data)
 #np.save('test_image', test_image_data)
-#np.save('test_labels_pik3ca', test_labels_pik3ca)
+#np.save('test_labels_tp53', test_labels_tp53)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL CONVOLUCIONAL ---------------------------------------
@@ -587,12 +587,12 @@ model.compile(loss = 'binary_crossentropy', optimizer = keras.optimizers.Adam(le
 model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
-checkpoint_path = '/home/avalderas/img_slides/mutations/image&data/PIK3CA SNV/inference/models/model_image&data_pik3ca_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/models/model_image&data_tp53_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = [train_data, train_image_data], y = train_labels_pik3ca, epochs = 2, verbose = 1,
-          validation_data = ([valid_data, valid_image_data], valid_labels_pik3ca),
+model.fit(x = [train_data, train_image_data], y = train_labels_tp53, epochs = 2, verbose = 1,
+          validation_data = ([valid_data, valid_image_data], valid_labels_tp53),
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -616,8 +616,8 @@ model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_pik3ca, epochs = 10, verbose = 1,
-                           validation_data = ([valid_data, valid_image_data], valid_labels_pik3ca),
+neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_tp53, epochs = 10, verbose = 1,
+                           validation_data = ([valid_data, valid_image_data], valid_labels_tp53),
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
