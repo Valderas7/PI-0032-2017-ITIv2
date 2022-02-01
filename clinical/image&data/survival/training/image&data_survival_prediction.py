@@ -539,8 +539,8 @@ mlp = layers.Dense(1, activation = "sigmoid")(mlp)
 final_mlp = keras.models.Model(inputs = input_data, outputs = mlp)
 
 """ La segunda rama del modelo será la encargada de procesar las imágenes: """
-cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = input_image,
-                                              include_top = False, pooling = 'max')
+cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = input_image, include_top = False,
+                                              pooling = 'max')
 
 """ Se añaden capas de clasificación después de las capas congeladas de convolución. """
 all_cnn_model = cnn_model.output

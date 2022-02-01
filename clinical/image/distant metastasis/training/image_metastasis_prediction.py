@@ -84,7 +84,6 @@ df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'distant_metastasis'] = 1
 
 """ Se eliminan todas las columnas de mutaciones excepto la de metástasis a distancia. """
 df_all_merge = df_all_merge[['ID', 'distant_metastasis']]
-df_all_merge = df_all_merge.sort_values(by = 'distant_metastasis', ascending = False)
 
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
 df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
