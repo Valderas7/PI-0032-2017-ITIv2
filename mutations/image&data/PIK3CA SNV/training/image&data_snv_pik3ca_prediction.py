@@ -601,7 +601,7 @@ reeentrenar el modelo ('fine tuning'). Este es un último paso opcional que pued
 sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo con las capas congeladas """
 set_trainable = 0
 
-for layer in base_model.layers:
+for layer in cnn_model.layers:
     if layer.name == 'block2a_expand_conv':
         set_trainable = True
     if set_trainable:
