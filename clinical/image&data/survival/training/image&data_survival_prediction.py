@@ -373,7 +373,7 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de teselas con cáncer normalizadas: """
-image_dir = '/home/avalderas/img_slides/tiles/TCGA_no_normalizadas_cáncer'
+image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
 
 """ Se seleccionan todas las rutas de las teselas: """
 cancer_dir = glob.glob(image_dir + "/img_lotes_tiles*/*") # 34421
@@ -520,7 +520,7 @@ batch_dimension = 32
 entrenar el modelo. """
 #np.save('test_image_try1', test_image_data)
 #np.save('test_data_try1', test_data)
-#np.save('test_labels_metastasis_try1', test_labels_survival)
+#np.save('test_labels_survival', test_labels_survival)
 
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------- SECCIÓN MODELO DE RED ------------------------------------------------------
@@ -563,9 +563,9 @@ combined = keras.layers.concatenate([final_mlp.output, final_cnn_model.output])
 
 """ Una vez se ha concatenado la salida de ambas ramas, se aplica dos capas densamente conectadas, la última de ellas
 siendo la de la predicción final con activación 'sigmoid', puesto que la salida será binaria. """
-multi_input_model = layers.Dense(32, activation="relu")(combined)
+multi_input_model = layers.Dense(32, activation = "relu")(combined)
 multi_input_model = layers.Dropout(0.5)(multi_input_model)
-multi_input_model = layers.Dense(1, activation="sigmoid")(multi_input_model)
+multi_input_model = layers.Dense(1, activation = "sigmoid")(multi_input_model)
 
 """ El modelo final aceptará datos numéricos/categóricos en la entrada de la red perceptrón multicapa e imágenes en la
 red neuronal convolucional, de forma que a la salida solo se obtenga la predicción de la metástasis a distancia. """
@@ -584,16 +584,16 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
 model.compile(loss = 'binary_crossentropy',
-              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '/clinical/image&data/distant metastasis/inference/models/model_image&data_metastasis_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/home/avalderas/img_slides/clinical/image&data/survival/inference/models/model_image&data_survival_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = [train_data, train_image_data], y = train_labels_survival, epochs = 2, verbose = 1,
+model.fit(x = [train_data, train_image_data], y = train_labels_survival, epochs = 1, verbose = 1,
           validation_data = ([valid_data, valid_image_data], valid_labels_survival),
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
@@ -614,7 +614,7 @@ for layer in cnn_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()

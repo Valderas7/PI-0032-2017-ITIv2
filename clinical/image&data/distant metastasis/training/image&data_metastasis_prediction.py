@@ -69,7 +69,8 @@ df_subtype = pd.DataFrame.from_dict(subtype.items()); df_subtype.rename(columns 
 df_snv = pd.DataFrame.from_dict(snv.items()); df_snv.rename(columns = {0 : 'ID', 1 : 'SNV'}, inplace = True)
 df_cnv = pd.DataFrame.from_dict(cnv.items()); df_cnv.rename(columns = {0 : 'ID', 1 : 'CNV'}, inplace = True)
 
-df_list = [df_age, df_neoadjuvant, df_prior_diagnosis, df_os_status, df_dfs_status, df_tumor_type, df_stage,
+""" No se incluye la columna de recidivas, puesto que reduce enormemente las muestras de pacientes con metástasis """
+df_list = [df_age, df_neoadjuvant, df_prior_diagnosis, df_os_status, df_tumor_type, df_stage,
            df_path_t_stage, df_path_n_stage, df_path_m_stage, df_subtype, df_snv, df_cnv]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
@@ -95,7 +96,7 @@ df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'distant_metastasis'] = 1
 """ Se recoloca la columna de metástasis a distancia al lado de la de recaídas para dejar las mutaciones como las 
 últimas columnas. """
 cols = df_all_merge.columns.tolist()
-cols = cols[:6] + cols[-1:] + cols[6:-1]
+cols = cols[:5] + cols[-1:] + cols[5:-1]
 df_all_merge = df_all_merge[cols]
 
 """ Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para empezar se carga el archivo excel 
@@ -344,7 +345,6 @@ df_all_merge.loc[df_all_merge.tumor_type == "Breast Invasive Carcinoma", "tumor_
 df_all_merge.loc[df_all_merge.neoadjuvant == "No", "neoadjuvant"] = 0; df_all_merge.loc[df_all_merge.neoadjuvant == "Yes", "neoadjuvant"] = 1
 df_all_merge.loc[df_all_merge.prior_diagnosis == "No", "prior_diagnosis"] = 0; df_all_merge.loc[df_all_merge.prior_diagnosis == "Yes", "prior_diagnosis"] = 1
 df_all_merge.loc[df_all_merge.os_status == "0:LIVING", "os_status"] = 0; df_all_merge.loc[df_all_merge.os_status == "1:DECEASED", "os_status"] = 1
-df_all_merge.loc[df_all_merge.dfs_status == "0:DiseaseFree", "dfs_status"] = 0; df_all_merge.loc[df_all_merge.dfs_status == "1:Recurred/Progressed", "dfs_status"] = 1
 
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
 df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
@@ -359,7 +359,7 @@ df_all_merge = pd.get_dummies(df_all_merge, columns=["tumor_type", "stage", "pat
 """ Se reordenan las columnas del dataframe para colocar las nuevas columnas numericas de datos anatomopatológicos antes
 de las mutaciones """
 cols = df_all_merge.columns.tolist()
-cols = cols[:7] + cols[-43:] + cols[7:-43]
+cols = cols[:6] + cols[-47:] + cols[6:-47]
 df_all_merge = df_all_merge[cols]
 
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
@@ -518,9 +518,9 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes, los datos y las etiquetas de test para usarlas después de 
 entrenar el modelo. """
-np.save('test_image_normalized_50', test_image_data)
-np.save('test_data_normalized_50', test_data)
-np.save('test_labels_metastasis_normalized_50', test_labels_metastasis)
+#np.save('test_image_normalized_50', test_image_data)
+#np.save('test_data_normalized_50', test_data)
+#np.save('test_labels_metastasis_normalized_50', test_labels_metastasis)
 
 """ --------------------------------------------------------------------------------------------------------------------
 ------------------------------------------- SECCIÓN MODELO DE RED ------------------------------------------------------
@@ -613,15 +613,15 @@ for layer in cnn_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 100, verbose = 1,
+neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 20, verbose = 1,
                            validation_data = ([valid_data, valid_image_data], valid_labels_metastasis),
-                           callbacks = mcp_save,
+                           #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
