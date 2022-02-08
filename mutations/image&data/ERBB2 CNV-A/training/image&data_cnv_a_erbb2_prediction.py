@@ -426,7 +426,7 @@ else:
     train_data = train_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = True)
 
 train_data = train_data[:-difference_train]
-#print(train_data['CNV_ERBB2_AMP'].value_counts())
+print(train_data['CNV_ERBB2_AMP'].value_counts())
 
 # Validación
 valid_tp53_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[1] # Con mutación
@@ -440,7 +440,7 @@ else:
     valid_data = valid_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = True)
 
 valid_data = valid_data[:-difference_valid]
-#print(valid_data['CNV_ERBB2_AMP'].value_counts())
+print(valid_data['CNV_ERBB2_AMP'].value_counts())
 
 # Test
 test_tp53_tiles = test_data['CNV_ERBB2_AMP'].value_counts()[1] # Con mutación
@@ -454,7 +454,7 @@ else:
     test_data = test_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = True)
 
 test_data = test_data[:-difference_test]
-#print(test_data['CNV_ERBB2_AMP'].value_counts())
+print(test_data['CNV_ERBB2_AMP'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -610,7 +610,7 @@ for layer in cnn_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()

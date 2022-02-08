@@ -373,7 +373,7 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de teselas con cáncer normalizadas: """
-image_dir = '/home/avalderas/img_slides/tiles/TCGA_no_normalizadas_cáncer'
+image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
 
 """ Se seleccionan todas las rutas de las teselas: """
 cancer_dir = glob.glob(image_dir + "/img_lotes_tiles*/*") # 34421
@@ -427,7 +427,7 @@ else:
     train_data = train_data.sort_values(by = 'dfs_status', ascending = True)
 
 train_data = train_data[:-difference_train]
-#print(train_data['dfs_status'].value_counts())
+print(train_data['dfs_status'].value_counts())
 
 """ Validación """
 valid_relapse_tiles = valid_data['dfs_status'].value_counts()[1] # Recaídas
@@ -441,7 +441,7 @@ else:
     valid_data = valid_data.sort_values(by = 'dfs_status', ascending = True)
 
 valid_data = valid_data[:-difference_valid]
-#print(valid_data['dfs_status'].value_counts())
+print(valid_data['dfs_status'].value_counts())
 
 """ Test """
 test_relapse_tiles = test_data['dfs_status'].value_counts()[1] # Recaídas
@@ -455,7 +455,7 @@ else:
     test_data = test_data.sort_values(by = 'dfs_status', ascending = True)
 
 test_data = test_data[:-difference_test]
-#print(test_data['dfs_status'].value_counts())
+print(test_data['dfs_status'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -495,18 +495,18 @@ valid_data = valid_data.drop(['img_path', 'ID'], axis = 1)
 test_data = test_data.drop(['img_path', 'ID'], axis = 1)
 
 """ Se extraen los datos de salida de la red neuronal y se guardan en otra variable. """
-train_labels_survival = train_data.pop('os_status')
-valid_labels_survival = valid_data.pop('os_status')
-test_labels_survival = test_data.pop('os_status')
+train_labels_relapse = train_data.pop('dfs_status')
+valid_labels_relapse = valid_data.pop('dfs_status')
+test_labels_relapse = test_data.pop('dfs_status')
 
 """ Para poder entrenar la red hace falta transformar los dataframes en arrays de numpy. """
 train_data = np.asarray(train_data).astype('float32')
 valid_data = np.asarray(valid_data).astype('float32')
 test_data = np.asarray(test_data).astype('float32')
 
-train_labels_survival = np.asarray(train_labels_survival).astype('float32')
-valid_labels_survival = np.asarray(valid_labels_survival).astype('float32')
-test_labels_survival = np.asarray(test_labels_survival).astype('float32')
+train_labels_relapse = np.asarray(train_labels_relapse).astype('float32')
+valid_labels_relapse = np.asarray(valid_labels_relapse).astype('float32')
+test_labels_relapse = np.asarray(test_labels_relapse).astype('float32')
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada, y se recopila la longitud de las imágenes de
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
@@ -532,9 +532,8 @@ input_image = Input(shape = (alto, ancho, canales))
 
 """ La primera rama del modelo (Perceptrón multicapa) opera con la entrada de datos: """
 mlp = layers.Dense(train_data.shape[1], activation = "relu")(input_data)
-mlp = layers.Dense(32, activation = "relu")(mlp)
 mlp = layers.Dropout(0.5)(mlp)
-mlp = layers.Dense(1, activation = "sigmoid")(mlp)
+mlp = layers.Dense(16, activation = "relu")(mlp)
 
 final_mlp = keras.models.Model(inputs = input_data, outputs = mlp)
 
@@ -548,8 +547,6 @@ all_cnn_model = layers.Flatten()(all_cnn_model)
 all_cnn_model = layers.Dense(128, activation = "relu")(all_cnn_model)
 all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
 all_cnn_model = layers.Dense(32, activation = "relu")(all_cnn_model)
-all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
-all_cnn_model = layers.Dense(1, activation = "sigmoid")(all_cnn_model)
 
 final_cnn_model = Model(inputs = cnn_model.input, outputs = all_cnn_model)
 
@@ -563,7 +560,7 @@ combined = keras.layers.concatenate([final_mlp.output, final_cnn_model.output])
 
 """ Una vez se ha concatenado la salida de ambas ramas, se aplica dos capas densamente conectadas, la última de ellas
 siendo la de la predicción final con activación 'sigmoid', puesto que la salida será binaria. """
-multi_input_model = layers.Dense(32, activation="relu")(combined)
+multi_input_model = layers.Dense(8, activation="relu")(combined)
 multi_input_model = layers.Dropout(0.5)(multi_input_model)
 multi_input_model = layers.Dense(1, activation="sigmoid")(multi_input_model)
 
@@ -589,12 +586,12 @@ model.compile(loss = 'binary_crossentropy',
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '/clinical/image&data/distant metastasis/inference/models/model_image&data_metastasis_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/home/avalderas/img_slides/clinical/image&data/relapse/inference/models/model_image&data_relapse_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = [train_data, train_image_data], y = train_labels_survival, epochs = 2, verbose = 1,
-          validation_data = ([valid_data, valid_image_data], valid_labels_survival),
+model.fit(x = [train_data, train_image_data], y = train_labels_relapse, epochs = 2, verbose = 1,
+          validation_data = ([valid_data, valid_image_data], valid_labels_relapse),
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -620,8 +617,8 @@ model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_survival, epochs = 10, verbose = 1,
-                           validation_data = ([valid_data, valid_image_data], valid_labels_survival),
+neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_relapse, epochs = 10, verbose = 1,
+                           validation_data = ([valid_data, valid_image_data], valid_labels_relapse),
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))

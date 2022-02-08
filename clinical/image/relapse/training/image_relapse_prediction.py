@@ -84,7 +84,7 @@ train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 """ Directorios de teselas con cáncer normalizadas: """
-image_dir = '/home/avalderas/img_slides/tiles/TCGA_no_normalizadas_cáncer'
+image_dir = '/home/avalderas/img_slides/tiles/TCGA_normalizadas_cáncer'
 
 """ Se seleccionan todas las rutas de las teselas: """
 cancer_dir = glob.glob(image_dir + "/img_lotes_tiles*/*") # 34421
@@ -138,7 +138,7 @@ else:
     train_data = train_data.sort_values(by = 'dfs_status', ascending = True)
 
 train_data = train_data[:-difference_train]
-#print(train_data['dfs_status'].value_counts())
+print(train_data['dfs_status'].value_counts())
 
 """ Validación """
 valid_relapse_tiles = valid_data['dfs_status'].value_counts()[1] # Recaídas
@@ -152,7 +152,7 @@ else:
     valid_data = valid_data.sort_values(by = 'dfs_status', ascending = True)
 
 valid_data = valid_data[:-difference_valid]
-#print(valid_data['dfs_status'].value_counts())
+print(valid_data['dfs_status'].value_counts())
 
 """ Test """
 test_relapse_tiles = test_data['dfs_status'].value_counts()[1] # Recaídas
@@ -166,7 +166,7 @@ else:
     test_data = test_data.sort_values(by = 'dfs_status', ascending = True)
 
 test_data = test_data[:-difference_test]
-#print(test_data['dfs_status'].value_counts())
+print(test_data['dfs_status'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -225,8 +225,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image_unnormalized', test_image_data)
-#np.save('test_labels_relapse_unnormalized', test_labels_relapse)
+#np.save('test_image_normalized', test_image_data)
+#np.save('test_labels_relapse_normalized', test_labels_relapse)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 10, vertical_flip = True)
@@ -266,8 +266,7 @@ parámetros de la red neuronal con el objetivo de minimizar la función de 'loss
 # @lr: tamaño de pasos para alcanzar el mínimo global de la función de loss.
 metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(name='fp'),
            keras.metrics.TrueNegatives(name='tn'), keras.metrics.FalseNegatives(name='fn'),
-           keras.metrics.Recall(name='recall'),  # TP / (TP + FN)
-           keras.metrics.Precision(name='precision'),  # TP / (TP + FP)
+           keras.metrics.Recall(name='recall'), keras.metrics.Precision(name='precision'),
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC-ROC'),
            keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
@@ -305,13 +304,13 @@ for layer in base_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_gen, epochs = 100, verbose = 1, validation_data = val_gen,
+neural_network = model.fit(x = train_gen, epochs = 50, verbose = 1, validation_data = val_gen,
                            #callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
