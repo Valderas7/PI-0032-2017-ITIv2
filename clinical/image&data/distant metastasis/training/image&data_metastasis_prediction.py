@@ -68,8 +68,8 @@ df_snv = pd.DataFrame.from_dict(snv.items()); df_snv.rename(columns = {0 : 'ID',
 df_cnv = pd.DataFrame.from_dict(cnv.items()); df_cnv.rename(columns = {0 : 'ID', 1 : 'CNV'}, inplace = True)
 
 """ No se incluye la columna de recidivas, puesto que reduce enormemente las muestras de pacientes con metástasis """
-df_list = [df_age, df_neoadjuvant, df_prior_diagnosis, df_os_status, df_tumor_type, df_stage,
-           df_path_t_stage, df_path_n_stage, df_path_m_stage, df_subtype]
+df_list = [df_age, df_neoadjuvant, df_tumor_type, df_stage, df_path_t_stage, df_path_n_stage, df_path_m_stage,
+           df_subtype]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
 esté descuadrado en la fila que no le corresponda. """
@@ -94,7 +94,7 @@ df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'distant_metastasis'] = 1
 """ Se recoloca la columna de metástasis a distancia al lado de la de recaídas para dejar las mutaciones como las 
 últimas columnas. """
 cols = df_all_merge.columns.tolist()
-cols = cols[:5] + cols[-1:] + cols[5:-1]
+cols = cols[:3] + cols[-1:] + cols[3:-1]
 df_all_merge = df_all_merge[cols]
 
 """ En este caso, el número de muestras de imágenes y de datos deben ser iguales. Las imágenes de las que se disponen se 
@@ -115,8 +115,8 @@ convierten las columnas categóricas binarias a valores de '0' y '1', para no au
 df_all_merge.loc[df_all_merge.tumor_type == "Infiltrating Carcinoma (NOS)", "tumor_type"] = "Mixed Histology (NOS)"
 df_all_merge.loc[df_all_merge.tumor_type == "Breast Invasive Carcinoma", "tumor_type"] = "Infiltrating Ductal Carcinoma"
 df_all_merge.loc[df_all_merge.neoadjuvant == "No", "neoadjuvant"] = 0; df_all_merge.loc[df_all_merge.neoadjuvant == "Yes", "neoadjuvant"] = 1
-df_all_merge.loc[df_all_merge.prior_diagnosis == "No", "prior_diagnosis"] = 0; df_all_merge.loc[df_all_merge.prior_diagnosis == "Yes", "prior_diagnosis"] = 1
-df_all_merge.loc[df_all_merge.os_status == "0:LIVING", "os_status"] = 0; df_all_merge.loc[df_all_merge.os_status == "1:DECEASED", "os_status"] = 1
+#df_all_merge.loc[df_all_merge.prior_diagnosis == "No", "prior_diagnosis"] = 0; df_all_merge.loc[df_all_merge.prior_diagnosis == "Yes", "prior_diagnosis"] = 1
+#df_all_merge.loc[df_all_merge.os_status == "0:LIVING", "os_status"] = 0; df_all_merge.loc[df_all_merge.os_status == "1:DECEASED", "os_status"] = 1
 df_all_merge.loc[df_all_merge.path_m_stage == "CM0 (I+)", "path_m_stage"] = 'M0'
 
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
@@ -188,6 +188,7 @@ for id_img in remove_img_list:
 
 """ Se iguala el número de teselas con y sin metástasis a distancia """
 # Entrenamiento
+"""
 train_metastasis_tiles = train_data['distant_metastasis'].value_counts()[1] # Con metástasis a distancia
 train_no_metastasis_tiles = train_data['distant_metastasis'].value_counts()[0] # Sin metástasis a distancia
 
@@ -228,6 +229,7 @@ else:
 
 test_data = test_data[:-difference_test]
 print(test_data['distant_metastasis'].value_counts())
+"""
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -305,11 +307,8 @@ input_image = Input(shape = (alto, ancho, canales))
 """ La primera rama del modelo (Perceptrón multicapa) opera con la entrada de datos: """
 mlp = layers.Dense(train_data.shape[1], activation = "relu")(input_data)
 mlp = layers.Dropout(0.5)(mlp)
-mlp = layers.Dense(32, activation = "relu")(mlp)
-#mlp = layers.Dropout(0.5)(mlp)
-#mlp = layers.Dense(8, activation = "relu")(mlp)
-
-final_mlp = keras.models.Model(inputs = input_data, outputs = mlp)
+mlp = layers.Dense(16, activation = "relu")(mlp)
+mlp = keras.models.Model(inputs = input_data, outputs = mlp)
 
 """ La segunda rama del modelo será la encargada de procesar las imágenes: """
 cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = input_image,
@@ -318,13 +317,10 @@ cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor
 """ Se añaden capas de clasificación después de las capas congeladas de convolución. """
 all_cnn_model = cnn_model.output
 all_cnn_model = layers.Flatten()(all_cnn_model)
-#all_cnn_model = layers.Dense(128, activation = "relu")(all_cnn_model)
-#all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
-#all_cnn_model = layers.Dense(32, activation = "relu")(all_cnn_model)
-#all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
-#all_cnn_model = layers.Dense(8, activation = "relu")(all_cnn_model)
-
-final_cnn_model = Model(inputs = cnn_model.input, outputs = all_cnn_model)
+all_cnn_model = layers.Dense(512, activation = "relu")(all_cnn_model)
+all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
+all_cnn_model = layers.Dense(64, activation = "relu")(all_cnn_model)
+all_cnn_model = Model(inputs = input_image, outputs = all_cnn_model)
 
 """ Se congelan todas las capas convolucionales del modelo base de la red convolucional. """
 # A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
@@ -332,17 +328,17 @@ for layer in cnn_model.layers:
     layer.trainable = False
 
 """ Se combina la salida de ambas ramas. """
-combined = keras.layers.concatenate([final_mlp.output, final_cnn_model.output])
+combined = keras.layers.concatenate([mlp.output, all_cnn_model.output])
 
 """ Una vez se ha concatenado la salida de ambas ramas, se aplica dos capas densamente conectadas, la última de ellas
 siendo la de la predicción final con activación 'sigmoid', puesto que la salida será binaria. """
-multi_input_model = layers.Dense(16, activation="relu")(combined)
+multi_input_model = layers.Dense(4, activation="relu")(combined)
 multi_input_model = layers.Dropout(0.5)(multi_input_model)
 multi_input_model = layers.Dense(1, activation="sigmoid")(multi_input_model)
 
 """ El modelo final aceptará datos numéricos/categóricos en la entrada de la red perceptrón multicapa e imágenes en la
 red neuronal convolucional, de forma que a la salida solo se obtenga la predicción de la metástasis a distancia. """
-model = keras.models.Model(inputs = [final_mlp.input, final_cnn_model.input], outputs = multi_input_model)
+model = keras.models.Model(inputs = [mlp.input, all_cnn_model.input], outputs = multi_input_model)
 
 """ Hay que definir las métricas de la red y configurar los distintos hiperparámetros para entrenar la red. El modelo ya
 ha sido definido anteriormente, así que ahora hay que compilarlo. Para ello se define una función de loss y un 

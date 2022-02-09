@@ -69,8 +69,8 @@ df_subtype = pd.DataFrame.from_dict(subtype.items()); df_subtype.rename(columns 
 df_snv = pd.DataFrame.from_dict(snv.items()); df_snv.rename(columns = {0 : 'ID', 1 : 'SNV'}, inplace = True)
 df_cnv = pd.DataFrame.from_dict(cnv.items()); df_cnv.rename(columns = {0 : 'ID', 1 : 'CNV'}, inplace = True)
 
-df_list = [df_age, df_neoadjuvant, df_prior_diagnosis, df_os_status, df_dfs_status, df_tumor_type, df_stage,
-           df_path_t_stage, df_path_n_stage, df_path_m_stage, df_subtype, df_snv, df_cnv]
+df_list = [df_age, df_neoadjuvant, df_os_status, df_dfs_status, df_tumor_type, df_stage, df_path_t_stage,
+           df_path_n_stage, df_path_m_stage, df_subtype]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
 esté descuadrado en la fila que no le corresponda. """
@@ -92,237 +92,10 @@ df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A18V', 'distant_metastasis'] = 1
 df_all_merge.loc[df_all_merge.ID == 'TCGA-EW-A1P8', 'distant_metastasis'] = 1
 df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'distant_metastasis'] = 1
 
-""" Se recoloca la columna de metástasis a distancia al lado de la de recaídas para dejar las mutaciones como las 
-últimas columnas. """
+""" Se recoloca la columna de metástasis a distancia al lado de la de recaídas """
 cols = df_all_merge.columns.tolist()
-cols = cols[:6] + cols[-1:] + cols[6:-1]
+cols = cols[:5] + cols[-1:] + cols[5:-1]
 df_all_merge = df_all_merge[cols]
-
-""" Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para empezar se carga el archivo excel 
-donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y creamos dos listas. Una para
-los genes SNV y otra para los genes CNV."""
-mutations_target = pd.read_excel('/home/avalderas/img_slides/excels/Panel_OCA.xlsx', usecols= 'B:C', engine= 'openpyxl')
-#mutations_target = pd.read_excel('C:\\Users\\valde\Desktop\Datos_repositorio\\img_slides\excel_oca_genes/Panel_OCA.xlsx',
-                                 #usecols= 'B:C', engine= 'openpyxl')
-
-snv = mutations_target.loc[mutations_target['Scope'] != 'CNV', 'Gen']
-cnv = mutations_target.loc[mutations_target['Scope'] == 'CNV', 'Gen']
-
-# SNV:
-snv_list = []
-for gen_snv in snv:
-    if gen_snv not in snv_list:
-        snv_list.append(gen_snv)
-
-# CNV:
-cnv_list = []
-for gen_cnv in cnv:
-    if gen_cnv not in cnv_list:
-        cnv_list.append(gen_cnv)
-
-""" Ahora se recopilan en dos listas (una para SNV y otra para CNV) los distintos IDs de los genes a estudiar. """
-id_snv_list = []
-id_cnv_list = []
-
-key_list = list(dict_genes.keys())
-val_list = list(dict_genes.values())
-
-# SNV:
-for gen_snv in snv_list:
-    position = val_list.index(gen_snv) # Número
-    id_gen_snv = (key_list[position]) # Número
-    id_snv_list.append(id_gen_snv) # Se añaden todos los IDs en la lista vacía
-
-# CNV:
-for gen_cnv in cnv_list:
-    if gen_cnv == 'RICTOR':
-        id_cnv_list.append(253260)
-        continue
-    position = val_list.index(gen_cnv) # Número
-    id_gen_cnv = (key_list[position]) # Número
-    id_cnv_list.append(id_gen_cnv) # Se añaden todos los IDs en la lista vacía
-
-""" Ahora se hace un bucle sobre la columna de mutaciones SNV y CNV del dataframe. Así, se busca en cada mutación de 
-cada fila para ver en cuales de estas filas se encuentra el ID de los genes a estudiar. Se almacenan en una lista de 
-listas los índices de las filas donde se encuentran los IDs de esos genes, de forma que se tiene una lista para cada gen. """
-# SNV:
-list_gen_snv = [[] for ID in range(len(id_snv_list))]
-
-for index, id_snv in enumerate (id_snv_list): # Para cada ID del gen SNV de la lista...
-    for index_row, row in enumerate (df_all_merge['SNV']): # Para cada fila dentro de la columna 'SNV'...
-        for mutation in row: # Para cada mutación dentro de cada fila...
-            if mutation[1] == id_snv: # Si el ID de la mutación es el mismo que el ID de la lista de genes...
-                list_gen_snv[index].append(index_row) # Se almacena el índice de la fila en la lista de listas
-
-# CNV:
-""" Se crea esta lista de los pacientes que tienen mutación 'CNV' de estos genes porque hay un fallo en el diccionario 
-de mutaciones 'CNV' y no identifica sus mutaciones. Por tanto, se ha recopilado manualmente los 'IDs' de los pacientes
-que tienen mutaciones en el gen (gracias a cBioPortal) para poner un '1' en la columna 'CNV' de esos 'IDs'. """
-cdkn1b_list_amp = ['TCGA-A1-A0SK', 'TCGA-A1-A0SP', 'TCGA-A2-A04T', 'TCGA-A2-A04U', 'TCGA-A7-A4SD', 'TCGA-A7-A6VW',
-                   'TCGA-AN-A0FJ', 'TCGA-AQ-A54N', 'TCGA-C8-A12L', 'TCGA-C8-A1HJ', 'TCGA-E9-A22G']
-cdkn1b_list_del = ['TCGA-A2-A3XT', 'TCGA-A8-A06R', 'TCGA-AC-A2FM', 'TCGA-AN-A0AJ', 'TCGA-AR-A24M', 'TCGA-LL-A8F5',
-                   'TCGA-OL-A5RU']
-
-brca2_list_amp = ['TCGA-A2-A04T', 'TCGA-A8-A06R', 'TCGA-AN-A0AS', 'TCGA-BH-A0GZ', 'TCGA-BH-A1EV', 'TCGA-D8-A1Y2',
-                  'TCGA-E2-A14T', 'TCGA-E2-A1LG']
-brca2_list_del = ['TCGA-A7-A0CE', 'TCGA-A8-A08I', 'TCGA-A8-A09V', 'TCGA-A8-A0AB', 'TCGA-AN-A04D', 'TCGA-AR-A24H',
-                  'TCGA-B6-A0IQ', 'TCGA-D8-A147', 'TCGA-D8-A1JB', 'TCGA-D8-A1JD', 'TCGA-EW-A1OX', 'TCGA-EW-A1P7',
-                  'TCGA-PE-A5DC', 'TCGA-S3-AA10']
-
-brca1_list_amp = ['TCGA-A2-A0EO', 'TCGA-A7-A13D', 'TCGA-A8-A09G', 'TCGA-AC-A2FB', 'TCGA-AN-A04C', 'TCGA-AR-A24H',
-                  'TCGA-B6-A0IG', 'TCGA-B6-A0IN', 'TCGA-BH-A42T', 'TCGA-C8-A9FZ', 'TCGA-E2-A105', 'TCGA-E9-A1RI',
-                  'TCGA-LD-A9QF']
-brca1_list_del = ['TCGA-BH-A0AW', 'TCGA-BH-A0C0', 'TCGA-C8-A12L', 'TCGA-E2-A1L7', 'TCGA-EW-A1OX']
-
-kdr_list_amp = ['TCGA-A2-A04T', 'TCGA-A2-A0YE', 'TCGA-B6-A0RS', 'TCGA-EW-A1P8']
-kdr_list_del = ['TCGA-AC-A5EH']
-
-chek1_list_amp = ['TCGA-AR-A2LJ']
-chek1_list_del = ['TCGA-A8-A0A1', 'TCGA-BH-A18M', 'TCGA-BH-A1FN', 'TCGA-C8-A130', 'TCGA-D8-A147', 'TCGA-E2-A56Z',
-                  'TCGA-E2-A9RU', 'TCGA-E9-A1RF', 'TCGA-EW-A1OX', 'TCGA-LL-A6FP']
-
-fanca_list_amp = ['TCGA-A2-A04P', 'TCGA-A2-A0D2', 'TCGA-AO-A0J2', 'TCGA-EW-A1PB']
-fanca_list_del = ['TCGA-A1-A0SG', 'TCGA-A2-A0D1', 'TCGA-A7-A0CD', 'TCGA-A7-A0CH', 'TCGA-A7-A5ZW', 'TCGA-A8-A08H',
-                  'TCGA-A8-A09V', 'TCGA-A8-A0A1', 'TCGA-AC-A3YI', 'TCGA-AC-A62V', 'TCGA-AO-A0JC', 'TCGA-AR-A2LQ',
-                  'TCGA-B6-A0IM', 'TCGA-B6-A0RM', 'TCGA-BH-A0AU', 'TCGA-BH-A0BF', 'TCGA-BH-A18J', 'TCGA-BH-A18M',
-                  'TCGA-BH-A18U', 'TCGA-BH-A1FB', 'TCGA-BH-A28O', 'TCGA-C8-A12T', 'TCGA-D8-A73X', 'TCGA-E2-A15J',
-                  'TCGA-E9-A295', 'TCGA-EW-A1IY', 'TCGA-EW-A1PG', 'TCGA-GM-A5PV', 'TCGA-OL-A6VO', 'TCGA-S3-AA10']
-
-rictor_list_amp = ['TCGA-A2-A0D0', 'TCGA-A2-A25B', 'TCGA-A7-A13D', 'TCGA-A8-A09C', 'TCGA-AC-A2FE', 'TCGA-AR-A0TW',
-                  'TCGA-B6-A3ZX', 'TCGA-BH-A0BP', 'TCGA-BH-A1FU', 'TCGA-C8-A131', 'TCGA-D8-A27H', 'TCGA-E2-A574']
-rictor_list_del = ['TCGA-BH-A0B3', 'TCGA-GM-A3XL']
-
-""" Se recopila los índices de las distintas filas donde aparecen las mutaciones 'CNV' de los genes seleccionados (tanto 
-de amplificación como deleción), y se añaden a la lista de listas correspondiente (la de amplificación o la de deleción). """
-list_gen_cnv_amp = [[] for ID in range(len(id_cnv_list))]
-list_gen_cnv_del = [[] for ID in range(len(id_cnv_list))]
-
-for index, id_cnv in enumerate (id_cnv_list): # Para cada ID del gen CNV de la lista...
-    if id_cnv == 1027: # CDKN1B
-        for patient_cdkn1b_amp in cdkn1b_list_amp:
-            for index_cdkn1b_amp, row_cdkn1b_amp in enumerate(df_all_merge['ID']):
-                if patient_cdkn1b_amp == row_cdkn1b_amp:
-                    list_gen_cnv_amp[index].append(index_cdkn1b_amp)
-        for patient_cdkn1b_del in cdkn1b_list_del:
-            for index_cdkn1b_del, row_cdkn1b_del in enumerate(df_all_merge['ID']):
-                if patient_cdkn1b_del == row_cdkn1b_del:
-                    list_gen_cnv_del[index].append(index_cdkn1b_del)
-
-    elif id_cnv == 675: # BRCA2
-        for patient_brca2_amp in brca2_list_amp:
-            for index_brca2_amp, row_brca2_amp in enumerate(df_all_merge['ID']):
-                if patient_brca2_amp == row_brca2_amp:
-                    list_gen_cnv_amp[index].append(index_brca2_amp)
-        for patient_brca2_del in brca2_list_del:
-            for index_brca2_del, row_brca2_del in enumerate(df_all_merge['ID']):
-                if patient_brca2_del == row_brca2_del:
-                    list_gen_cnv_del[index].append(index_brca2_del)
-
-    elif id_cnv == 672: # BRCA1
-        for patient_brca1_amp in brca1_list_amp:
-            for index_brca1_amp, row_brca1_amp in enumerate(df_all_merge['ID']):
-                if patient_brca1_amp == row_brca1_amp:
-                    list_gen_cnv_amp[index].append(index_brca1_amp)
-        for patient_brca1_del in brca1_list_del:
-            for index_brca1_del, row_brca1_del in enumerate(df_all_merge['ID']):
-                if patient_brca1_del == row_brca1_del:
-                    list_gen_cnv_del[index].append(index_brca1_del)
-
-    elif id_cnv == 3791: # KDR
-        for patient_kdr_amp in kdr_list_amp:
-            for index_kdr_amp, row_kdr_amp in enumerate(df_all_merge['ID']):
-                if patient_kdr_amp == row_kdr_amp:
-                    list_gen_cnv_amp[index].append(index_kdr_amp)
-        for patient_kdr_del in kdr_list_del:
-            for index_kdr_del, row_kdr_del in enumerate(df_all_merge['ID']):
-                if patient_kdr_del == row_kdr_del:
-                    list_gen_cnv_del[index].append(index_kdr_del)
-
-    elif id_cnv == 1111: # CHEK1
-        for patient_chek1_amp in chek1_list_amp:
-            for index_chek1_amp, row_chek1_amp in enumerate(df_all_merge['ID']):
-                if patient_chek1_amp == row_chek1_amp:
-                    list_gen_cnv_amp[index].append(index_chek1_amp)
-        for patient_chek1_del in chek1_list_del:
-            for index_chek1_del, row_chek1_del in enumerate(df_all_merge['ID']):
-                if patient_chek1_del == row_chek1_del:
-                    list_gen_cnv_del[index].append(index_chek1_del)
-
-    elif id_cnv == 2175: # FANCA
-        for patient_fanca_amp in fanca_list_amp:
-            for index_fanca_amp, row_fanca_amp in enumerate(df_all_merge['ID']):
-                if patient_fanca_amp == row_fanca_amp:
-                    list_gen_cnv_amp[index].append(index_fanca_amp)
-        for patient_fanca_del in fanca_list_del:
-            for index_fanca_del, row_fanca_del in enumerate(df_all_merge['ID']):
-                if patient_fanca_del == row_fanca_del:
-                    list_gen_cnv_del[index].append(index_fanca_del)
-
-    elif id_cnv == 253260: # RICTOR
-        for patient_rictor_amp in rictor_list_amp:
-            for index_rictor_amp, row_rictor_amp in enumerate(df_all_merge['ID']):
-                if patient_rictor_amp == row_rictor_amp:
-                    list_gen_cnv_amp[index].append(index_rictor_amp)
-        for patient_rictor_del in rictor_list_del:
-            for index_rictor_del, row_rictor_del in enumerate(df_all_merge['ID']):
-                if patient_rictor_del == row_rictor_del:
-                    list_gen_cnv_del[index].append(index_rictor_del)
-
-    else:
-        for index_row, row in enumerate (df_all_merge['CNV']): # Para cada fila dentro de la columna 'CNV'...
-            for mutation in row: # Para cada mutación dentro de cada fila...
-                if mutation[1] == id_cnv and mutation[2] > 0:
-                    list_gen_cnv_amp[index].append(index_row) # Se almacena el índice de la fila en la lista de listas
-                elif mutation[1] == id_cnv and mutation[2] < 0:
-                    list_gen_cnv_del[index].append(index_row) # Se almacena el índice de la fila en la lista de listas
-
-""" Una vez se tienen almacenados los índices de las filas donde se producen las mutaciones SNV y CNV, hay que crear 
-distintas columnas para cada uno de los genes objetivo, para asi mostrar la informacion de uno en uno. De esta forma, 
-habra una columna distinta para cada gen SNV a estudiar; y tres columnas distintas para cada gen CNV a estudiar 
-(amplificacion, delecion y estado normal). Ademas, se recopilan las columnas creadas en listas (una para las 
-columnas de mutaciones SNV y otras tres para las columnas de mutaciones CNV). """
-# SNV:
-columns_list_snv = []
-
-df_all_merge.drop(['SNV'], axis=1, inplace= True)
-for gen_snv in snv_list:
-    df_all_merge['SNV_' + gen_snv] = 0
-    columns_list_snv.append('SNV_' + gen_snv)
-
-# CNV:
-columns_list_cnv_amp = []
-columns_list_cnv_del = []
-
-df_all_merge.drop(['CNV'], axis=1, inplace= True)
-for gen_cnv in cnv_list:
-    df_all_merge['CNV_' + gen_cnv + '_AMP'] = 0
-    df_all_merge['CNV_' + gen_cnv + '_DEL'] = 0
-    columns_list_cnv_amp.append('CNV_' + gen_cnv + '_AMP')
-    columns_list_cnv_del.append('CNV_' + gen_cnv + '_DEL')
-
-""" Una vez han sido creadas las columnas, se añade un '1' en aquellas filas donde el paciente tiene mutación sobre el
-gen seleccionado. Se utiliza para ello los índices recogidos anteriormente en las respectivas listas de listas. De esta
-forma, iterando sobre la lista de columnas creadas y mediante los distintos indices de cada sublista, se consigue
-colocar un '1' en aquella filas donde el paciente tiene la mutacion especificada en el gen especificado. """
-# SNV:
-i_snv = 0
-for column_snv in columns_list_snv:
-    for index_snv_sublist in list_gen_snv[i_snv]:
-        df_all_merge.loc[index_snv_sublist, column_snv] = 1
-    i_snv += 1
-
-# CNV:
-i_cnv_amp = 0
-for column_cnv_amp in columns_list_cnv_amp:
-    for index_cnv_sublist_amp in list_gen_cnv_amp[i_cnv_amp]:
-        df_all_merge.loc[index_cnv_sublist_amp, column_cnv_amp] = 1
-    i_cnv_amp += 1
-
-i_cnv_del = 0
-for column_cnv_del in columns_list_cnv_del:
-    for index_cnv_sublist_del in list_gen_cnv_del[i_cnv_del]:
-        df_all_merge.loc[index_cnv_sublist_del, column_cnv_del] = 1
-    i_cnv_del += 1
 
 """ En este caso, el número de muestras de imágenes y de datos deben ser iguales. Las imágenes de las que se disponen se 
 enmarcan según el sistema de estadificación TNM como N1A, N1, N2A, N2, N3A, N1MI, N1B, N3, NX, N3B, N1C o N3C según la
@@ -342,9 +115,10 @@ convierten las columnas categóricas binarias a valores de '0' y '1', para no au
 df_all_merge.loc[df_all_merge.tumor_type == "Infiltrating Carcinoma (NOS)", "tumor_type"] = "Mixed Histology (NOS)"
 df_all_merge.loc[df_all_merge.tumor_type == "Breast Invasive Carcinoma", "tumor_type"] = "Infiltrating Ductal Carcinoma"
 df_all_merge.loc[df_all_merge.neoadjuvant == "No", "neoadjuvant"] = 0; df_all_merge.loc[df_all_merge.neoadjuvant == "Yes", "neoadjuvant"] = 1
-df_all_merge.loc[df_all_merge.prior_diagnosis == "No", "prior_diagnosis"] = 0; df_all_merge.loc[df_all_merge.prior_diagnosis == "Yes", "prior_diagnosis"] = 1
+#df_all_merge.loc[df_all_merge.prior_diagnosis == "No", "prior_diagnosis"] = 0; df_all_merge.loc[df_all_merge.prior_diagnosis == "Yes", "prior_diagnosis"] = 1
 df_all_merge.loc[df_all_merge.os_status == "0:LIVING", "os_status"] = 0; df_all_merge.loc[df_all_merge.os_status == "1:DECEASED", "os_status"] = 1
 df_all_merge.loc[df_all_merge.dfs_status == "0:DiseaseFree", "dfs_status"] = 0; df_all_merge.loc[df_all_merge.dfs_status == "1:Recurred/Progressed", "dfs_status"] = 1
+df_all_merge.loc[df_all_merge.path_m_stage == "CM0 (I+)", "path_m_stage"] = 'M0'
 
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
 df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
@@ -355,12 +129,6 @@ ahora se realiza esta técnica antes de hacer la repartición de subconjuntos pa
 #@ get_dummies: Aplica técnica de 'One Hot Encoding', creando columnas binarias para las columnas seleccionadas
 df_all_merge = pd.get_dummies(df_all_merge, columns=["tumor_type", "stage", "path_t_stage", "path_n_stage",
                                                      "path_m_stage", "subtype"])
-
-""" Se reordenan las columnas del dataframe para colocar las nuevas columnas numericas de datos anatomopatológicos antes
-de las mutaciones """
-cols = df_all_merge.columns.tolist()
-cols = cols[:7] + cols[-43:] + cols[7:-43]
-df_all_merge = df_all_merge[cols]
 
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
 df_all_merge.dropna(inplace = True)
@@ -534,21 +302,23 @@ input_image = Input(shape = (alto, ancho, canales))
 mlp = layers.Dense(train_data.shape[1], activation = "relu")(input_data)
 mlp = layers.Dropout(0.5)(mlp)
 mlp = layers.Dense(16, activation = "relu")(mlp)
+mlp = layers.Dropout(0.5)(mlp)
+mlp = layers.Dense(4, activation = "relu")(mlp)
 
 final_mlp = keras.models.Model(inputs = input_data, outputs = mlp)
 
 """ La segunda rama del modelo será la encargada de procesar las imágenes: """
-cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = input_image,
-                                              include_top = False, pooling = 'max')
+cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = input_image, include_top = False,
+                                              pooling = 'max')
 
 """ Se añaden capas de clasificación después de las capas congeladas de convolución. """
 all_cnn_model = cnn_model.output
 all_cnn_model = layers.Flatten()(all_cnn_model)
-all_cnn_model = layers.Dense(128, activation = "relu")(all_cnn_model)
-all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
-all_cnn_model = layers.Dense(32, activation = "relu")(all_cnn_model)
+all_cnn_model = layers.Dense(512, activation = "relu")(all_cnn_model)
+#all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
+#all_cnn_model = layers.Dense(16, activation = "relu")(all_cnn_model)
 
-final_cnn_model = Model(inputs = cnn_model.input, outputs = all_cnn_model)
+final_cnn_model = Model(inputs = input_image, outputs = all_cnn_model)
 
 """ Se congelan todas las capas convolucionales del modelo base de la red convolucional. """
 # A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
@@ -560,7 +330,9 @@ combined = keras.layers.concatenate([final_mlp.output, final_cnn_model.output])
 
 """ Una vez se ha concatenado la salida de ambas ramas, se aplica dos capas densamente conectadas, la última de ellas
 siendo la de la predicción final con activación 'sigmoid', puesto que la salida será binaria. """
-multi_input_model = layers.Dense(8, activation="relu")(combined)
+multi_input_model = layers.Dense(256, activation="relu")(combined)
+multi_input_model = layers.Dropout(0.5)(multi_input_model)
+multi_input_model = layers.Dense(128, activation="relu")(multi_input_model)
 multi_input_model = layers.Dropout(0.5)(multi_input_model)
 multi_input_model = layers.Dense(1, activation="sigmoid")(multi_input_model)
 
@@ -581,7 +353,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
 model.compile(loss = 'binary_crossentropy',
-              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
               metrics = metrics)
 model.summary()
 
@@ -611,7 +383,7 @@ for layer in cnn_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()
