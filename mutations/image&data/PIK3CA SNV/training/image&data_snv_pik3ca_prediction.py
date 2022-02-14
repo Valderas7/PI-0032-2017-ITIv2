@@ -426,7 +426,7 @@ else:
     train_data = train_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
 
 train_data = train_data[:-difference_train]
-#print(train_data['SNV_PIK3CA'].value_counts())
+print(train_data['SNV_PIK3CA'].value_counts())
 
 # Validación
 valid_pik3ca_tiles = valid_data['SNV_PIK3CA'].value_counts()[1] # Con mutación
@@ -440,7 +440,7 @@ else:
     valid_data = valid_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
 
 valid_data = valid_data[:-difference_valid]
-#print(valid_data['SNV_PIK3CA'].value_counts())
+print(valid_data['SNV_PIK3CA'].value_counts())
 
 # Test
 test_pik3ca_tiles = test_data['SNV_PIK3CA'].value_counts()[1] # Con mutación
@@ -454,7 +454,7 @@ else:
     test_data = test_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
 
 test_data = test_data[:-difference_test]
-#print(test_data['SNV_PIK3CA'].value_counts())
+print(test_data['SNV_PIK3CA'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -498,6 +498,26 @@ train_labels_pik3ca = train_data.pop('SNV_PIK3CA')
 valid_labels_pik3ca = valid_data.pop('SNV_PIK3CA')
 test_labels_pik3ca = test_data.pop('SNV_PIK3CA')
 
+""" Se mide la importancia de las variables de datos con Random Forest. Se crean grupos de árboles de decisión para
+estimar cuales son las variables que mas influyen en la predicción de la salida"""
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.inspection import permutation_importance
+
+feature_names = [f"feature {i}" for i in range(train_data.shape[1])]
+forest = RandomForestClassifier(random_state = 0)
+forest.fit(train_data, train_labels_pik3ca)
+
+result = permutation_importance(forest, train_data, train_labels_pik3ca, n_repeats = 10, random_state = 42, n_jobs = 2)
+forest_importances = pd.Series(result.importances_mean, index = feature_names)
+
+""" Se dibuja la gráfica """
+fig, ax = plt.subplots()
+forest_importances.plot.bar(yerr = result.importances_std > 0.05, ax = ax)
+ax.set_title("Importancia de variables usando permutación en todo el modelo")
+ax.set_ylabel("Mean accuracy decrease")
+fig.tight_layout()
+plt.show()
+
 """ Para poder entrenar la red hace falta transformar las tablas en arrays. Para ello se utiliza 'numpy' """
 train_data = np.asarray(train_data).astype('float32')
 valid_data = np.asarray(valid_data).astype('float32')
@@ -509,7 +529,7 @@ test_labels_pik3ca = np.asarray(test_labels_pik3ca).astype('float32')
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada, y se recopila la longitud de las imágenes de
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
-del df_all_merge, df_path_n_stage, df_list
+del df_path_n_stage, df_list
 
 train_image_data_len = len(train_image_data)  # print(train_image_data_len)
 valid_image_data_len = len(valid_image_data)
@@ -531,11 +551,10 @@ input_image = Input(shape = (alto, ancho, canales))
 
 """ La primera rama del modelo (Perceptrón multicapa) opera con la entrada de datos: """
 mlp = layers.Dense(train_data.shape[1], activation = "relu")(input_data)
-mlp = layers.Dense(32, activation = "relu")(mlp)
-mlp = layers.Dropout(0.5)(mlp)
-mlp = layers.Dense(1, activation = "sigmoid")(mlp)
-
-final_mlp = keras.models.Model(inputs = input_data, outputs = mlp)
+mlp = layers.Dropout(0.2)(mlp)
+mlp = layers.Dense(64, activation = "relu")(mlp)
+mlp = layers.Dropout(0.2)(mlp)
+mlp_out = layers.Dense(16, activation = "relu")(mlp)
 
 """ La segunda rama del modelo será la encargada de procesar las imágenes: """
 cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = input_image,include_top = False,
@@ -544,13 +563,11 @@ cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor
 """ Se añaden capas de clasificación después de las capas congeladas de convolución. """
 all_cnn_model = cnn_model.output
 all_cnn_model = layers.Flatten()(all_cnn_model)
-all_cnn_model = layers.Dense(128, activation = "relu")(all_cnn_model)
-all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
-all_cnn_model = layers.Dense(32, activation = "relu")(all_cnn_model)
-all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
-all_cnn_model = layers.Dense(1, activation = "sigmoid")(all_cnn_model)
-
-final_cnn_model = Model(inputs = cnn_model.input, outputs = all_cnn_model)
+all_cnn_model = layers.Dense(512, activation = "relu")(all_cnn_model)
+all_cnn_model = layers.Dropout(0.2)(all_cnn_model)
+all_cnn_model = layers.Dense(64, activation = "relu")(all_cnn_model)
+all_cnn_model = layers.Dropout(0.2)(all_cnn_model)
+all_cnn_model_out = layers.Dense(16, activation = "relu")(all_cnn_model)
 
 """ Se congelan todas las capas convolucionales del modelo base de la red convolucional. """
 # A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
@@ -558,17 +575,19 @@ for layer in cnn_model.layers:
     layer.trainable = False
 
 """ Se combina la salida de ambas ramas. """
-combined = keras.layers.concatenate([final_mlp.output, final_cnn_model.output])
+combined = keras.layers.concatenate([mlp_out, all_cnn_model_out])
 
 """ Una vez se ha concatenado la salida de ambas ramas, se aplica dos capas densamente conectadas, la última de ellas
 siendo la de la predicción final con activación 'sigmoid', puesto que la salida será binaria. """
-multi_input_model = layers.Dense(32, activation="relu")(combined)
-multi_input_model = layers.Dropout(0.5)(multi_input_model)
-multi_input_model = layers.Dense(1, activation="sigmoid")(multi_input_model)
+multi_input_model = layers.Dense(16, activation="relu")(combined)
+multi_input_model = layers.Dropout(0.2)(multi_input_model)
+multi_input_model = layers.Dense(4, activation="relu")(multi_input_model)
+multi_input_model = layers.Dropout(0.2)(multi_input_model)
+multi_input_model_out = layers.Dense(1, activation="sigmoid")(multi_input_model)
 
 """ El modelo final aceptará datos numéricos/categóricos en la entrada de la red perceptrón multicapa e imágenes en la
 red neuronal convolucional, de forma que a la salida solo se obtenga la predicción de la metástasis a distancia. """
-model = keras.models.Model(inputs = [final_mlp.input, final_cnn_model.input], outputs = multi_input_model)
+model = keras.models.Model(inputs = [input_data, input_image], outputs = multi_input_model_out)
 
 """ Hay que definir las métricas de la red y configurar los distintos hiperparámetros para entrenar la red. El modelo ya
 ha sido definido anteriormente, así que ahora hay que compilarlo. Para ello se define una función de loss y un 

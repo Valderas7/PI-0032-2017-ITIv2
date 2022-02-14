@@ -182,7 +182,7 @@ for id_img in remove_img_list:
     test_data.drop(index_test, inplace = True)
 
 """ Se iguala el número de teselas con supervivencia y sin supervivencia """
-""" Entrenamiento """
+# Entrenamiento
 train_no_survival_tiles = train_data['os_status'].value_counts()[1] # Fallecidas
 train_survival_tiles = train_data['os_status'].value_counts()[0] # Vivas
 
@@ -196,7 +196,7 @@ else:
 train_data = train_data[:-difference_train]
 print(train_data['os_status'].value_counts())
 
-""" Validación """
+# Validación
 valid_no_survival_tiles = valid_data['os_status'].value_counts()[1] # Fallecidas
 valid_survival_tiles = valid_data['os_status'].value_counts()[0] # Vivas
 
@@ -210,7 +210,7 @@ else:
 valid_data = valid_data[:-difference_valid]
 print(valid_data['os_status'].value_counts())
 
-""" Test """
+# Test
 test_no_survival_tiles = test_data['os_status'].value_counts()[1] # Fallecidas
 test_survival_tiles = test_data['os_status'].value_counts()[0] # Vivas
 
@@ -299,11 +299,8 @@ input_image = Input(shape = (alto, ancho, canales))
 
 """ La primera rama del modelo (Perceptrón multicapa) opera con la entrada de datos: """
 mlp = layers.Dense(train_data.shape[1], activation = "relu")(input_data)
-mlp = layers.Dropout(0.5)(mlp)
-mlp = layers.Dense(16, activation = "relu")(mlp)
-mlp = layers.Dropout(0.5)(mlp)
-mlp_out = layers.Dense(4, activation = "relu")(mlp)
-#mlp = keras.models.Model(inputs = input_data, outputs = mlp)
+mlp = layers.Dropout(0.2)(mlp)
+mlp_out = layers.Dense(16, activation = "relu")(mlp)
 
 """ La segunda rama del modelo será la encargada de procesar las imágenes: """
 cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor = input_image, include_top = False,
@@ -312,10 +309,13 @@ cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor
 """ Se añaden capas de clasificación después de las capas congeladas de convolución. """
 all_cnn_model = cnn_model.output
 all_cnn_model = layers.Flatten()(all_cnn_model)
-all_cnn_model_out = layers.Dense(512, activation = "relu")(all_cnn_model)
-#all_cnn_model = layers.Dropout(0.5)(all_cnn_model)
-#all_cnn_model = layers.Dense(16, activation = "relu")(all_cnn_model)
-#all_cnn_model = Model(inputs = input_image, outputs = all_cnn_model)
+all_cnn_model = layers.Dense(512, activation = "relu")(all_cnn_model)
+all_cnn_model = layers.Dropout(0.2)(all_cnn_model)
+all_cnn_model = layers.Dense(128, activation = "relu")(all_cnn_model)
+all_cnn_model = layers.Dropout(0.2)(all_cnn_model)
+all_cnn_model = layers.Dense(64, activation = "relu")(all_cnn_model)
+all_cnn_model = layers.Dropout(0.2)(all_cnn_model)
+all_cnn_model_out = layers.Dense(16, activation = "relu")(all_cnn_model)
 
 """ Se congelan todas las capas convolucionales del modelo base de la red convolucional. """
 # A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
@@ -327,12 +327,10 @@ combined = keras.layers.concatenate([mlp_out, all_cnn_model_out])
 
 """ Una vez se ha concatenado la salida de ambas ramas, se aplica dos capas densamente conectadas, la última de ellas
 siendo la de la predicción final con activación 'sigmoid', puesto que la salida será binaria. """
-multi_input_model = layers.Dense(256, activation = "relu")(combined)
-multi_input_model = layers.Dropout(0.3)(multi_input_model)
-multi_input_model = layers.Dense(64, activation = "relu")(multi_input_model)
-multi_input_model = layers.Dropout(0.3)(multi_input_model)
-multi_input_model = layers.Dense(16, activation = "relu")(multi_input_model)
-multi_input_model = layers.Dropout(0.3)(multi_input_model)
+multi_input_model = layers.Dense(16, activation = "relu")(combined)
+multi_input_model = layers.Dropout(0.2)(multi_input_model)
+multi_input_model = layers.Dense(4, activation = "relu")(multi_input_model)
+multi_input_model = layers.Dropout(0.2)(multi_input_model)
 multi_input_model_out = layers.Dense(1, activation = "sigmoid")(multi_input_model)
 
 """ El modelo final aceptará datos numéricos/categóricos en la entrada de la red perceptrón multicapa e imágenes en la
