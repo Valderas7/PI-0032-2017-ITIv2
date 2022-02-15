@@ -347,6 +347,11 @@ df_all_merge.loc[df_all_merge.dfs_status == "0:DiseaseFree", "dfs_status"] = 0; 
 df_all_merge.loc[df_all_merge.subtype == "BRCA_Her2", "subtype"] = 1
 df_all_merge['subtype'].replace({"BRCA_Normal": 0, "BRCA_Basal": 0, "BRCA_LumA": 0, "BRCA_LumB": 0}, inplace = True)
 
+""" Ahora se procede a procesar la columna continua de edad, que se normaliza para que esté en el rango de (0-1) """
+scaler = MinMaxScaler()
+train_continuous = scaler.fit_transform(df_all_merge[['Age']])
+df_all_merge.loc[:, 'Age'] = train_continuous[:, 0]
+
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
 df_all_merge.dropna(inplace = True)
 
@@ -378,11 +383,6 @@ df_all_merge = df_all_merge.rename(columns = {'subtype': 'HER-2 receptor', 'tumo
                                               'stage_STAGE IIIA': 'STAGE IIIA', 'stage_STAGE IIIB': 'STAGE IIIB',
                                               'stage_STAGE IIIC': 'STAGE IIIC', 'stage_STAGE IV': 'STAGE IV',
                                               'stage_STAGE X': 'STAGE X'})
-
-""" Ahora se procede a procesar la columna continua de edad, que se normaliza para que esté en el rango de (0-1) """
-scaler = MinMaxScaler()
-train_continuous = scaler.fit_transform(df_all_merge[['Age']])
-df_all_merge.loc[:,'Age'] = train_continuous[:,0]
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
@@ -531,7 +531,7 @@ test_labels_erbb2 = np.asarray(test_labels_erbb2).astype('float32')
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
 del df_all_merge, df_path_n_stage, df_list
 
-train_image_data_len = len(train_image_data)  # print(train_image_data_len)
+train_image_data_len = len(train_image_data)
 valid_image_data_len = len(valid_image_data)
 batch_dimension = 32
 
@@ -539,7 +539,7 @@ batch_dimension = 32
 neuronal convolucional. """
 #np.save('test_data', test_data)
 #np.save('test_image', test_image_data)
-#np.save('test_labels_erbb2', test_labels_erbb2)
+#np.save('test_labels', test_labels_erbb2)
 
 """ Se mide la importancia de las variables de datos con Random Forest. Se crean grupos de árboles de decisión para
 estimar cuales son las variables que mas influyen en la predicción de la salida y se musetra en un gráfico """
@@ -552,10 +552,9 @@ result = permutation_importance(forest, train_data, train_labels_erbb2, n_repeat
 forest_importances = pd.Series(result.importances_mean, index = train_data_columns)
 forest_importances_threshold = forest_importances.nlargest(n = 10).dropna()
 
-""" Se dibuja la gráfica """
 fig, ax = plt.subplots()
 forest_importances_threshold.plot.barh(ax = ax)
-ax.set_title("Importancia de variables con permutación")
+ax.set_title("Importancia de variables para CNV-A ERBB2")
 ax.set_ylabel("Reducción de eficacia media")
 fig.tight_layout()
 plt.show()

@@ -346,6 +346,11 @@ df_all_merge.loc[df_all_merge.path_m_stage == "CM0 (I+)", "path_m_stage"] = 'M0'
 df_all_merge.loc[df_all_merge.subtype == "BRCA_Her2", "subtype"] = 1
 df_all_merge['subtype'].replace({"BRCA_Normal": 0, "BRCA_Basal": 0, "BRCA_LumA": 0, "BRCA_LumB": 0}, inplace = True)
 
+""" Ahora se procede a procesar la columna continua de edad, que se normaliza para que esté en el rango de (0-1) """
+scaler = MinMaxScaler()
+train_continuous = scaler.fit_transform(df_all_merge[['Age']])
+df_all_merge.loc[:, 'Age'] = train_continuous[:, 0]
+
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
 df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
 
@@ -546,7 +551,7 @@ forest_importances_threshold = forest_importances.nlargest(n = 10).dropna()
 
 fig, ax = plt.subplots()
 forest_importances_threshold.plot.barh(ax = ax)
-ax.set_title("Importancia de variables con permutación")
+ax.set_title("Importancia de variables para metástasis distante")
 ax.set_ylabel("Reducción de eficacia media")
 fig.tight_layout()
 plt.show()
