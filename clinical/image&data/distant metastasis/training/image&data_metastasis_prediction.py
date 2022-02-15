@@ -102,8 +102,6 @@ df_all_merge = df_all_merge[cols]
 donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y se crean dos listas. Una para
 los genes SNV y otra para los genes CNV."""
 mutations_target = pd.read_excel('/home/avalderas/img_slides/excels/Panel_OCA.xlsx', usecols= 'B:C', engine= 'openpyxl')
-#mutations_target = pd.read_excel('C:\\Users\\valde\Desktop\Datos_repositorio\\img_slides\excel_oca_genes/Panel_OCA.xlsx',
-                                 #usecols= 'B:C', engine= 'openpyxl')
 
 snv = mutations_target.loc[mutations_target['Scope'] != 'CNV', 'Gen']
 cnv = mutations_target.loc[mutations_target['Scope'] == 'CNV', 'Gen']
@@ -344,7 +342,7 @@ df_all_merge.loc[df_all_merge.tumor_type == "Breast Invasive Carcinoma", "tumor_
 df_all_merge.loc[df_all_merge.Neoadjuvant == "No", "Neoadjuvant"] = 0; df_all_merge.loc[df_all_merge.Neoadjuvant == "Yes", "Neoadjuvant"] = 1
 df_all_merge.loc[df_all_merge.path_m_stage == "CM0 (I+)", "path_m_stage"] = 'M0'
 
-# Cambiar a subtipos para que muestre solo los receptores de HER-2
+# Cambiar los subtipos para que muestre solo los receptores de HER-2
 df_all_merge.loc[df_all_merge.subtype == "BRCA_Her2", "subtype"] = 1
 df_all_merge['subtype'].replace({"BRCA_Normal": 0, "BRCA_Basal": 0, "BRCA_LumA": 0, "BRCA_LumB": 0}, inplace = True)
 
@@ -531,21 +529,21 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes, los datos y las etiquetas de test para usarlas después de 
 entrenar el modelo. """
-#np.save('test_image_normalized_50', test_image_data)
-#np.save('test_data_normalized_50', test_data)
-#np.save('test_labels_metastasis_normalized_50', test_labels_metastasis)
+#np.save('test_image', test_image_data)
+#np.save('test_data', test_data)
+#np.save('test_labels', test_labels_metastasis)
 
 """ Se mide la importancia de las variables de datos con Random Forest. Se crean grupos de árboles de decisión para
-estimar cuales son las variables que mas influyen en la predicción de la salida"""
+estimar cuales son las variables que mas influyen en la predicción de la salida y se musetra en un gráfico """
 feature_names = [f"feature {i}" for i in range(train_data.shape[1])]
 forest = RandomForestClassifier(random_state = 0)
 forest.fit(train_data, train_labels_metastasis)
 
-result = permutation_importance(forest, train_data, train_labels_metastasis, n_repeats = 30, random_state = 42, n_jobs = 2)
+result = permutation_importance(forest, train_data, train_labels_metastasis, n_repeats = 30, random_state = 42,
+                                n_jobs = 2)
 forest_importances = pd.Series(result.importances_mean, index = train_data_columns)
 forest_importances_threshold = forest_importances.nlargest(n = 10).dropna()
 
-""" Se dibuja la gráfica """
 fig, ax = plt.subplots()
 forest_importances_threshold.plot.barh(ax = ax)
 ax.set_title("Importancia de variables con permutación")
@@ -579,7 +577,7 @@ all_cnn_model = layers.Dense(512, activation = "relu")(all_cnn_model)
 all_cnn_model = layers.Dropout(0.2)(all_cnn_model)
 all_cnn_model = layers.Dense(128, activation = "relu")(all_cnn_model)
 all_cnn_model = layers.Dropout(0.2)(all_cnn_model)
-all_cnn_model_out = layers.Dense(64, activation="relu")(all_cnn_model)
+all_cnn_model_out = layers.Dense(64, activation = "relu")(all_cnn_model)
 
 """ Se congelan todas las capas convolucionales del modelo base de la red convolucional. """
 # A partir de TF 2.0 @trainable = False hace tambien ejecutar las capas BN en modo inferencia (@training = False)
@@ -595,7 +593,7 @@ multi_input_model = layers.Dense(64, activation = "relu")(combined)
 multi_input_model = layers.Dropout(0.2)(multi_input_model)
 multi_input_model = layers.Dense(32, activation = "relu")(multi_input_model)
 multi_input_model = layers.Dropout(0.2)(multi_input_model)
-multi_input_model_out = layers.Dense(1, activation="sigmoid")(multi_input_model)
+multi_input_model_out = layers.Dense(1, activation = "sigmoid")(multi_input_model)
 
 """ El modelo final aceptará datos numéricos/categóricos en la entrada de la red perceptrón multicapa e imágenes en la
 red neuronal convolucional, de forma que a la salida solo se obtenga la predicción de la metástasis a distancia. """
