@@ -554,7 +554,7 @@ forest_importances_threshold = forest_importances.nlargest(n = 10).dropna()
 
 fig, ax = plt.subplots()
 forest_importances_threshold.plot.barh(ax = ax)
-ax.set_title("Importancia de variables para CNV-A ERBB2")
+ax.set_title("Importancia de variables [CNV-A ERBB2]")
 ax.set_ylabel("Reducción de eficacia media")
 fig.tight_layout()
 plt.show()
