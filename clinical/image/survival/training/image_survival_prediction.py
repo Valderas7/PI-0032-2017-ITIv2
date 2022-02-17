@@ -137,7 +137,7 @@ else:
     train_data = train_data.sort_values(by = 'os_status', ascending = False)
 
 train_data = train_data[:-difference_train]
-#print(train_data['os_status'].value_counts())
+print(train_data['os_status'].value_counts())
 
 """ Validación """
 valid_no_survival_tiles = valid_data['os_status'].value_counts()[1] # Fallecidas
@@ -151,7 +151,7 @@ else:
     valid_data = valid_data.sort_values(by = 'os_status', ascending = False)
 
 valid_data = valid_data[:-difference_valid]
-#print(valid_data['os_status'].value_counts())
+print(valid_data['os_status'].value_counts())
 
 """ Test """
 test_no_survival_tiles = test_data['os_status'].value_counts()[1] # Fallecidas
@@ -165,7 +165,7 @@ else:
     test_data = test_data.sort_values(by = 'os_status', ascending = False)
 
 test_data = test_data[:-difference_test]
-#print(test_data['os_status'].value_counts())
+print(test_data['os_status'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -224,8 +224,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-np.save('test_image_normalized', test_image_data)
-np.save('test_labels_survival_normalized', test_labels_survival)
+#np.save('test_image_normalized', test_image_data)
+#np.save('test_labels_normalized', test_labels_survival)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 10, vertical_flip = True)
@@ -246,9 +246,11 @@ base_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tenso
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
 all_model = layers.Dense(128, activation = 'relu')(all_model)
-all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.Dense(32, activation = 'relu')(all_model)
-all_model = layers.Dropout(0.5)(all_model)
+all_model = layers.Dropout(0.2)(all_model)
+all_model = layers.Dense(64, activation = 'relu')(all_model)
+all_model = layers.Dropout(0.2)(all_model)
+all_model = layers.Dense(16, activation = 'relu')(all_model)
+all_model = layers.Dropout(0.2)(all_model)
 survival = layers.Dense(1, activation = "sigmoid", name = 'survival')(all_model)
 
 model = Model(inputs = base_model.input, outputs = survival)
@@ -278,6 +280,7 @@ model.summary()
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
 checkpoint_path = '/home/avalderas/img_slides/clinical/image/survival/inference/models/model_image_survival_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
+mcp_save_accuracy = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_accuracy', mode = 'max', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_gen, epochs = 2, verbose = 1, validation_data = val_gen,
@@ -296,11 +299,8 @@ Para ello, primero se descongela el modelo base. """
 set_trainable = 0
 
 for layer in base_model.layers:
-    if layer.name == 'block2a_expand_conv':
-        set_trainable = True
-    if set_trainable:
-        if not isinstance(layer, layers.BatchNormalization):
-            layer.trainable = True
+    if not isinstance(layer, layers.BatchNormalization):
+        layer.trainable = True
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
@@ -311,7 +311,7 @@ model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = train_gen, epochs = 50, verbose = 1, validation_data = val_gen,
-                           callbacks = mcp_save,
+                           # callbacks = [mcp_save, mcp_save_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

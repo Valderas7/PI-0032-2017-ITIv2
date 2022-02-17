@@ -447,7 +447,6 @@ else:
     train_data = train_data.sort_values(by = 'Survival', ascending = False)
 
 train_data = train_data[:-difference_train]
-print(train_data['Survival'].value_counts())
 
 # Validación
 valid_no_survival_tiles = valid_data['Survival'].value_counts()[1] # Fallecidas
@@ -461,7 +460,6 @@ else:
     valid_data = valid_data.sort_values(by = 'Survival', ascending = False)
 
 valid_data = valid_data[:-difference_valid]
-print(valid_data['Survival'].value_counts())
 
 # Test
 test_no_survival_tiles = test_data['Survival'].value_counts()[1] # Fallecidas
@@ -475,7 +473,6 @@ else:
     test_data = test_data.sort_values(by = 'Survival', ascending = False)
 
 test_data = test_data[:-difference_test]
-print(test_data['Survival'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -557,7 +554,7 @@ forest_importances_threshold = forest_importances.nlargest(n = 10).dropna()
 """ Se dibuja la gráfica """
 fig, ax = plt.subplots()
 forest_importances_threshold.plot.barh(ax = ax)
-ax.set_title("Importancia de variables con permutación")
+ax.set_title("Importancia de variables [Supervivencia]")
 ax.set_ylabel("Reducción de eficacia media")
 fig.tight_layout()
 plt.show()
@@ -584,8 +581,6 @@ cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor
 """ Se añaden capas de clasificación después de las capas congeladas de convolución. """
 all_cnn_model = cnn_model.output
 all_cnn_model = layers.Flatten()(all_cnn_model)
-all_cnn_model = layers.Dense(512, activation = "relu")(all_cnn_model)
-all_cnn_model = layers.Dropout(0.2)(all_cnn_model)
 all_cnn_model = layers.Dense(128, activation = "relu")(all_cnn_model)
 all_cnn_model = layers.Dropout(0.2)(all_cnn_model)
 all_cnn_model_out = layers.Dense(64, activation = "relu")(all_cnn_model)
@@ -602,7 +597,7 @@ combined = keras.layers.concatenate([mlp_out, all_cnn_model_out])
 siendo la de la predicción final con activación 'sigmoid', puesto que la salida será binaria. """
 multi_input_model = layers.Dense(64, activation = "relu")(combined)
 multi_input_model = layers.Dropout(0.2)(multi_input_model)
-multi_input_model = layers.Dense(32, activation = "relu")(multi_input_model)
+multi_input_model = layers.Dense(16, activation = "relu")(multi_input_model)
 multi_input_model = layers.Dropout(0.2)(multi_input_model)
 multi_input_model_out = layers.Dense(1, activation = "sigmoid")(multi_input_model)
 
@@ -630,6 +625,7 @@ model.summary()
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
 checkpoint_path = '/home/avalderas/img_slides/clinical/image&data/survival/inference/models/model_image&data_survival_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
+mcp_save_accuracy = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_accuracy', mode = 'max', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = [train_data, train_image_data], y = train_labels_survival, epochs = 2, verbose = 1,
@@ -645,9 +641,6 @@ Para ello, primero se descongela el modelo base."""
 set_trainable = 0
 
 for layer in cnn_model.layers:
-    #if layer.name == 'block2a_expand_conv':
-        #set_trainable = True
-    #if set_trainable:
     if not isinstance(layer, layers.BatchNormalization):
         layer.trainable = True
 
@@ -661,7 +654,7 @@ model.summary()
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_survival, epochs = 20, verbose = 1,
                            validation_data = ([valid_data, valid_image_data], valid_labels_survival),
-                           #callbacks = mcp_save,
+                           callbacks = [mcp_save, mcp_save_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
