@@ -24,9 +24,6 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_image_data, test_labels_relapse, verbose = 0)
 
-""" -------------------------------------------------------------------------------------------------------------------
-------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
---------------------------------------------------------------------------------------------------------------------"""
 print("\n'Loss' de recidivas en el conjunto de prueba: {:.2f}\n""Sensibilidad de recidivas en el conjunto "
       "de prueba: {:.2f}%\n""Precisión de recidivas en el conjunto de prueba: {:.2f}%\n""Especificidad de recidivas "
       "en el conjunto de prueba: {:.2f}% \n""Exactitud de recidivas en el conjunto de prueba: {:.2f}%\n"
