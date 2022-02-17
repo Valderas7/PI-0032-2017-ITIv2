@@ -13,10 +13,10 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/clinical/image/relapse/inference/models/model_image_relapse_04_0.64_normalized.h5')
+model = load_model('/home/avalderas/img_slides/clinical/image/relapse/inference/models/model_image_relapse_')
 
-test_image_data = np.load('/clinical/image/relapse/inference/test data/test_image_normalized.npy')
-test_labels_relapse = np.load('/clinical/image/relapse/inference/test data/test_labels_relapse_normalized.npy')
+test_image_data = np.load('/home/avalderas/img_slides/clinical/image/relapse/inference/test data/test_image_normalized.npy')
+test_labels_relapse = np.load('/home/avalderas/img_slides/clinical/image/relapse/inference/test data/test_labels_relapse_normalized.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

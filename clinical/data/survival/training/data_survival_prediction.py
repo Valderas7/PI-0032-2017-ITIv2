@@ -1,31 +1,25 @@
-import shelve # datos persistentes
+import shelve  # datos persistentes
 import pandas as pd
 import numpy as np
-import imblearn
-import seaborn as sns # Para realizar gráficas sobre datos
+import seaborn as sns  # Para realizar gráficas sobre datos
 import matplotlib.pyplot as plt
-import cv2 #OpenCV
 import glob
+from imblearn.over_sampling import SMOTE
 from tensorflow.keras.callbacks import ModelCheckpoint
-import imageio
-import imgaug as ia
-import imgaug.augmenters as iaa
 from sklearn.utils import class_weight
-import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras.layers import Input # Para instanciar tensores de Keras
-from functools import reduce # 'reduce' aplica una función pasada como argumento para todos los miembros de una lista.
-from sklearn.model_selection import train_test_split # Se importa la librería para dividir los datos en entreno y test.
-from sklearn.preprocessing import MinMaxScaler # Para escalar valores
-from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
+from tensorflow.keras import *
+from tensorflow.keras.layers import *
+from functools import reduce  # 'reduce' aplica una función pasada como argumento para todos los miembros de una lista.
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.inspection import permutation_importance
+from sklearn.model_selection import train_test_split  # Se importa la librería para dividir los datos en entreno y test.
+from sklearn.preprocessing import MinMaxScaler  # Para escalar valores
+from sklearn.metrics import multilabel_confusion_matrix, confusion_matrix  # Para realizar la matriz de confusión
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------- SECCIÓN DATOS TABULARES ------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
-""" - Datos de entrada: Age, cancer_type, cancer_type_detailed, dfs_months, dfs_status, dss_months, dss_status,
-ethnicity, neoadjuvant, os_months, os_status, path_m_stage. path_n_stage, path_t_stage, sex, stage, subtype.
-    - Salida binaria: Presenta mutación o no en el gen 'X' (BRCA1 [ID: 672] en este caso). CNAs (CNV) y mutations (SNV). """
 list_to_read = ['CNV_oncomine', 'age', 'all_oncomine', 'mutations_oncomine', 'cancer_type', 'cancer_type_detailed',
                 'dfs_months', 'dfs_status', 'dict_genes', 'dss_months', 'dss_status', 'ethnicity',
                 'full_length_oncomine', 'fusions_oncomine', 'muted_genes', 'CNA_genes', 'hotspot_oncomine', 'mutations',
@@ -34,63 +28,78 @@ list_to_read = ['CNV_oncomine', 'age', 'all_oncomine', 'mutations_oncomine', 'ca
                 'pfs_months', 'pfs_status', 'radiation_therapy']
 
 filename = '/home/avalderas/img_slides/data/brca_tcga_pan_can_atlas_2018.out'
-#filename = 'C:\\Users\\valde\Desktop\Datos_repositorio\cbioportal\data/brca_tcga_pan_can_atlas_2018.out'
 
-""" Almacenamos en una variable los diccionarios: """
+""" Almacenamos en una variable el diccionario de las mutaciones CNV (CNAs), en otra el diccionario de genes, que
+hará falta para identificar los ID de los distintos genes a predecir y por último el diccionario de la categoría N del 
+sistema de estadificación TNM: """
 with shelve.open(filename) as data:
     dict_genes = data.get('dict_genes')
     age = data.get('age')
-    cancer_type_detailed = data.get('cancer_type_detailed')
-    neoadjuvant = data.get('neoadjuvant')  # 1 valor nulo
-    os_months = data.get('os_months')
+    neoadjuvant = data.get('neoadjuvant') # 1 valor nulo
+    prior_diagnosis = data.get('prior_diagnosis') # 1 valor nulo
+    # Datos de metástasis a distancia
     os_status = data.get('os_status')
-    path_m_stage = data.get('path_m_stage')
-    path_n_stage = data.get('path_n_stage')
-    path_t_stage = data.get('path_t_stage')
-    stage = data.get('stage')
-    subtype = data.get('subtype')
-    tumor_type = data.get('tumor_type')
-    new_tumor = data.get('new_tumor')  # ~200 valores nulos
-    prior_diagnosis = data.get('prior_diagnosis')  # 1 valor nulo
-    pfs_months = data.get('pfs_months')  # 2 valores nulos
-    pfs_status = data.get('pfs_status')  # 1 valor nulo
-    dfs_months = data.get('dfs_months')  # 143 valores nulos
     dfs_status = data.get('dfs_status')  # 142 valores nulos
-    cnv = data.get('CNAs')
+    tumor_type = data.get('tumor_type')
+    stage = data.get('stage')
+    path_t_stage = data.get('path_t_stage')
+    path_n_stage = data.get('path_n_stage')
+    path_m_stage = data.get('path_m_stage')
+    subtype = data.get('subtype')
     snv = data.get('mutations')
+    cnv = data.get('CNAs')
 
 """ Se crean dataframes individuales para cada uno de los diccionarios almacenados en cada variable de entrada y se
 renombran las columnas para que todo quede más claro. Además, se crea una lista con todos los dataframes para
 posteriormente unirlos todos juntos. """
 df_age = pd.DataFrame.from_dict(age.items()); df_age.rename(columns = {0 : 'ID', 1 : 'Age'}, inplace = True)
-df_cancer_type_detailed = pd.DataFrame.from_dict(cancer_type_detailed.items()); df_cancer_type_detailed.rename(columns = {0 : 'ID', 1 : 'cancer_type_detailed'}, inplace = True)
-df_neoadjuvant = pd.DataFrame.from_dict(neoadjuvant.items()); df_neoadjuvant.rename(columns = {0 : 'ID', 1 : 'neoadjuvant'}, inplace = True)
-df_dfs_status = pd.DataFrame.from_dict(dfs_status.items()); df_dfs_status.rename(columns = {0 : 'ID', 1 : 'dfs_status'}, inplace = True)
-df_path_m_stage = pd.DataFrame.from_dict(path_m_stage.items()); df_path_m_stage.rename(columns = {0 : 'ID', 1 : 'path_m_stage'}, inplace = True)
-df_path_n_stage = pd.DataFrame.from_dict(path_n_stage.items()); df_path_n_stage.rename(columns = {0 : 'ID', 1 : 'path_n_stage'}, inplace = True)
-df_path_t_stage = pd.DataFrame.from_dict(path_t_stage.items()); df_path_t_stage.rename(columns = {0 : 'ID', 1 : 'path_t_stage'}, inplace = True)
-df_stage = pd.DataFrame.from_dict(stage.items()); df_stage.rename(columns = {0 : 'ID', 1 : 'stage'}, inplace = True)
-df_subtype = pd.DataFrame.from_dict(subtype.items()); df_subtype.rename(columns = {0 : 'ID', 1 : 'subtype'}, inplace = True)
-df_tumor_type = pd.DataFrame.from_dict(tumor_type.items()); df_tumor_type.rename(columns = {0 : 'ID', 1 : 'tumor_type'}, inplace = True)
-df_new_tumor = pd.DataFrame.from_dict(new_tumor.items()); df_new_tumor.rename(columns = {0 : 'ID', 1 : 'new_tumor'}, inplace = True)
+df_neoadjuvant = pd.DataFrame.from_dict(neoadjuvant.items()); df_neoadjuvant.rename(columns = {0 : 'ID', 1 : 'Neoadjuvant'}, inplace = True)
 df_prior_diagnosis = pd.DataFrame.from_dict(prior_diagnosis.items()); df_prior_diagnosis.rename(columns = {0 : 'ID', 1 : 'prior_diagnosis'}, inplace = True)
+# Columna de metástasis a distancia
+df_os_status = pd.DataFrame.from_dict(os_status.items()); df_os_status.rename(columns = {0 : 'ID', 1 : 'os_status'}, inplace = True)
+df_dfs_status = pd.DataFrame.from_dict(dfs_status.items()); df_dfs_status.rename(columns = {0 : 'ID', 1 : 'dfs_status'}, inplace = True)
+df_tumor_type = pd.DataFrame.from_dict(tumor_type.items()); df_tumor_type.rename(columns = {0 : 'ID', 1 : 'tumor_type'}, inplace = True)
+df_stage = pd.DataFrame.from_dict(stage.items()); df_stage.rename(columns = {0 : 'ID', 1 : 'stage'}, inplace = True)
+df_path_t_stage = pd.DataFrame.from_dict(path_t_stage.items()); df_path_t_stage.rename(columns = {0 : 'ID', 1 : 'path_t_stage'}, inplace = True)
+df_path_n_stage = pd.DataFrame.from_dict(path_n_stage.items()); df_path_n_stage.rename(columns = {0 : 'ID', 1 : 'path_n_stage'}, inplace = True)
+df_path_m_stage = pd.DataFrame.from_dict(path_m_stage.items()); df_path_m_stage.rename(columns = {0 : 'ID', 1 : 'path_m_stage'}, inplace = True)
+df_subtype = pd.DataFrame.from_dict(subtype.items()); df_subtype.rename(columns = {0 : 'ID', 1 : 'subtype'}, inplace = True)
 df_snv = pd.DataFrame.from_dict(snv.items()); df_snv.rename(columns = {0 : 'ID', 1 : 'SNV'}, inplace = True)
 df_cnv = pd.DataFrame.from_dict(cnv.items()); df_cnv.rename(columns = {0 : 'ID', 1 : 'CNV'}, inplace = True)
 
-df_os_status = pd.DataFrame.from_dict(os_status.items()); df_os_status.rename(columns = {0 : 'ID', 1 : 'os_status'}, inplace = True)
-
-df_list = [df_age, df_dfs_status, df_neoadjuvant, df_path_m_stage, df_path_n_stage, df_path_t_stage, df_stage,
-           df_subtype, df_tumor_type, df_prior_diagnosis, df_os_status, df_snv, df_cnv]
+""" No se incluye la columna de recidivas, puesto que reduce enormemente las muestras de pacientes con metástasis """
+df_list = [df_age, df_neoadjuvant, df_os_status, df_dfs_status, df_tumor_type, df_stage, df_path_t_stage,
+           df_path_n_stage, df_path_m_stage, df_subtype, df_snv, df_cnv]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
 esté descuadrado en la fila que no le corresponda. """
 df_all_merge = reduce(lambda left,right: pd.merge(left,right,on=['ID'], how='left'), df_list)
 
-""" Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para empezar se carga el archivo excel 
-donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y creamos dos listas. Una para
+""" Se crea una nueva columna para indicar la metastasis a distancia. En esta columna se indicaran los pacientes que 
+tienen estadio M1 (metastasis inicial) + otros pacientes que desarrollan metastasis a lo largo de la enfermedad (para
+ello se hace uso del excel pacientes_tcga y su columna DB) """
+df_all_merge['Distant Metastasis'] = 0
+df_all_merge.loc[df_all_merge.path_m_stage == 'M1', 'Distant Metastasis'] = 1
+
+""" Estos pacientes desarrollan metastasis A LO LARGO de la enfermedad, tal y como se puede apreciar en el excel de los
+pacientes de TCGA. Por tanto, se incluyen como clase positiva dentro de la columna 'distant_metastasis'. """
+df_all_merge.loc[df_all_merge.ID == 'TCGA-A2-A3XS', 'Distant Metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-AC-A2FM', 'Distant Metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-AR-A2LH', 'Distant Metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A0C1', 'Distant Metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A18V', 'Distant Metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-EW-A1P8', 'Distant Metastasis'] = 1
+df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'Distant Metastasis'] = 1
+
+""" Se recoloca la columna de metástasis a distancia al lado de la de tipo histológico """
+cols = df_all_merge.columns.tolist()
+cols = cols[:5] + cols[-1:] + cols[5:-1]
+df_all_merge = df_all_merge[cols]
+
+""" Ahora se encuentra cuales son los IDs de los genes que interesan del panel OCA. Primero se carga el archivo excel 
+donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y se crean dos listas. Una para
 los genes SNV y otra para los genes CNV."""
-mutations_target = pd.read_excel('/home/avalderas/img_slides/excel_genes_panelOCA/Panel_OCA.xlsx', usecols= 'B:C',
-                                 engine= 'openpyxl')
+mutations_target = pd.read_excel('/home/avalderas/img_slides/excels/Panel_OCA.xlsx', usecols= 'B:C', engine= 'openpyxl')
 
 snv = mutations_target.loc[mutations_target['Scope'] != 'CNV', 'Gen']
 cnv = mutations_target.loc[mutations_target['Scope'] == 'CNV', 'Gen']
@@ -273,22 +282,19 @@ columns_list_snv = []
 
 df_all_merge.drop(['SNV'], axis=1, inplace= True)
 for gen_snv in snv_list:
-    df_all_merge['SNV_' + gen_snv] = 0
-    columns_list_snv.append('SNV_' + gen_snv)
+    df_all_merge['SNV ' + gen_snv] = 0
+    columns_list_snv.append('SNV ' + gen_snv)
 
 # CNV:
 columns_list_cnv_amp = []
-columns_list_cnv_normal = []
 columns_list_cnv_del = []
 
 df_all_merge.drop(['CNV'], axis=1, inplace= True)
 for gen_cnv in cnv_list:
-    df_all_merge['CNV_' + gen_cnv + '_AMP'] = 0
-    df_all_merge['CNV_' + gen_cnv + '_NORMAL'] = 0
-    df_all_merge['CNV_' + gen_cnv + '_DEL'] = 0
-    columns_list_cnv_amp.append('CNV_' + gen_cnv + '_AMP')
-    columns_list_cnv_normal.append('CNV_' + gen_cnv + '_NORMAL')
-    columns_list_cnv_del.append('CNV_' + gen_cnv + '_DEL')
+    df_all_merge['CNV-A ' + gen_cnv] = 0
+    df_all_merge['CNV-D ' + gen_cnv] = 0
+    columns_list_cnv_amp.append('CNV-A ' + gen_cnv)
+    columns_list_cnv_del.append('CNV-D ' + gen_cnv)
 
 """ Una vez han sido creadas las columnas, se añade un '1' en aquellas filas donde el paciente tiene mutación sobre el
 gen seleccionado. Se utiliza para ello los índices recogidos anteriormente en las respectivas listas de listas. De esta
@@ -314,119 +320,158 @@ for column_cnv_del in columns_list_cnv_del:
         df_all_merge.loc[index_cnv_sublist_del, column_cnv_del] = 1
     i_cnv_del += 1
 
-""" Falta por rellenar la columna normal de todas las mutaciones CNV. Para ello se colocará un '1' en aquellas filas 
-donde no haya mutación CNV ni de amplificación ni de deleción para un gen en especifico. """
-i_cnv_normal = 0
-for column_cnv_normal in columns_list_cnv_normal:
-    for i_row in range(1084):
-        if i_row not in list_gen_cnv_amp[i_cnv_normal] and i_row not in list_gen_cnv_del[i_cnv_normal]:
-            df_all_merge.loc[i_row, column_cnv_normal] = 1
-    i_cnv_normal += 1
-
-""" En este caso, el número de muestras de imágenes y de datos deben ser iguales. Las imágenes de las que se disponen se 
-enmarcan según el sistema de estadificación TNM como N1A, N1, N2A, N2, N3A, N1MI, N1B, N3, NX, N3B, N1C o N3C según la
-categoría N (extensión de cáncer que se ha diseminado a los ganglios linfáticos) de dicho sistema de estadificación.
-Por tanto, en los datos tabulares tendremos que quedarnos solo con los casos donde los pacientes tengan esos valores
-de la categoría 'N' y habrá que usar, por tanto, una imagen para cada paciente, para que no haya errores al repartir
-los subconjuntos de datos. """
-# 552 filas resultantes, como en cBioPortal:
-df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge["path_n_stage"]!='NX') &
-                            (df_all_merge["path_n_stage"]!='N0 (I-)') & (df_all_merge["path_n_stage"]!='N0 (I+)') &
-                            (df_all_merge["path_n_stage"]!='N0 (MOL+)')]
-
 """ Al realizar un análisis de los datos de entrada se ha visto un único valor incorrecto en la columna
 'cancer_type_detailed'. Por ello se sustituye dicho valor por 'Breast Invasive Carcinoma (NOS)'. También se ha apreciado
 un único valor en 'tumor_type', por lo que también se realiza un cambio de valor en dicho valor atípico. Además, se 
 convierten las columnas categóricas binarias a valores de '0' y '1', para no aumentar el número de columnas: """
 df_all_merge.loc[df_all_merge.tumor_type == "Infiltrating Carcinoma (NOS)", "tumor_type"] = "Mixed Histology (NOS)"
 df_all_merge.loc[df_all_merge.tumor_type == "Breast Invasive Carcinoma", "tumor_type"] = "Infiltrating Ductal Carcinoma"
-df_all_merge.loc[df_all_merge.neoadjuvant == "No", "neoadjuvant"] = 0; df_all_merge.loc[df_all_merge.neoadjuvant == "Yes", "neoadjuvant"] = 1
-df_all_merge.loc[df_all_merge.dfs_status == "0:DiseaseFree", "dfs_status"] = 0; df_all_merge.loc[df_all_merge.dfs_status == "1:Recurred/Progressed", "dfs_status"] = 1
-df_all_merge.loc[df_all_merge.prior_diagnosis == "No", "prior_diagnosis"] = 0; df_all_merge.loc[df_all_merge.prior_diagnosis == "Yes", "prior_diagnosis"] = 1
+df_all_merge.loc[df_all_merge.Neoadjuvant == "No", "Neoadjuvant"] = 0; df_all_merge.loc[df_all_merge.Neoadjuvant == "Yes", "Neoadjuvant"] = 1
 df_all_merge.loc[df_all_merge.os_status == "0:LIVING", "os_status"] = 0; df_all_merge.loc[df_all_merge.os_status == "1:DECEASED", "os_status"] = 1
+df_all_merge.loc[df_all_merge.dfs_status == "0:DiseaseFree", "dfs_status"] = 0; df_all_merge.loc[df_all_merge.dfs_status == "1:Recurred/Progressed", "dfs_status"] = 1
+df_all_merge.loc[df_all_merge.path_m_stage == "CM0 (I+)", "path_m_stage"] = 'M0'
 
-""" Se crea una nueva columna para indicar la metastasis a distancia. En esta columna se indicaran los pacientes que 
-tienen estadio M1 (metastasis inicial) + otros pacientes que desarrollan metastasis a lo largo de la enfermedad (para
-ello se hace uso del excel pacientes_tcga y su columna DB) """
-df_all_merge['distant_metastasis'] = 0
-df_all_merge.loc[df_all_merge.path_m_stage == 'M1', 'distant_metastasis'] = 1
+# Cambiar los subtipos para que muestre solo los receptores de HER-2
+df_all_merge.loc[df_all_merge.subtype == "BRCA_Her2", "subtype"] = 1
+df_all_merge['subtype'].replace({"BRCA_Normal": 0, "BRCA_Basal": 0, "BRCA_LumA": 0, "BRCA_LumB": 0}, inplace = True)
 
-""" Estos pacientes desarrollan metastasis A LO LARGO de la enfermedad, tal y como se puede apreciar en el excel de los
-pacientes de TCGA. Por tanto, se incluyen como clase positiva dentro de la columna 'distant_metastasis'. """
-df_all_merge.loc[df_all_merge.ID == 'TCGA-A2-A3XS', 'distant_metastasis'] = 1
-df_all_merge.loc[df_all_merge.ID == 'TCGA-AC-A2FM', 'distant_metastasis'] = 1
-df_all_merge.loc[df_all_merge.ID == 'TCGA-AR-A2LH', 'distant_metastasis'] = 1
-df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A0C1', 'distant_metastasis'] = 1
-df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A18V', 'distant_metastasis'] = 1
-df_all_merge.loc[df_all_merge.ID == 'TCGA-EW-A1P8', 'distant_metastasis'] = 1
-df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'distant_metastasis'] = 1
+""" Ahora se procede a procesar la columna continua de edad, que se normaliza para que esté en el rango de (0-1) """
+scaler = MinMaxScaler()
+train_continuous = scaler.fit_transform(df_all_merge[['Age']])
+df_all_merge.loc[:, 'Age'] = train_continuous[:, 0]
 
-""" Ahora, antes de transformar las variables categóricas en numéricas, se eliminan las filas donde haya datos nulos
-para no ir arrastrándolos a lo largo del programa: """
-df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
+""" Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
+df_all_merge.dropna(inplace = True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
+
+""" Se eliminan las columnas de TNM (ya se tiene la columna STAGE que da la misma información) """
+df_all_merge = df_all_merge.drop(columns = ['path_t_stage', 'path_n_stage', 'path_m_stage'])
 
 """ Una vez la tabla tiene las columnas deseadas se procede a codificar las columnas categóricas del dataframe a valores
 numéricos mediante la técnica del 'One Hot Encoding'. Más adelante se escalarán las columnas numéricas continuas, pero
 ahora se realiza esta técnica antes de hacer la repartición de subconjuntos para que no haya problemas con las columnas. """
 #@ get_dummies: Aplica técnica de 'One Hot Encoding', creando columnas binarias para las columnas seleccionadas
-df_all_merge = pd.get_dummies(df_all_merge, columns=["path_m_stage","path_n_stage", "path_t_stage", "stage",
-                                                     "subtype", "tumor_type"])
+df_all_merge = pd.get_dummies(df_all_merge, columns=["tumor_type", "stage"])
 
-""" Se dividen los datos tabulares en conjuntos de entrenamiento, validación y test. """
-# @train_test_split: Divide en subconjuntos de datos los 'arrays' o matrices especificadas.
-# @random_state: Consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_tabular_data, test_tabular_data = train_test_split(df_all_merge, test_size = 0.20,
-                                                         stratify = df_all_merge['os_status'])
+""" Se recocolan las columnas para que las mutaciones aparezcan las últimas """
+cols = df_all_merge.columns.tolist()
+cols = cols[:6] + cols[-18:] + cols[6:-18]
+df_all_merge = df_all_merge[cols]
 
-train_tabular_data, valid_tabular_data = train_test_split(train_tabular_data, test_size = 0.15,
-                                                         stratify = train_tabular_data['os_status'])
+""" Se renombran algunas columnas, simplemente para hacerlo más atractivo visualmente. """
+df_all_merge = df_all_merge.rename(columns = {'os_status': 'Survival', 'dfs_status': 'Relapse',
+                                              'subtype': 'HER-2 receptor', 'tumor_type_Infiltrating Ductal Carcinoma': 'Ductal [tumor type]',
+                                              'tumor_type_Infiltrating Lobular Carcinoma': 'Lobular [tumor type]',
+                                              'tumor_type_Medullary Carcinoma': 'Medullary [tumor type]',
+                                              'tumor_type_Metaplastic Carcinoma': 'Metaplastic [tumor type]',
+                                              'tumor_type_Mixed Histology (NOS)': 'Mixed [tumor type]',
+                                              'tumor_type_Mucinous Carcinoma': 'Mucinous [tumor type]',
+                                              'tumor_type_Other': 'Other [tumor type]', 'stage_STAGE I': 'STAGE I',
+                                              'stage_STAGE IA': 'STAGE IA', 'stage_STAGE IB': 'STAGE IB',
+                                              'stage_STAGE II': 'STAGE II', 'stage_STAGE IIA': 'STAGE IIA',
+                                              'stage_STAGE IIB': 'STAGE IIB', 'stage_STAGE III': 'STAGE III',
+                                              'stage_STAGE IIIA': 'STAGE IIIA', 'stage_STAGE IIIB': 'STAGE IIIB',
+                                              'stage_STAGE IIIC': 'STAGE IIIC', 'stage_STAGE IV': 'STAGE IV',
+                                              'stage_STAGE X': 'STAGE X'})
+
+""" Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split. """
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['Survival'])
+train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['Survival'])
+
+""" Se iguala el número de teselas con y sin supervivencia """
+# Entrenamiento
+train_no_survival_tiles = train_data['Survival'].value_counts()[1] # Fallecidas
+train_survival_tiles = train_data['Survival'].value_counts()[0] # Vivas
+
+if train_no_survival_tiles >= train_survival_tiles:
+    difference_train = train_no_survival_tiles - train_survival_tiles
+    train_data = train_data.sort_values(by = 'Survival', ascending = True)
+else:
+    difference_train = train_survival_tiles - train_no_survival_tiles
+    train_data = train_data.sort_values(by = 'Survival', ascending = False)
+
+train_data = train_data[:-difference_train]
+
+# Validación
+valid_no_survival_tiles = valid_data['Survival'].value_counts()[1] # Fallecidas
+valid_survival_tiles = valid_data['Survival'].value_counts()[0] # Vivas
+
+if valid_no_survival_tiles >= valid_survival_tiles:
+    difference_valid = valid_no_survival_tiles - valid_survival_tiles
+    valid_data = valid_data.sort_values(by = 'Survival', ascending = True)
+else:
+    difference_valid = valid_survival_tiles - valid_no_survival_tiles
+    valid_data = valid_data.sort_values(by = 'Survival', ascending = False)
+
+valid_data = valid_data[:-difference_valid]
+
+# Test
+test_no_survival_tiles = test_data['Survival'].value_counts()[1] # Fallecidas
+test_survival_tiles = test_data['Survival'].value_counts()[0] # Vivas
+
+if test_no_survival_tiles >= test_survival_tiles:
+    difference_test = test_no_survival_tiles - test_survival_tiles
+    test_data = test_data.sort_values(by = 'Survival', ascending = True)
+else:
+    difference_test = test_survival_tiles - test_no_survival_tiles
+    test_data = test_data.sort_values(by = 'Survival', ascending = False)
+
+test_data = test_data[:-difference_test]
 
 """ Ya se puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
-#@inplace = True para que devuelva el resultado en la misma variable
-train_tabular_data = train_tabular_data.drop(['ID'], axis=1)
-valid_tabular_data = valid_tabular_data.drop(['ID'], axis=1)
-test_tabular_data = test_tabular_data.drop(['ID'], axis=1)
+train_data = train_data.drop(['ID'], axis = 1)
+valid_data = valid_data.drop(['ID'], axis = 1)
+test_data = test_data.drop(['ID'], axis = 1)
 
-""" Se extrae la columna 'os_status' del dataframe de ambos subconjuntos, puesto que ésta es la salida del modelo que se
-va a entrenar."""
-train_labels = train_tabular_data.pop('os_status')
-valid_labels = valid_tabular_data.pop('os_status')
-test_labels = test_tabular_data.pop('os_status')
+""" Se extraen los datos de salida de la red neuronal y se guardan los nombres de las columnas de datos """
+train_labels_survival = train_data.pop('Survival')
+valid_labels_survival = valid_data.pop('Survival')
+test_labels_survival = test_data.pop('Survival')
 
-""" Ahora se procede a procesar las columnas continuas, que se escalarán para que estén en el rango de (0-1), es decir, 
-como la salida de la red. """
-scaler = MinMaxScaler()
+train_data_columns = train_data.columns.values
 
-""" Hay 'warning' si se hace directamente, así que se hace de esta manera. Se transforman los datos guardándolos en una
-variable. Posteriormente se modifica la columna de las tablas con esa variable. """
-train_continuous = scaler.fit_transform(train_tabular_data[['Age']])
-valid_continuous = scaler.transform(valid_tabular_data[['Age']])
-test_continuous = scaler.transform(test_tabular_data[['Age']])
+""" Para poder entrenar la red hace falta transformar los dataframes en arrays de numpy. """
+train_data = np.asarray(train_data).astype('float32')
+valid_data = np.asarray(valid_data).astype('float32')
+test_data = np.asarray(test_data).astype('float32')
 
-train_tabular_data.loc[:,'Age'] = train_continuous[:,0]
-valid_tabular_data.loc[:,'Age'] = valid_continuous[:,0]
-test_tabular_data.loc[:,'Age'] = test_continuous[:,0]
+train_labels_survival = np.asarray(train_labels_survival).astype('float32')
+valid_labels_survival = np.asarray(valid_labels_survival).astype('float32')
+test_labels_survival = np.asarray(test_labels_survival).astype('float32')
 
-""" Para poder entrenar la red hace falta transformar los dataframes de entrenamiento y test en arrays de numpy, así 
-como también la columna de salida de ambos subconjuntos (las imágenes YA fueron convertidas anteriormente, por lo que no
-hace falta transformarlas de nuevo). """
-train_tabular_data = np.asarray(train_tabular_data).astype('float32')
-train_labels = np.asarray(train_labels).astype('float32')
+""" Se especifica tamaño de lote para utilizarlo posteriormente en el entrenamiento: """
+batch_dimension = 32
 
-valid_tabular_data = np.asarray(valid_tabular_data).astype('float32')
-valid_labels = np.asarray(valid_labels).astype('float32')
+""" Se pueden guardar en formato de 'numpy' las imágenes, los datos y las etiquetas de test para usarlas después de 
+entrenar el modelo. """
+#np.save('test_data', test_data)
+#np.save('test_labels', test_labels_survival)
 
-test_tabular_data = np.asarray(test_tabular_data).astype('float32')
-test_labels = np.asarray(test_labels).astype('float32')
+""" Se mide la importancia de las variables de datos con Random Forest. Se crean grupos de árboles de decisión para
+estimar cuales son las variables que mas influyen en la predicción de la salida y se musetra en un gráfico """
+feature_names = [f"feature {i}" for i in range(train_data.shape[1])]
+forest = RandomForestClassifier(random_state = 0)
+forest.fit(train_data, train_labels_survival)
+
+result = permutation_importance(forest, train_data, train_labels_survival, n_repeats = 30, random_state = 42,
+                                n_jobs = 2)
+forest_importances = pd.Series(result.importances_mean, index = train_data_columns)
+forest_importances_threshold = forest_importances.nlargest(n = 10).dropna()
+
+fig, ax = plt.subplots()
+forest_importances_threshold.plot.barh(ax = ax)
+ax.set_title("Importancia de variables [Supervivencia]")
+ax.set_ylabel("Reducción de eficacia media")
+fig.tight_layout()
+plt.show()
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL (MLP) -----------------------------------------------
 --------------------------------------------------------------------------------------------------------------------"""
 model = keras.Sequential()
-model.add(layers.Dense(train_tabular_data.shape[1], activation='relu', input_shape=(train_tabular_data.shape[1],)))
-model.add(layers.Dropout(0.5))
-model.add(layers.Dense(32, activation = "relu"))
-model.add(layers.Dropout(0.3))
+model.add(layers.Dense(train_data.shape[1], activation='relu', input_shape=(train_data.shape[1],)))
+model.add(layers.Dropout(0.2))
+model.add(layers.Dense(64, activation = "relu"))
+model.add(layers.Dropout(0.2))
 model.add(layers.Dense(1, activation = "sigmoid"))
 model.summary()
 
@@ -437,49 +482,23 @@ parámetros de la red neuronal con el objetivo de minimizar la función de 'loss
 # @lr: tamaño de pasos para alcanzar el mínimo global de la función de loss.
 metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(name='fp'),
            keras.metrics.TrueNegatives(name='tn'), keras.metrics.FalseNegatives(name='fn'),
-           keras.metrics.Recall(name='recall'), # TP / (TP + FN)
-           keras.metrics.Precision(name='precision'), # TP / (TP + FP)
-           keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC')]
+           keras.metrics.Recall(name='recall'),  # TP / (TP + FN)
+           keras.metrics.Precision(name='precision'),  # TP / (TP + FP)
+           keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC-ROC'),
+           keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
 model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
               optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '../data/data_model_survival_prediction.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
-
-smoter = imblearn.over_sampling.SMOTE(sampling_strategy='minority')
-train_tabular_data, train_labels = smoter.fit_resample(train_tabular_data, train_labels)
-
-""" Esto se hace para que al hacer el entrenamiento, los pesos de las distintas salidas se balaceen, ya que el conjunto
-de datos que se tratan en este problema es muy imbalanceado. """
-from sklearn.utils import class_weight
-class_weights = class_weight.compute_class_weight(class_weight = 'balanced', classes = np.unique(train_labels),
-                                                  y = train_labels)
-class_weight_dict = dict(enumerate(class_weights))
+checkpoint_path = '/home/avalderas/img_slides/clinical/data/survival/inference/models/model_data_survival_{epoch:02d}_{val_loss:.2f}.h5'
+mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_accuracy', mode= 'max')
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = train_tabular_data,  # Datos de entrada.
-                           y = train_labels,  # Datos objetivos.
-                           epochs = 100,
-                           verbose = 1,
-                           batch_size= 32,
-                           class_weight= class_weight_dict,
-                           #callbacks= mcp_save,
-                           validation_data = (valid_tabular_data, valid_labels)) # Datos de validación.
-
-""" Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
-especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
-la sensibilidad y la precisión del conjunto de datos de validación."""
-# @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_tabular_data, test_labels, verbose = 0)
-print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
-      "Exactitud del conjunto de prueba: {:.2f} %\n" 
-      "El AUC-ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
-                                                               results[3]/(results[3]+results[2]), results[7] * 100,
-                                                               results[8]))
+neural_network = model.fit(x = train_data, y = train_labels_survival, epochs = 500, verbose = 1, batch_size = 32,
+                           # callbacks = mcp_save,
+                           validation_data = (valid_data, valid_labels_survival))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
 posteriormentes para dibujar las gráficas de la 'loss', la sensibilidad y la precisión del entrenamiento y  validación 
@@ -499,68 +518,3 @@ plt.xlabel('Epochs')
 plt.legend()
 plt.figure() # Crea o activa una figura
 plt.show() # Se muestran todas las gráficas
-
-""" -------------------------------------------------------------------------------------------------------------------
-------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
---------------------------------------------------------------------------------------------------------------------"""
-""" Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
-conjunto de datos de test que se definió anteriormente al repartir los datos. """
-# @suppress = True: Muestra los números con representación de coma fija
-# @predict: Genera predicciones para nuevas entradas
-print("\nGenera predicciones para 10 muestras")
-print("Clase de las salidas: ", test_labels[:10])
-np.set_printoptions(precision=3, suppress=True)
-print("Predicciones:\n", np.round(model.predict(test_tabular_data[:10])))
-
-""" Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
-red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
-y_true = test_labels # Etiquetas verdaderas de 'test'
-y_pred = np.round(model.predict(test_tabular_data)) # Predicción de etiquetas de 'test'
-
-matrix = confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
-
-group_names = ['True Neg','False Pos','False Neg','True Pos'] # Nombres de los grupos
-group_counts = ['{0:0.0f}'.format(value) for value in matrix.flatten()] # Cantidad de casos por grupo
-
-""" @zip: Une las tuplas del nombre de los grupos con la de la cantidad de casos por grupo """
-labels = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names,group_counts)]
-labels = np.asarray(labels).reshape(2,2)
-sns.heatmap(matrix, annot=labels, fmt='', cmap='Blues')
-plt.show() # Muestra la gráfica de la matriz de confusión
-
-""" Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
-documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
-tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
-Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
-# @ravel: Aplana el vector a 1D
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
-y_pred_prob = model.predict(test_tabular_data).ravel()
-fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
-auc_roc = auc(fpr, tpr)
-
-plt.figure(1)
-plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
-plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
-plt.xlabel('False positive rate')
-plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve')
-plt.legend(loc = 'best')
-plt.show()
-
-""" Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
-del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
-precision, recall, threshold = precision_recall_curve(y_true, y_pred_prob)
-auc_pr = auc(recall, precision)
-
-plt.figure(2)
-plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
-plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('AUC-PR curve')
-plt.legend(loc = 'best')
-plt.show()
-
-#np.save('test_data', test_tabular_data)
-#np.save('test_labels', test_labels)

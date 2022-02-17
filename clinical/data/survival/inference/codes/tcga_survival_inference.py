@@ -1,53 +1,76 @@
 import pandas as pd
 import numpy as np
-import seaborn as sns # Para realizar gráficas sobre datos
+import seaborn as sns  # Para realizar gráficas sobre datos
 import matplotlib.pyplot as plt
-import cv2 #OpenCV
+import cv2  # OpenCV
 import glob
-import tensorflow as tf
-from tensorflow import keras
+import itertools
 from tensorflow.keras.models import load_model
-from tensorflow.keras import layers
-from tensorflow.keras.layers import Input # Para instanciar tensores de Keras
-from functools import reduce # 'reduce' aplica una función pasada como argumento para todos los miembros de una lista.
-from sklearn.model_selection import train_test_split # Se importa la librería para dividir los datos en entreno y test.
-from sklearn.preprocessing import MinMaxScaler # Para escalar valores
-from sklearn.metrics import confusion_matrix # Para realizar la matriz de confusión
-from pytorch_grad_cam import GradCAM # Hace falta instalar pytorch, ttach, torchvision, tqdm y el propio GRAD-CAM
+from tensorflow import keras
+from tensorflow.keras import *
+from tensorflow.keras.layers import *
+from sklearn.metrics import confusion_matrix
 
-model = load_model(
-    '/patient_status/data/overall_status/inference/data/test_data&models/data_model_survival_prediction.h5')
+""" Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
+'numpy' """
+model = load_model('/home/avalderas/img_slides/clinical/data/survival/inference/models/model_data_survival_253_0.35.h5')
 
-test_tabular_data = np.load('/patient_status/data/overall_status/inference/data/test_data&models/test_data.npy')
-test_labels = np.load('/patient_status/data/overall_status/inference/data/test_data&models/test_labels.npy')
+test_data = np.load('/home/avalderas/img_slides/clinical/data/survival/inference/test data/test_data.npy')
+test_labels = np.load('/home/avalderas/img_slides/clinical/data/survival/inference/test data/test_labels.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_tabular_data, test_labels, verbose = 0)
-print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n" 
-      "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
-      "Exactitud del conjunto de prueba: {:.2f} %\n" 
-      "El AUC-ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
-                                                               results[3]/(results[3]+results[2]), results[7] * 100,
-                                                               results[8]))
+results = model.evaluate(test_data, test_labels, verbose = 0)
+print("\n'Loss' de la supervivencia en el conjunto de prueba: {:.2f}\n""Sensibilidad de la supervivencia en el conjunto "
+      "de prueba: {:.2f}%\n""Precisión de la supervivencia en el conjunto de prueba: {:.2f}%\n""Especificidad de la "
+      "supervivencia en el conjunto de prueba: {:.2f}% \n""Exactitud de la supervivencia en el conjunto de prueba: {:.2f}%\n"
+      "AUC-ROC de la supervivenvicia en el conjunto de prueba: {:.2f}\nAUC-PR de la supervivencia en el conjunto de "
+      "prueba: {:.2f}".format(results[0], results[5] * 100, results[6] * 100, (results[3]/(results[3]+results[2])) * 100,
+                              results[7] * 100, results[8], results[9]))
 
-""" Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
+if results[5] > 0 or results[6] > 0:
+    print("Valor-F de la supervivencia en el conjunto de "
+          "prueba: {:.2f}".format((2 * results[5] * results[6]) / (results[5] + results[6])))
+
+""" Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
+conjunto de datos de test que se definió anteriormente al repartir los datos.
+Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
-y_true = test_labels # Etiquetas verdaderas de 'test'
-y_pred = np.round(model.predict(test_tabular_data)) # Predicción de etiquetas de 'test'
+def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de confusión', cmap = plt.cm.Blues):
+    """ Imprime y dibuja la matriz de confusión. Se puede normalizar escribiendo el parámetro `normalize=True`. """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes)
+    plt.yticks(tick_marks, classes)
 
-matrix = confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        cm = cm.round(2)
+    else:
+        cm=cm
 
-group_names = ['True Neg','False Pos','False Neg','True Pos'] # Nombres de los grupos
-group_counts = ['{0:0.0f}'.format(value) for value in matrix.flatten()] # Cantidad de casos por grupo
+    thresh = cm.max() / 2.
+    for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "white" if cm[il, j] > thresh else "black")
 
-""" @zip: Une las tuplas del nombre de los grupos con la de la cantidad de casos por grupo """
-labels = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names,group_counts)]
-labels = np.asarray(labels).reshape(2,2)
-sns.heatmap(matrix, annot=labels, fmt='', cmap='Blues')
-plt.show() # Muestra la gráfica de la matriz de confusión
+    plt.tight_layout()
+    plt.ylabel('Clase verdadera')
+    plt.xlabel('Predicción')
+
+# Supervivencia
+y_true_survival = test_labels
+y_pred_survival = np.round(model.predict(test_data))
+
+matrix_metastasis = confusion_matrix(y_true_survival, y_pred_survival, labels = [0, 1])
+matrix_metastasis_classes = ['Sobrevive', 'Fallece']
+
+plot_confusion_matrix(matrix_metastasis, classes = matrix_metastasis_classes, title ='Matriz de confusión de '
+                                                                                     'supervivencia')
+plt.show()
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
 documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
@@ -56,8 +79,8 @@ Para implementarlas, se importan los paquetes necesarios, se definen las variabl
 # @ravel: Aplana el vector a 1D
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
-y_pred_prob = model.predict(test_tabular_data).ravel()
-fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
+y_pred_prob_survival = model.predict(test_data).ravel()
+fpr, tpr, thresholds = roc_curve(test_labels, y_pred_prob_survival)
 auc_roc = auc(fpr, tpr)
 
 plt.figure(1)
@@ -65,13 +88,13 @@ plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve')
+plt.title('AUC-ROC curve for survival prediction')
 plt.legend(loc = 'best')
 plt.show()
 
 """ Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
 del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
-precision, recall, threshold = precision_recall_curve(y_true, y_pred_prob)
+precision, recall, threshold_metastasis = precision_recall_curve(test_labels, y_pred_prob_survival)
 auc_pr = auc(recall, precision)
 
 plt.figure(2)
@@ -79,6 +102,6 @@ plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('AUC-PR curve')
+plt.title('AUC-PR curve for survival prediction')
 plt.legend(loc = 'best')
 plt.show()
