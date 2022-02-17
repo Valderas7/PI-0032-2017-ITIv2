@@ -1,4 +1,5 @@
 """ Librerías """
+import itertools
 import pandas as pd
 import numpy as np
 import seaborn as sns # Para realizar gráficas sobre datos
@@ -20,9 +21,9 @@ data_inibica = pd.read_excel('/home/avalderas/img_slides/excels/inference_inibic
 
 """ Se sustituyen los valores de la columna del estado de supervivencia, puesto que se entrenaron para valores de '1' 
 para los pacientes fallecidos, al contrario que en el Excel de los pacientes de INiBICA """
-data_inibica.loc[data_inibica.Estado_supervivencia == 1, "Estado_supervivencia"] = 2
-data_inibica.loc[data_inibica.Estado_supervivencia == 0, "Estado_supervivencia"] = 1
-data_inibica.loc[data_inibica.Estado_supervivencia == 2, "Estado_supervivencia"] = 0
+data_inibica.loc[data_inibica.Supervivencia == 1, "Supervivencia"] = 2
+data_inibica.loc[data_inibica.Supervivencia == 0, "Supervivencia"] = 1
+data_inibica.loc[data_inibica.Supervivencia == 2, "Supervivencia"] = 0
 
 """ Se crea la misma cantidad de columnas para los tipos de tumor que se creo en el conjunto de entrenamiento para 
 rellenarlas posteriormente con un '1' en las filas que corresponda, dependiendo de los tipos de tumor de los pacientes 
@@ -35,18 +36,21 @@ data_inibica['Mixed [tumor type]'] = 0
 data_inibica['Mucinous [tumor type]'] = 0
 data_inibica['Other [tumor type]'] = 0
 
-data_inibica.loc[(data_inibica['Tipo_tumor'] == 'Medullary'), 'Medullary [tumor type]'] = 1
-data_inibica.loc[(data_inibica['Tipo_tumor'] == 'Mucinous'), 'Mucinous [tumor type]'] = 1
-data_inibica.loc[(data_inibica['Tipo_tumor'] == "Lobular"), 'Lobular [tumor type]'] = 1
-data_inibica.loc[(data_inibica['Tipo_tumor'] == 'IDC') | (data_inibica['Tipo_tumor'] == 'Non Infiltrating Ductal'),
-                 'Ductal [tumor type]'] = 1
-data_inibica.loc[(data_inibica['Tipo_tumor'] == 'Mixed'), 'Mixed [tumor type]'] = 1
-data_inibica.loc[(data_inibica['Tipo_tumor'] == 'Apocrine') | (data_inibica['Tipo_tumor'] == 'Micropapillar') |
-                 (data_inibica['Tipo_tumor'] == 'Tubular'), 'Tumor_Other'] = 1
+data_inibica.loc[(data_inibica['Tipo histológico'] == 'Medullary'), 'Medullary [tumor type]'] = 1
+data_inibica.loc[(data_inibica['Tipo histológico'] == 'Mucinous'), 'Mucinous [tumor type]'] = 1
+data_inibica.loc[(data_inibica['Tipo histológico'] == "Lobular"), 'Lobular [tumor type]'] = 1
+data_inibica.loc[(data_inibica['Tipo histológico'] == 'IDC') |
+                 (data_inibica['Tipo histológico'] == 'Non Infiltrating Ductal'), 'Ductal [tumor type]'] = 1
+data_inibica.loc[(data_inibica['Tipo histológico'] == 'Mixed'), 'Mixed [tumor type]'] = 1
+data_inibica.loc[(data_inibica['Tipo histológico'] == 'Apocrine')
+                 | (data_inibica['Tipo histológico'] == 'Micropapillar')
+                 | (data_inibica['Tipo histológico'] == 'Tubular'), 'Other [tumor type]'] = 1
 
 """ Se crea la misma cantidad de columnas para la variable 'STAGE' que se creo en el conjunto de entrenamiento para 
 rellenarlas posteriormente con un '1' en las filas que corresponda, dependiendo de la fase de 'STAGE' de los pacientes 
 de INiBICA. """
+data_inibica['STAGE I'] = 0
+data_inibica['STAGE IA'] = 0
 data_inibica['STAGE IB'] = 0
 data_inibica['STAGE II'] = 0
 data_inibica['STAGE IIA'] = 0
@@ -58,6 +62,8 @@ data_inibica['STAGE IIIC'] = 0
 data_inibica['STAGE IV'] = 0
 data_inibica['STAGE X'] = 0
 
+data_inibica.loc[(data_inibica['STAGE'] == 'I'), 'STAGE I'] = 1
+data_inibica.loc[(data_inibica['STAGE'] == 'IA'), 'STAGE IA'] = 1
 data_inibica.loc[(data_inibica['STAGE'] == 'IB'), 'STAGE IB'] = 1
 data_inibica.loc[(data_inibica['STAGE'] == 'IIA'), 'STAGE IIA'] = 1
 data_inibica.loc[(data_inibica['STAGE'] == 'IIB'), 'STAGE IIB'] = 1
@@ -67,73 +73,100 @@ data_inibica.loc[(data_inibica['STAGE'] == 'IIIC'), 'STAGE IIIC'] = 1
 data_inibica.loc[(data_inibica['STAGE'] == 'IV'), 'STAGE IV'] = 1
 
 """ Se binariza la columna de receptores Her-2 """
-data_inibica.loc[(data_inibica['Her-2'] == '1+') | (data_inibica['Her-2'] == 0) | (data_inibica['Her-2'] == '2+')] = 0
-data_inibica.loc[(data_inibica['Her-2'] == '3+')] = 1
+data_inibica.loc[(data_inibica['Her-2'] == '1+') | (data_inibica['Her-2'] == '0')
+                 | (data_inibica['Her-2'] == '2+'), 'Her-2'] = 0
+data_inibica.loc[(data_inibica['Her-2'] == '3+'), 'Her-2'] = 1
 
 """ Se eliminan las columnas que no sirven """
-data_inibica = data_inibica.drop(['Diagnóstico_previo', 'PR', 'ER', 'pT', 'pN', 'pM', 'Ki-67', 'Tipo_tumor', 'Recidivas',
-                                  'Estado_supervivencia'], axis = 1)
+data_inibica = data_inibica.drop(['Diagnóstico previo', 'PR', 'ER', 'pT', 'pN', 'pM', 'Ki-67', 'Tipo histológico',
+                                  'Recidivas', 'Supervivencia', 'STAGE'], axis = 1)
 data_inibica = data_inibica[data_inibica.columns.drop(list(data_inibica.filter(regex='NORMAL')))]
 
 """ Se ordenan las columnas de igual manera en el que fueron colocadas durante el proceso de entrenamiento. """
 cols = data_inibica.columns.tolist()
-cols = cols[:2] + cols[3:4] + cols[2:3] + cols[-18:-11] + cols[-11:]
+cols = cols[:2] + cols[3:4] + cols[2:3] + cols[-19:-13] + cols[-13:] + cols[4:5] + cols[5:-19]
 data_inibica = data_inibica[cols]
-
 #data_inibica.to_excel('inference_inibica_metastasis.xlsx')
 
 """ Se carga el Excel de nuevo ya que anteriormente se ha guardado """
-data_inibica_metastasis = pd.read_excel('/home/avalderas/img_slides/patient_status/data/distant_metastasis/inference/test_data&models/inference_inibica_metastasis.xlsx', engine='openpyxl')
+data_inibica_metastasis = pd.read_excel('/home/avalderas/img_slides/clinical/data/distant metastasis/inference/excel/inference_inibica_metastasis.xlsx', engine='openpyxl')
 
 """ Ahora habria que eliminar la columna de pacientes y guardar la columna de metastasis a distancia como variable de 
 salida. """
-data_inibica_metastasis = data_inibica_metastasis.drop(['Paciente'], axis = 1)
-inibica_labels = data_inibica_metastasis.pop('Metástasis_distancia')
+data_inibica = data_inibica.drop(['Paciente'], axis = 1)
+test_labels = data_inibica.pop('Metástasis distancia')
 
 """ Se transforman ambos dataframes en formato numpy para que se les pueda aplicar la inferencia del modelo de la red 
 neuronal """
-test_data_inibica = np.asarray(data_inibica_metastasis).astype('float32')
-inibica_labels = np.asarray(inibica_labels)
+test_data = np.asarray(data_inibica).astype('float32')
+test_labels = np.asarray(test_labels)
 
-metastasis_model = load_model(
-    '/clinical_data/data/distant_metastasis/inference/test_data&models/data_model_distant_metastasis_prediction.h5')
+model = load_model('/home/avalderas/img_slides/clinical/data/distant metastasis/inference/models/model_data_distant_metastasis_300_0.38.h5')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento """
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = metastasis_model.evaluate(test_data_inibica, inibica_labels, verbose = 0)
-print("\n'Loss' del conjunto de prueba: {:.2f}\n""Sensibilidad del conjunto de prueba: {:.2f}\n"
-      "Precisión del conjunto de prueba: {:.2f}\n""Especifidad del conjunto de prueba: {:.2f} \n"
-      "Exactitud del conjunto de prueba: {:.2f} %\n"
-      "El AUC-ROC del conjunto de prueba es de: {:.2f}".format(results[0], results[5], results[6],
-                                                               results[3]/(results[3]+results[2]), results[7] * 100,
-                                                               results[8]))
+results = model.evaluate(test_data, test_labels, verbose = 0)
 
-""" Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
+print("\n'Loss' de metástasis a distancia en el conjunto de prueba: {:.2f}\n""Sensibilidad de metástasis a distancia en "
+      "el conjunto de prueba: {:.2f}%\n""Precisión de metástasis a distancia en el conjunto de prueba: {:.2f}%\n"
+      "Especificidad de metástasis a distancia en el conjunto de prueba: {:.2f}% \n""Exactitud de metástasis a distancia "
+      "en el conjunto de prueba: {:.2f}%\n""AUC-ROC de metástasis a distancia en el conjunto de prueba: {:.2f}\nAUC-PR "
+      "de metástasis a distancia en el conjunto de "
+      "prueba: {:.2f}".format(results[0], results[5] * 100, results[6] * 100, (results[3]/(results[3]+results[2])) * 100,
+                              results[7] * 100, results[8], results[9]))
+
+if results[5] > 0 or results[6] > 0:
+    print("Valor-F de metástasis a distancia en el conjunto de "
+          "prueba: {:.2f}".format((2 * results[5] * results[6]) / (results[5] + results[6])))
+
+""" Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
+conjunto de datos de test que se definió anteriormente al repartir los datos.
+Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
 red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
-y_true = inibica_labels # Etiquetas verdaderas de 'test'
-y_pred = np.round(metastasis_model.predict(test_data_inibica)) # Predicción de etiquetas de 'test'
+def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de confusión', cmap = plt.cm.Blues):
+    """ Imprime y dibuja la matriz de confusión. Se puede normalizar escribiendo el parámetro `normalize=True`. """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes)
+    plt.yticks(tick_marks, classes)
 
-matrix = confusion_matrix(y_true, y_pred) # Calcula (pero no dibuja) la matriz de confusión
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        cm = cm.round(2)
+    else:
+        cm=cm
 
-group_names = ['True Neg','False Pos','False Neg','True Pos'] # Nombres de los grupos
-group_counts = ['{0:0.0f}'.format(value) for value in matrix.flatten()] # Cantidad de casos por grupo
+    thresh = cm.max() / 2.
+    for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "white" if cm[il, j] > thresh else "black")
 
-""" @zip: Une las tuplas del nombre de los grupos con la de la cantidad de casos por grupo """
-labels = [f'{v1}\n{v2}\n' for v1, v2 in zip(group_names,group_counts)]
-labels = np.asarray(labels).reshape(2,2)
-sns.heatmap(matrix, annot=labels, fmt='', cmap='Blues')
-plt.show() # Muestra la gráfica de la matriz de confusión
+    plt.tight_layout()
+    plt.ylabel('Clase verdadera')
+    plt.xlabel('Predicción')
 
-""" Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un
+# Recidivas
+y_true_metastasis = test_labels
+y_pred_metastasis = np.round(model.predict(test_data))
+
+matrix_metastasis = confusion_matrix(y_true_metastasis, y_pred_metastasis, labels = [0, 1])
+matrix_metastasis_classes = ['Sin metástasis distante', 'Con metástasis distante']
+
+plot_confusion_matrix(matrix_metastasis, classes = matrix_metastasis_classes, title ='Matriz de confusión de metástasis '
+                                                                                     'a distancia')
+plt.show()
+
+""" Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
 documento grafico del rendimiento del clasificador binario. Esta curva representa la tasa de verdaderos positivos y la
 tasa de falsos positivos, por lo que resume el comportamiento general del clasificador para diferenciar clases.
 Para implementarlas, se importan los paquetes necesarios, se definen las variables y con ellas se dibuja la curva: """
 # @ravel: Aplana el vector a 1D
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
-y_pred_prob = metastasis_model.predict(test_data_inibica).ravel()
-fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
+y_pred_prob_metastasis = model.predict(test_data).ravel()
+fpr, tpr, thresholds = roc_curve(test_labels, y_pred_prob_metastasis)
 auc_roc = auc(fpr, tpr)
 
 plt.figure(1)
@@ -141,13 +174,13 @@ plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve')
+plt.title('AUC-ROC curve for distant metastasis prediction')
 plt.legend(loc = 'best')
 plt.show()
 
-""" Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico
+""" Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
 del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
-precision, recall, threshold = precision_recall_curve(y_true, y_pred_prob)
+precision, recall, threshold_metastasis = precision_recall_curve(test_labels, y_pred_prob_metastasis)
 auc_pr = auc(recall, precision)
 
 plt.figure(2)
@@ -155,6 +188,6 @@ plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('AUC-PR curve')
+plt.title('AUC-PR curve for distant metastasis prediction')
 plt.legend(loc = 'best')
 plt.show()

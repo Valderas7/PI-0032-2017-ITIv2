@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/clinical/data/distant metastasis/inference/models/model_data_distant_metastasis_190_0.64.h5')
+model = load_model('/home/avalderas/img_slides/clinical/data/distant metastasis/inference/models/model_data_distant_metastasis_300_0.38.h5')
 
 test_data = np.load('/home/avalderas/img_slides/clinical/data/distant metastasis/inference/test data/test_data.npy')
 test_labels_metastasis = np.load('/home/avalderas/img_slides/clinical/data/distant metastasis/inference/test data/test_labels.npy')
@@ -24,9 +24,6 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_data, test_labels_metastasis, verbose = 0)
 
-""" -------------------------------------------------------------------------------------------------------------------
-------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
---------------------------------------------------------------------------------------------------------------------"""
 print("\n'Loss' de metástasis a distancia en el conjunto de prueba: {:.2f}\n""Sensibilidad de metástasis a distancia en "
       "el conjunto de prueba: {:.2f}%\n""Precisión de metástasis a distancia en el conjunto de prueba: {:.2f}%\n"
       "Especificidad de metástasis a distancia en el conjunto de prueba: {:.2f}% \n""Exactitud de metástasis a distancia "

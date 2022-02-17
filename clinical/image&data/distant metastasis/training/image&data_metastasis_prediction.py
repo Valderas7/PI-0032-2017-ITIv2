@@ -637,9 +637,6 @@ Para ello, primero se descongela el modelo base."""
 set_trainable = 0
 
 for layer in cnn_model.layers:
-    #if layer.name == 'block2a_expand_conv':
-        #set_trainable = True
-    #if set_trainable:
     if not isinstance(layer, layers.BatchNormalization):
         layer.trainable = True
 

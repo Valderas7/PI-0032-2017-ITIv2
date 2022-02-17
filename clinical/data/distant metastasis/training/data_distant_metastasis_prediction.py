@@ -320,17 +320,6 @@ for column_cnv_del in columns_list_cnv_del:
         df_all_merge.loc[index_cnv_sublist_del, column_cnv_del] = 1
     i_cnv_del += 1
 
-""" En este caso, el número de muestras de imágenes y de datos deben ser iguales. Las imágenes de las que se disponen se 
-enmarcan según el sistema de estadificación TNM como N1A, N1, N2A, N2, N3A, N1MI, N1B, N3, NX, N3B, N1C o N3C según la
-categoría N (extensión de cáncer que se ha diseminado a los ganglios linfáticos) de dicho sistema de estadificación.
-Por tanto, en los datos tabulares tendremos que quedarnos solo con los casos donde los pacientes tengan esos valores
-de la categoría 'N' y habrá que usar, por tanto, una imagen para cada paciente, para que no haya errores al repartir
-los subconjuntos de datos. """
-# 552 filas resultantes, como en cBioPortal:
-df_all_merge = df_all_merge[(df_all_merge["path_n_stage"]!='N0') & (df_all_merge["path_n_stage"]!='NX') &
-                            (df_all_merge["path_n_stage"]!='N0 (I-)') & (df_all_merge["path_n_stage"]!='N0 (I+)') &
-                            (df_all_merge["path_n_stage"]!='N0 (MOL+)')]
-
 """ Al realizar un análisis de los datos de entrada se ha visto un único valor incorrecto en la columna
 'cancer_type_detailed'. Por ello se sustituye dicho valor por 'Breast Invasive Carcinoma (NOS)'. También se ha apreciado
 un único valor en 'tumor_type', por lo que también se realiza un cambio de valor en dicho valor atípico. Además, se 
@@ -363,7 +352,7 @@ df_all_merge = pd.get_dummies(df_all_merge, columns=["tumor_type", "stage"])
 
 """ Se recocolan las columnas para que las mutaciones aparezcan las últimas """
 cols = df_all_merge.columns.tolist()
-cols = cols[:4] + cols[-17:] + cols[4:-17]
+cols = cols[:4] + cols[-19:] + cols[4:-19]
 df_all_merge = df_all_merge[cols]
 
 """ Se renombran algunas columnas, simplemente para hacerlo más atractivo visualmente. """
@@ -373,7 +362,8 @@ df_all_merge = df_all_merge.rename(columns = {'subtype': 'HER-2 receptor', 'tumo
                                               'tumor_type_Metaplastic Carcinoma': 'Metaplastic [tumor type]',
                                               'tumor_type_Mixed Histology (NOS)': 'Mixed [tumor type]',
                                               'tumor_type_Mucinous Carcinoma': 'Mucinous [tumor type]',
-                                              'tumor_type_Other': 'Other [tumor type]', 'stage_STAGE IB': 'STAGE IB',
+                                              'tumor_type_Other': 'Other [tumor type]', 'stage_STAGE I': 'STAGE I',
+                                              'stage_STAGE IA': 'STAGE IA', 'stage_STAGE IB': 'STAGE IB',
                                               'stage_STAGE II': 'STAGE II', 'stage_STAGE IIA': 'STAGE IIA',
                                               'stage_STAGE IIB': 'STAGE IIB', 'stage_STAGE III': 'STAGE III',
                                               'stage_STAGE IIIA': 'STAGE IIIA', 'stage_STAGE IIIB': 'STAGE IIIB',
@@ -385,7 +375,6 @@ train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratif
 train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['Distant Metastasis'])
 
 """ Se iguala el número de teselas con y sin metástasis a distancia """
-"""
 # Entrenamiento
 train_metastasis_tiles = train_data['Distant Metastasis'].value_counts()[1] # Con metástasis a distancia
 train_no_metastasis_tiles = train_data['Distant Metastasis'].value_counts()[0] # Sin metástasis a distancia
@@ -398,7 +387,7 @@ else:
     train_data = train_data.sort_values(by = 'Distant Metastasis', ascending = True)
 
 train_data = train_data[:-difference_train]
-"""
+
 # Validación
 valid_metastasis_tiles = valid_data['Distant Metastasis'].value_counts()[1] # Con metástasis a distancia
 valid_no_metastasis_tiles = valid_data['Distant Metastasis'].value_counts()[0] # Sin metástasis a distancia
@@ -505,12 +494,12 @@ model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse
 checkpoint_path = '/home/avalderas/img_slides/clinical/data/distant metastasis/inference/models/model_data_distant_metastasis_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
 
-smoter = SMOTE(sampling_strategy = 'minority')
-train_tabular_data, train_labels = smoter.fit_resample(train_data, train_labels_metastasis)
+#smoter = SMOTE(sampling_strategy = 'minority')
+#train_tabular_data, train_labels = smoter.fit_resample(train_data, train_labels_metastasis)
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_data, y = train_labels_metastasis, epochs = 300, verbose = 1, batch_size = 32,
-                           #callbacks = mcp_save,
+                           callbacks = mcp_save,
                            validation_data = (valid_data, valid_labels_metastasis))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 

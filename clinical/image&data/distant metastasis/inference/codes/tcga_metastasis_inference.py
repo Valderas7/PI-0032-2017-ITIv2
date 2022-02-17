@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/clinical/image&data/distant metastasis/inference/models/model_image&data_metastasis')
+model = load_model('/home/avalderas/img_slides/clinical/image&data/distant metastasis/inference/models/model_image&data_metastasis_39_0.89.h5')
 
 test_data = np.load('/home/avalderas/img_slides/clinical/image&data/distant metastasis/inference/test data/normalized/test_data_normalized.npy')
 test_image = np.load('/home/avalderas/img_slides/clinical/image&data/distant metastasis/inference/test data/normalized/test_image_normalized.npy')
