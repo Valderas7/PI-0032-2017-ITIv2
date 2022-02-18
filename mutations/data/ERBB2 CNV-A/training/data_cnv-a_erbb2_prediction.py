@@ -3,11 +3,13 @@ import pandas as pd
 import numpy as np
 import seaborn as sns  # Para realizar gráficas sobre datos
 import matplotlib.pyplot as plt
+import cv2  # OpenCV
 import glob
-from imblearn.over_sampling import SMOTE
+import staintools
 from tensorflow.keras.callbacks import ModelCheckpoint
 from sklearn.utils import class_weight
 from tensorflow import keras
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras import *
 from tensorflow.keras.layers import *
 from functools import reduce  # 'reduce' aplica una función pasada como argumento para todos los miembros de una lista.
@@ -67,9 +69,8 @@ df_subtype = pd.DataFrame.from_dict(subtype.items()); df_subtype.rename(columns 
 df_snv = pd.DataFrame.from_dict(snv.items()); df_snv.rename(columns = {0 : 'ID', 1 : 'SNV'}, inplace = True)
 df_cnv = pd.DataFrame.from_dict(cnv.items()); df_cnv.rename(columns = {0 : 'ID', 1 : 'CNV'}, inplace = True)
 
-""" No se incluye la columna de recidivas, puesto que reduce enormemente las muestras de pacientes con metástasis """
-df_list = [df_age, df_neoadjuvant, df_tumor_type, df_stage, df_path_t_stage, df_path_n_stage, df_path_m_stage,
-           df_subtype, df_snv, df_cnv]
+df_list = [df_age, df_neoadjuvant, df_os_status, df_dfs_status, df_tumor_type, df_stage, df_path_t_stage,
+           df_path_n_stage, df_path_m_stage, df_subtype, df_snv, df_cnv]
 
 """ Fusionar todos los dataframes (los cuales se han recopilado en una lista) por la columna 'ID' para que ningún valor
 esté descuadrado en la fila que no le corresponda. """
@@ -91,13 +92,14 @@ df_all_merge.loc[df_all_merge.ID == 'TCGA-BH-A18V', 'Distant Metastasis'] = 1
 df_all_merge.loc[df_all_merge.ID == 'TCGA-EW-A1P8', 'Distant Metastasis'] = 1
 df_all_merge.loc[df_all_merge.ID == 'TCGA-GM-A2DA', 'Distant Metastasis'] = 1
 
-""" Se recoloca la columna de metástasis a distancia al lado de la de tipo histológico """
+""" Se recoloca la columna de metástasis a distancia al lado de la de recaídas para dejar las mutaciones como las 
+últimas columnas. """
 cols = df_all_merge.columns.tolist()
-cols = cols[:3] + cols[-1:] + cols[3:-1]
+cols = cols[:5] + cols[-1:] + cols[5:-1]
 df_all_merge = df_all_merge[cols]
 
-""" Ahora se encuentra cuales son los IDs de los genes que interesan del panel OCA. Primero se carga el archivo excel 
-donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y se crean dos listas. Una para
+""" Ahora se va a encontrar cuales son los ID de los genes que nos interesa. Para empezar se carga el archivo excel 
+donde aparecen todos los genes con mutaciones que interesan estudiar usando 'openpyxl' y creamos dos listas. Una para
 los genes SNV y otra para los genes CNV."""
 mutations_target = pd.read_excel('/home/avalderas/img_slides/excels/Panel_OCA.xlsx', usecols= 'B:C', engine= 'openpyxl')
 
@@ -327,7 +329,8 @@ convierten las columnas categóricas binarias a valores de '0' y '1', para no au
 df_all_merge.loc[df_all_merge.tumor_type == "Infiltrating Carcinoma (NOS)", "tumor_type"] = "Mixed Histology (NOS)"
 df_all_merge.loc[df_all_merge.tumor_type == "Breast Invasive Carcinoma", "tumor_type"] = "Infiltrating Ductal Carcinoma"
 df_all_merge.loc[df_all_merge.Neoadjuvant == "No", "Neoadjuvant"] = 0; df_all_merge.loc[df_all_merge.Neoadjuvant == "Yes", "Neoadjuvant"] = 1
-df_all_merge.loc[df_all_merge.path_m_stage == "CM0 (I+)", "path_m_stage"] = 'M0'
+df_all_merge.loc[df_all_merge.os_status == "0:LIVING", "os_status"] = 0; df_all_merge.loc[df_all_merge.os_status == "1:DECEASED", "os_status"] = 1
+df_all_merge.loc[df_all_merge.dfs_status == "0:DiseaseFree", "dfs_status"] = 0; df_all_merge.loc[df_all_merge.dfs_status == "1:Recurred/Progressed", "dfs_status"] = 1
 
 # Cambiar los subtipos para que muestre solo los receptores de HER-2
 df_all_merge.loc[df_all_merge.subtype == "BRCA_Her2", "subtype"] = 1
@@ -339,7 +342,7 @@ train_continuous = scaler.fit_transform(df_all_merge[['Age']])
 df_all_merge.loc[:, 'Age'] = train_continuous[:, 0]
 
 """ Ahora se eliminan las filas donde haya datos nulos para no ir arrastrándolos a lo largo del programa: """
-df_all_merge.dropna(inplace=True) # Mantiene el DataFrame con las entradas válidas en la misma variable.
+df_all_merge.dropna(inplace = True)
 
 """ Se eliminan las columnas de TNM (ya se tiene la columna STAGE que da la misma información) """
 df_all_merge = df_all_merge.drop(columns = ['path_t_stage', 'path_n_stage', 'path_m_stage'])
@@ -352,111 +355,110 @@ df_all_merge = pd.get_dummies(df_all_merge, columns=["tumor_type", "stage"])
 
 """ Se recocolan las columnas para que las mutaciones aparezcan las últimas """
 cols = df_all_merge.columns.tolist()
-cols = cols[:4] + cols[-19:] + cols[4:-19]
+cols = cols[:6] + cols[-18:] + cols[6:-18]
 df_all_merge = df_all_merge[cols]
 
 """ Se renombran algunas columnas, simplemente para hacerlo más atractivo visualmente. """
 df_all_merge = df_all_merge.rename(columns = {'subtype': 'HER-2 receptor', 'tumor_type_Infiltrating Ductal Carcinoma': 'Ductal [tumor type]',
+                                              'os_status': 'Survival', 'dfs_status': 'Relapse',
                                               'tumor_type_Infiltrating Lobular Carcinoma': 'Lobular [tumor type]',
                                               'tumor_type_Medullary Carcinoma': 'Medullary [tumor type]',
                                               'tumor_type_Metaplastic Carcinoma': 'Metaplastic [tumor type]',
                                               'tumor_type_Mixed Histology (NOS)': 'Mixed [tumor type]',
                                               'tumor_type_Mucinous Carcinoma': 'Mucinous [tumor type]',
-                                              'tumor_type_Other': 'Other [tumor type]', 'stage_STAGE I': 'STAGE I',
-                                              'stage_STAGE IA': 'STAGE IA', 'stage_STAGE IB': 'STAGE IB',
+                                              'tumor_type_Other': 'Other [tumor type]', 'stage_STAGE IB': 'STAGE IB',
+                                              'stage_STAGE I': 'STAGE I', 'stage_STAGE IA': 'STAGE IA',
                                               'stage_STAGE II': 'STAGE II', 'stage_STAGE IIA': 'STAGE IIA',
                                               'stage_STAGE IIB': 'STAGE IIB', 'stage_STAGE III': 'STAGE III',
                                               'stage_STAGE IIIA': 'STAGE IIIA', 'stage_STAGE IIIB': 'STAGE IIIB',
                                               'stage_STAGE IIIC': 'STAGE IIIC', 'stage_STAGE IV': 'STAGE IV',
                                               'stage_STAGE X': 'STAGE X'})
 
-""" Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split. """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['Distant Metastasis'])
-train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['Distant Metastasis'])
+""" Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
+Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['CNV-A ERBB2'])
+train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['CNV-A ERBB2'])
 
-""" Se iguala el número de teselas con y sin metástasis a distancia """
+""" Se iguala el número de teselas con mutación y sin mutación CNV-A del gen ERBB2 """
 # Entrenamiento
-train_metastasis_tiles = train_data['Distant Metastasis'].value_counts()[1] # Con metástasis a distancia
-train_no_metastasis_tiles = train_data['Distant Metastasis'].value_counts()[0] # Sin metástasis a distancia
+train_erbb2_tiles = train_data['CNV-A ERBB2'].value_counts()[1] # Con mutación
+train_no_erbb2_tiles = train_data['CNV-A ERBB2'].value_counts()[0] # Sin mutación
 
-if train_no_metastasis_tiles >= train_metastasis_tiles:
-    difference_train = train_no_metastasis_tiles - train_metastasis_tiles
-    train_data = train_data.sort_values(by = 'Distant Metastasis', ascending = False)
+if train_no_erbb2_tiles >= train_erbb2_tiles:
+    difference_train = train_no_erbb2_tiles - train_erbb2_tiles
+    train_data = train_data.sort_values(by = 'CNV-A ERBB2', ascending = False)
 else:
-    difference_train = train_metastasis_tiles - train_no_metastasis_tiles
-    train_data = train_data.sort_values(by = 'Distant Metastasis', ascending = True)
+    difference_train = train_erbb2_tiles - train_no_erbb2_tiles
+    train_data = train_data.sort_values(by = 'CNV-A ERBB2', ascending = True)
 
 train_data = train_data[:-difference_train]
 
 # Validación
-valid_metastasis_tiles = valid_data['Distant Metastasis'].value_counts()[1] # Con metástasis a distancia
-valid_no_metastasis_tiles = valid_data['Distant Metastasis'].value_counts()[0] # Sin metástasis a distancia
+valid_erbb2_tiles = valid_data['CNV-A ERBB2'].value_counts()[1] # Con mutación
+valid_no_erbb2_tiles = valid_data['CNV-A ERBB2'].value_counts()[0] # Sin mutación
 
-if valid_no_metastasis_tiles >= valid_metastasis_tiles:
-    difference_valid = valid_no_metastasis_tiles - valid_metastasis_tiles
-    valid_data = valid_data.sort_values(by = 'Distant Metastasis', ascending = False)
+if valid_no_erbb2_tiles >= valid_erbb2_tiles:
+    difference_valid = valid_no_erbb2_tiles - valid_erbb2_tiles
+    valid_data = valid_data.sort_values(by = 'CNV-A ERBB2', ascending = False)
 else:
-    difference_valid = valid_metastasis_tiles - valid_no_metastasis_tiles
-    valid_data = valid_data.sort_values(by = 'Distant Metastasis', ascending = True)
+    difference_valid = valid_erbb2_tiles - valid_no_erbb2_tiles
+    valid_data = valid_data.sort_values(by = 'CNV-A ERBB2', ascending = True)
 
 valid_data = valid_data[:-difference_valid]
 
 # Test
-test_metastasis_tiles = test_data['Distant Metastasis'].value_counts()[1] # Con metástasis a distancia
-test_no_metastasis_tiles = test_data['Distant Metastasis'].value_counts()[0] # Sin metástasis a distancia
+test_erbb2_tiles = test_data['CNV-A ERBB2'].value_counts()[1] # Con mutación
+test_no_erbb2_tiles = test_data['CNV-A ERBB2'].value_counts()[0] # Sin mutación
 
-if test_no_metastasis_tiles >= test_metastasis_tiles:
-    difference_test = test_no_metastasis_tiles - test_metastasis_tiles
-    test_data = test_data.sort_values(by = 'Distant Metastasis', ascending = False)
+if test_no_erbb2_tiles >= test_erbb2_tiles:
+    difference_test = test_no_erbb2_tiles - test_erbb2_tiles
+    test_data = test_data.sort_values(by = 'CNV-A ERBB2', ascending = False)
 else:
-    difference_test = test_metastasis_tiles - test_no_metastasis_tiles
-    test_data = test_data.sort_values(by = 'Distant Metastasis', ascending = True)
+    difference_test = test_erbb2_tiles - test_no_erbb2_tiles
+    test_data = test_data.sort_values(by = 'CNV-A ERBB2', ascending = True)
 
 test_data = test_data[:-difference_test]
 
-""" Ya se puede eliminar de los dos subconjuntos la columna 'ID' que no es útil para la red MLP: """
+""" Ya se puede eliminar de los subconjuntos la columna de ID: """
 train_data = train_data.drop(['ID'], axis = 1)
 valid_data = valid_data.drop(['ID'], axis = 1)
 test_data = test_data.drop(['ID'], axis = 1)
 
 """ Se extraen los datos de salida de la red neuronal y se guardan los nombres de las columnas de datos """
-train_labels_metastasis = train_data.pop('Distant Metastasis')
-valid_labels_metastasis = valid_data.pop('Distant Metastasis')
-test_labels_metastasis = test_data.pop('Distant Metastasis')
+train_labels_erbb2 = train_data.pop('CNV-A ERBB2')
+valid_labels_erbb2 = valid_data.pop('CNV-A ERBB2')
+test_labels_erbb2 = test_data.pop('CNV-A ERBB2')
 
 train_data_columns = train_data.columns.values
 
-""" Para poder entrenar la red hace falta transformar los dataframes en arrays de numpy. """
+""" Para poder entrenar la red hace falta transformar las tablas en arrays. Para ello se utiliza 'numpy' """
 train_data = np.asarray(train_data).astype('float32')
 valid_data = np.asarray(valid_data).astype('float32')
 test_data = np.asarray(test_data).astype('float32')
 
-train_labels_metastasis = np.asarray(train_labels_metastasis).astype('float32')
-valid_labels_metastasis = np.asarray(valid_labels_metastasis).astype('float32')
-test_labels_metastasis = np.asarray(test_labels_metastasis).astype('float32')
+train_labels_erbb2 = np.asarray(train_labels_erbb2).astype('float32')
+valid_labels_erbb2 = np.asarray(valid_labels_erbb2).astype('float32')
+test_labels_erbb2 = np.asarray(test_labels_erbb2).astype('float32')
 
-""" Se especifica tamaño de lote para utilizarlo posteriormente en el entrenamiento: """
-batch_dimension = 32
-
-""" Se pueden guardar en formato de 'numpy' las imágenes, los datos y las etiquetas de test para usarlas después de 
-entrenar el modelo. """
+""" Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
+neuronal convolucional. """
 #np.save('test_data', test_data)
-#np.save('test_labels', test_labels_metastasis)
+#np.save('test_labels', test_labels_erbb2)
 
 """ Se mide la importancia de las variables de datos con Random Forest. Se crean grupos de árboles de decisión para
 estimar cuales son las variables que mas influyen en la predicción de la salida y se musetra en un gráfico """
 feature_names = [f"feature {i}" for i in range(train_data.shape[1])]
 forest = RandomForestClassifier(random_state = 0)
-forest.fit(train_data, train_labels_metastasis)
+forest.fit(train_data, train_labels_erbb2)
 
-result = permutation_importance(forest, train_data, train_labels_metastasis, n_repeats = 30, random_state = 42,
+result = permutation_importance(forest, train_data, train_labels_erbb2, n_repeats = 30, random_state = 42,
                                 n_jobs = 2)
 forest_importances = pd.Series(result.importances_mean, index = train_data_columns)
 forest_importances_threshold = forest_importances.nlargest(n = 10).dropna()
 
 fig, ax = plt.subplots()
 forest_importances_threshold.plot.barh(ax = ax)
-ax.set_title("Importancia de variables [Metástasis Distante]")
+ax.set_title("Importancia de variables [CNV-A ERBB2]")
 ax.set_ylabel("Reducción de eficacia media")
 fig.tight_layout()
 plt.show()
@@ -486,22 +488,22 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC-ROC'),
            keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
-model.compile(loss = 'binary_crossentropy', # Esta función de loss suele usarse para clasificación binaria.
-              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+model.compile(loss = 'binary_crossentropy', optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
+model.summary()
 
-""" Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
-checkpoint_path = '/home/avalderas/img_slides/clinical/data/distant metastasis/inference/models/model_data_distant_metastasis_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath= checkpoint_path, save_best_only = True, monitor= 'val_loss', mode= 'min')
+""" Se implementa un callbacks para guardar el modelo cada época. """
+checkpoint_path = '/home/avalderas/img_slides/mutations/data/ERBB2 CNV-A/inference/models/model_data_erbb2_{epoch:02d}_{val_loss:.2f}.h5'
+mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
+mcp_save_accuracy = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_accuracy', mode = 'max', save_best_only = True)
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
-neural_network = model.fit(x = train_data, y = train_labels_metastasis, epochs = 300, verbose = 1, batch_size = 32,
-                           callbacks = mcp_save,
-                           validation_data = (valid_data, valid_labels_metastasis))
+neural_network = model.fit(x = train_data, y = train_labels_erbb2, epochs = 1000, verbose = 1, batch_size = 32,
+                           #callbacks = [mcp_save, mcp_save_accuracy],
+                           validation_data = (valid_data, valid_labels_erbb2))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
-posteriormentes para dibujar las gráficas de la 'loss', la sensibilidad y la precisión del entrenamiento y  validación 
-de cada iteración."""
+posteriormentes para dibujar la gráfica de la 'loss'."""
 loss = neural_network.history['loss']
 val_loss = neural_network.history['val_loss']
 
@@ -516,4 +518,4 @@ plt.ylabel('Loss')
 plt.xlabel('Epochs')
 plt.legend()
 plt.figure() # Crea o activa una figura
-plt.show() # Se muestran todas las gráficas
+plt.show()
