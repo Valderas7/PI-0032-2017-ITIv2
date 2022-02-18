@@ -538,9 +538,9 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_data', test_data)
-#np.save('test_image', test_image_data)
-#np.save('test_labels', test_labels_pik3ca)
+np.save('test_data', test_data)
+np.save('test_image', test_image_data)
+np.save('test_labels', test_labels_pik3ca)
 
 """ Se mide la importancia de las variables de datos con Random Forest. Se crean grupos de árboles de decisión para
 estimar cuales son las variables que mas influyen en la predicción de la salida"""
@@ -555,7 +555,7 @@ forest_importances_threshold = forest_importances.nlargest(n = 10).dropna()
 
 fig, ax = plt.subplots()
 forest_importances_threshold.plot.barh(ax = ax)
-ax.set_title("Importancia de variables para SNV PIK3CA")
+ax.set_title("Importancia de variables [SNV PIK3CA]")
 ax.set_ylabel("Reducción de eficacia media")
 fig.tight_layout()
 plt.show()
@@ -626,7 +626,8 @@ model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
 checkpoint_path = '/home/avalderas/img_slides/mutations/image&data/PIK3CA SNV/inference/models/model_image&data_pik3ca_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
+mcp_loss = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
+mcp_accuracy = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_accuracy', mode = 'max', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = [train_data, train_image_data], y = train_labels_pik3ca, epochs = 2, verbose = 1,
@@ -640,9 +641,6 @@ sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
 set_trainable = 0
 
 for layer in cnn_model.layers:
-    #if layer.name == 'block2a_expand_conv':
-        #set_trainable = True
-    #if set_trainable:
     if not isinstance(layer, layers.BatchNormalization):
         layer.trainable = True
 
@@ -654,9 +652,9 @@ model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_pik3ca, epochs = 20, verbose = 1,
+neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_pik3ca, epochs = 50, verbose = 1,
                            validation_data = ([valid_data, valid_image_data], valid_labels_pik3ca),
-                           #callbacks = mcp_save,
+                           callbacks = [mcp_loss, mcp_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
