@@ -13,10 +13,10 @@ import itertools
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/models/model_image_erbb2_07_0.69_try2.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/models/model_image_erbb2_03_0.69.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/test data/test_image_try2.npy')
-test_labels_erbb2 = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/test data/test_labels_erbb2_try2.npy')
+test_image_data = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/test data/normalized/test_image.npy')
+test_labels_erbb2 = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/test data/normalized/test_labels.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

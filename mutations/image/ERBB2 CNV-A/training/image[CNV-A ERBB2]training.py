@@ -317,7 +317,6 @@ else:
     train_data = train_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = True)
 
 train_data = train_data[:-difference_train]
-print(train_data['CNV_ERBB2_AMP'].value_counts())
 
 # Validación
 valid_erbb2_tiles = valid_data['CNV_ERBB2_AMP'].value_counts()[1] # Con mutación
@@ -331,7 +330,6 @@ else:
     valid_data = valid_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = True)
 
 valid_data = valid_data[:-difference_valid]
-print(valid_data['CNV_ERBB2_AMP'].value_counts())
 
 # Test
 test_erbb2_tiles = test_data['CNV_ERBB2_AMP'].value_counts()[1] # Con mutación
@@ -345,7 +343,6 @@ else:
     test_data = test_data.sort_values(by = 'CNV_ERBB2_AMP', ascending = True)
 
 test_data = test_data[:-difference_test]
-print(test_data['CNV_ERBB2_AMP'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -405,8 +402,8 @@ test_labels_erbb2 = np.asarray(test_labels_erbb2).astype('float32')
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image_try2', test_image_data)
-#np.save('test_labels_erbb2_try2', test_labels_erbb2)
+#np.save('test_image', test_image_data)
+#np.save('test_labels', test_labels_erbb2)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL CONVOLUCIONAL ---------------------------------------
@@ -418,6 +415,8 @@ base_model = keras.applications.EfficientNetB7(weights='imagenet', input_tensor=
 
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
+all_model = layers.Dense(512)(all_model)
+all_model = layers.Dropout(0.5)(all_model)
 all_model = layers.Dense(128)(all_model)
 all_model = layers.Dropout(0.5)(all_model)
 all_model = layers.Dense(32)(all_model)
@@ -450,7 +449,8 @@ model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
 checkpoint_path = '/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/models/model_image_erbb2_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
+mcp_loss = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
+mcp_accuracy = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_accuracy', mode = 'max', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = train_image_data, y = train_labels_erbb2,
@@ -464,11 +464,8 @@ sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
 set_trainable = 0
 
 for layer in base_model.layers:
-    if layer.name == 'block2a_expand_conv':
-        set_trainable = True
-    if set_trainable:
-        if not isinstance(layer, layers.BatchNormalization):
-            layer.trainable = True
+    if not isinstance(layer, layers.BatchNormalization):
+        layer.trainable = True
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
@@ -479,8 +476,8 @@ model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = train_image_data, y = train_labels_erbb2,
-                           epochs = 50, verbose = 1, validation_data = (valid_image_data, valid_labels_erbb2),
-                           #callbacks = mcp_save,
+                           epochs = 30, verbose = 1, validation_data = (valid_image_data, valid_labels_erbb2),
+                           #callbacks = [mcp_loss, mcp_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
