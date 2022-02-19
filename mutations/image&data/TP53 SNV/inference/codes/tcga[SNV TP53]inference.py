@@ -14,7 +14,7 @@ from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/models/')
+model = load_model('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/models/model_image&data_tp53_02_0.64.h5')
 
 test_data = np.load('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/test data/normalized/test_data.npy')
 test_image = np.load('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/test data/normalized/test_image.npy')
@@ -61,7 +61,7 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
 
     thresh = cm.max() / 2.
     for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "white" if cm[il, j] > thresh else "black")
+        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "black" if cm[il, j] > thresh else "red")
 
     plt.tight_layout()
     plt.ylabel('Clase')

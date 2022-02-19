@@ -625,7 +625,8 @@ model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
 checkpoint_path = '/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/models/model_image&data_tp53_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
+mcp_loss = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
+mcp_accuracy = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_accuracy', mode = 'max', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = [train_data, train_image_data], y = train_labels_tp53, epochs = 2, verbose = 1,
@@ -639,9 +640,6 @@ sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo 
 set_trainable = 0
 
 for layer in cnn_model.layers:
-    #if layer.name == 'block2a_expand_conv':
-        #set_trainable = True
-    #if set_trainable:
     if not isinstance(layer, layers.BatchNormalization):
         layer.trainable = True
 
@@ -655,7 +653,7 @@ model.summary()
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_tp53, epochs = 20, verbose = 1,
                            validation_data = ([valid_data, valid_image_data], valid_labels_tp53),
-                           #callbacks = mcp_save,
+                           #callbacks = [mcp_loss, mcp_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

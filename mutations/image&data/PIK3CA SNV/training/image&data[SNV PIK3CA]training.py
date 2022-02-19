@@ -538,9 +538,9 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-np.save('test_data', test_data)
-np.save('test_image', test_image_data)
-np.save('test_labels', test_labels_pik3ca)
+#np.save('test_data', test_data)
+#np.save('test_image', test_image_data)
+#np.save('test_labels', test_labels_pik3ca)
 
 """ Se mide la importancia de las variables de datos con Random Forest. Se crean grupos de árboles de decisión para
 estimar cuales son las variables que mas influyen en la predicción de la salida"""
@@ -652,9 +652,9 @@ model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_pik3ca, epochs = 50, verbose = 1,
+neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_pik3ca, epochs = 20, verbose = 1,
                            validation_data = ([valid_data, valid_image_data], valid_labels_pik3ca),
-                           callbacks = [mcp_loss, mcp_accuracy],
+                           #callbacks = [mcp_loss, mcp_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
