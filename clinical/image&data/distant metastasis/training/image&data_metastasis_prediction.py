@@ -534,9 +534,9 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes, los datos y las etiquetas de test para usarlas después de 
 entrenar el modelo. """
-np.save('test_image_normalized', test_image_data)
-np.save('test_data_normalized', test_data)
-np.save('test_labels_normalized', test_labels_metastasis)
+np.save('test_image', test_image_data)
+np.save('test_data', test_data)
+np.save('test_labels', test_labels_metastasis)
 
 """ Se mide la importancia de las variables de datos con Random Forest. Se crean grupos de árboles de decisión para
 estimar cuales son las variables que mas influyen en la predicción de la salida y se musetra en un gráfico """
@@ -578,6 +578,8 @@ cnn_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tensor
 """ Se añaden capas de clasificación después de las capas congeladas de convolución. """
 all_cnn_model = cnn_model.output
 all_cnn_model = layers.Flatten()(all_cnn_model)
+all_cnn_model = layers.Dense(512, activation = "relu")(all_cnn_model)
+all_cnn_model = layers.Dropout(0.2)(all_cnn_model)
 all_cnn_model = layers.Dense(128, activation = "relu")(all_cnn_model)
 all_cnn_model = layers.Dropout(0.2)(all_cnn_model)
 all_cnn_model_out = layers.Dense(64, activation = "relu")(all_cnn_model)
@@ -615,13 +617,14 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
 model.compile(loss = 'binary_crossentropy',
-              optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 model.summary()
 
 """ Se implementa un callback: para guardar el mejor modelo que tenga la menor 'loss' en la validación. """
 checkpoint_path = '/home/avalderas/img_slides/clinical/image&data/distant metastasis/inference/models/model_image&data_metastasis_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = False)
+mcp_loss = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
+mcp_accuracy = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_accuracy', mode = 'max', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
 model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 2, verbose = 1,
@@ -642,15 +645,15 @@ for layer in cnn_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 50, verbose = 1,
+neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_metastasis, epochs = 20, verbose = 1,
                            validation_data = ([valid_data, valid_image_data], valid_labels_metastasis),
-                           callbacks = mcp_save,
+                           callbacks = [mcp_loss, mcp_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
