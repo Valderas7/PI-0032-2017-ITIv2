@@ -16,9 +16,9 @@ from sklearn.metrics import roc_curve, auc, precision_recall_curve
 'numpy' """
 model = load_model('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/models/model_image&data_tp53_02_0.64_1.h5')
 
-test_data = np.load('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/test data/normalized/test_data.npy')
-test_image = np.load('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/test data/normalized/test_image.npy')
-test_labels = np.load('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/test data/normalized/test_labels.npy')
+test_data = np.load('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/training/test_data.npy')
+test_image = np.load('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/training/test_image.npy')
+test_labels = np.load('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/training/test_labels.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,

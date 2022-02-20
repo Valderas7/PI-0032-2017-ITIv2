@@ -62,7 +62,7 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
 
     thresh = cm.max() / 2.
     for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "white" if cm[il, j] > thresh else "black")
+        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "black" if cm[il, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('Clase verdadera')

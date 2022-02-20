@@ -619,7 +619,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC-ROC'),
            keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
-model.compile(loss = 'binary_crossentropy', optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+model.compile(loss = 'binary_crossentropy', optimizer = keras.optimizers.Adam(learning_rate = 0.000001),
               metrics = metrics)
 model.summary()
 
