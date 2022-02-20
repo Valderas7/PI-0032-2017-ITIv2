@@ -14,7 +14,7 @@ from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/models/model_image&data_tp53_02_0.')
+model = load_model('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/models/model_image&data_tp53_02_0.64_1.h5')
 
 test_data = np.load('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/test data/normalized/test_data.npy')
 test_image = np.load('/home/avalderas/img_slides/mutations/image&data/TP53 SNV/inference/test data/normalized/test_image.npy')

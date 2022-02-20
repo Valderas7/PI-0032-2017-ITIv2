@@ -402,8 +402,8 @@ test_labels_erbb2 = np.asarray(test_labels_erbb2).astype('float32')
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-np.save('test_image', test_image_data)
-np.save('test_labels', test_labels_erbb2)
+#np.save('test_image', test_image_data)
+#np.save('test_labels', test_labels_erbb2)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL CONVOLUCIONAL ---------------------------------------
@@ -477,7 +477,7 @@ model.summary()
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = train_image_data, y = train_labels_erbb2,
                            epochs = 30, verbose = 1, validation_data = (valid_image_data, valid_labels_erbb2),
-                           callbacks = [mcp_loss, mcp_accuracy],
+                           #callbacks = [mcp_loss, mcp_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

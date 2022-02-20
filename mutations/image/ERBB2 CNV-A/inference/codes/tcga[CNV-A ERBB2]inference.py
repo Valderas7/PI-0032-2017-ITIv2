@@ -13,10 +13,10 @@ import itertools
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/models/model_image_erbb')
+model = load_model('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/models/model_image_erbb2_03_0.91.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/training/test_i')
-test_labels_erbb2 = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/training/test_labe')
+test_image_data = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/test data/normalized/test_image.npy')
+test_labels_erbb2 = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/test data/normalized/test_labels.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -58,7 +58,7 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
 
     thresh = cm.max() / 2.
     for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "white" if cm[il, j] > thresh else "black")
+        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "black" if cm[il, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('Clase verdadera')

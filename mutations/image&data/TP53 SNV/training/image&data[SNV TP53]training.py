@@ -645,13 +645,13 @@ for layer in cnn_model.layers:
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_tp53, epochs = 20, verbose = 1,
+neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_tp53, epochs = 10, verbose = 1,
                            validation_data = ([valid_data, valid_image_data], valid_labels_tp53),
                            callbacks = [mcp_loss, mcp_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
