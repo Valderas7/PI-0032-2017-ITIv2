@@ -55,14 +55,12 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         cm = cm.round(2)
-        #print("Normalized confusion matrix")
     else:
         cm=cm
-        #print('Confusion matrix, without normalization')
 
     thresh = cm.max() / 2.
     for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, il, cm[il, j], horizontalalignment="center", color="white" if cm[il, j] > thresh else "black")
+        plt.text(j, il, cm[il, j], horizontalalignment="center", color="black" if cm[il, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('Clase verdadera')
@@ -101,7 +99,7 @@ plt.show()
 
 """ Por otra parte, tambien se dibuja el area bajo la la curva PR (precision-recall), para tener un documento grafico 
 del rendimiento del clasificador en cuanto a la sensibilidad y la precision de resultados. """
-precision, recall, threshold_survival = precision_recall_curve(test_labels_survival, y_pred_prob_survival)
+precision, recall, threshold_survival = precision_recall_curve(test_labels, y_pred_prob_survival)
 auc_pr = auc(recall, precision)
 
 plt.figure(2)
