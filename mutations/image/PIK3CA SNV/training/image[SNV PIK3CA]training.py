@@ -192,7 +192,6 @@ else:
     train_data = train_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
 
 train_data = train_data[:-difference_train]
-#print(train_data['SNV_PIK3CA'].value_counts())
 
 # Validación
 valid_pik3ca_tiles = valid_data['SNV_PIK3CA'].value_counts()[1] # Con mutación
@@ -206,7 +205,6 @@ else:
     valid_data = valid_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
 
 valid_data = valid_data[:-difference_valid]
-#print(valid_data['SNV_PIK3CA'].value_counts())
 
 # Test
 test_pik3ca_tiles = test_data['SNV_PIK3CA'].value_counts()[1] # Con mutación
@@ -220,7 +218,6 @@ else:
     test_data = test_data.sort_values(by = 'SNV_PIK3CA', ascending = True)
 
 test_data = test_data[:-difference_test]
-#print(test_data['SNV_PIK3CA'].value_counts())
 
 """ Una vez ya se tienen todas las imágenes valiosas y todo perfectamente enlazado entre datos e imágenes, se definen 
 las dimensiones que tendrán cada una de ellas. """
@@ -259,7 +256,7 @@ train_data = train_data.drop(['img_path'], axis = 1)
 valid_data = valid_data.drop(['img_path'], axis = 1)
 test_data = test_data.drop(['img_path'], axis = 1)
 
-""" Se extraen las etiquetas de salida para cada la mutación SNV de TP53 """
+""" Se extraen las etiquetas de salida para la mutación """
 train_labels_pik3ca = train_data.iloc[:, -1]
 valid_labels_pik3ca = valid_data.iloc[:, -1]
 test_labels_pik3ca = test_data.iloc[:, -1]
@@ -268,7 +265,7 @@ test_labels_pik3ca = test_data.iloc[:, -1]
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
 del df_all_merge, df_path_n_stage, df_list
 
-train_image_data_len = len(train_image_data)  # print(train_image_data_len)
+train_image_data_len = len(train_image_data)
 valid_image_data_len = len(valid_image_data)
 batch_dimension = 32
 
@@ -281,7 +278,15 @@ test_labels_pik3ca = np.asarray(test_labels_pik3ca).astype('float32')
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
 #np.save('test_image', test_image_data)
-#np.save('test_labels_pik3ca', test_labels_pik3ca)
+#np.save('test_labels', test_labels_pik3ca)
+
+""" Data augmentation """
+train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 20, vertical_flip = True)
+val_aug = ImageDataGenerator()
+
+""" Instanciar lotes """
+train_gen = train_aug.flow(x = train_image_data, y = train_labels_pik3ca, batch_size = 32)
+val_gen = val_aug.flow(x = valid_image_data, y = valid_labels_pik3ca, batch_size = 32, shuffle = False)
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------- SECCIÓN MODELO DE RED NEURONAL CONVOLUCIONAL ---------------------------------------
@@ -293,10 +298,12 @@ base_model = keras.applications.EfficientNetB7(weights='imagenet', input_tensor=
 
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
-all_model = layers.Dense(64)(all_model)
-all_model = layers.Dropout(0.5)(all_model)
-all_model = layers.Dense(16)(all_model)
-all_model = layers.Dropout(0.5)(all_model)
+all_model = layers.Dense(512)(all_model)
+all_model = layers.Dropout(0.2)(all_model)
+all_model = layers.Dense(128)(all_model)
+all_model = layers.Dropout(0.2)(all_model)
+all_model = layers.Dense(32)(all_model)
+all_model = layers.Dropout(0.2)(all_model)
 pik3ca = layers.Dense(1, activation="sigmoid", name='pik3ca')(all_model)
 
 model = Model(inputs=base_model.input, outputs = pik3ca)
@@ -319,47 +326,46 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
 model.compile(loss = 'binary_crossentropy',
-              optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+              optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               metrics = metrics)
 model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
 checkpoint_path = '/home/avalderas/img_slides/mutations/image/PIK3CA SNV/inference/models/model_image_pik3ca_{epoch:02d}_{val_loss:.2f}.h5'
-mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min')
+mcp_loss = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
+mcp_accuracy = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_accuracy', mode = 'max', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = train_image_data, y = train_labels_pik3ca, epochs = 2, verbose = 1,
-          validation_data = (valid_image_data, valid_labels_pik3ca),
+model.fit(train_gen, epochs = 2, verbose = 1, validation_data = val_gen,
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
+
+""" Una vez el modelo ya ha sido entrenado, se resetean los generadores de data augmentation de los conjuntos de 
+entrenamiento y validacion """
+train_gen.reset()
+val_gen.reset()
 
 """ Una vez el modelo ya ha sido entrenado, se descongelan algunas capas convolucionales del modelo base de la red para 
 reeentrenar el modelo ('fine tuning'). Este es un último paso opcional que puede dar grandes mejoras o un rápido 
 sobreentrenamiento y que solo debe ser realizado después de entrenar el modelo con las capas congeladas """
-set_trainable = 0
-
 for layer in base_model.layers:
-    if layer.name == 'block2a_expand_conv':
-        set_trainable = True
-    if set_trainable:
-        if not isinstance(layer, layers.BatchNormalization):
-            layer.trainable = True
+    if not isinstance(layer, layers.BatchNormalization):
+        layer.trainable = True
 
 """ Es importante recompilar el modelo después de hacer cualquier cambio al atributo 'trainable', para que los cambios
 se tomen en cuenta. """
-model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
+model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
               loss = 'binary_crossentropy',
               metrics = metrics)
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = train_image_data, y = train_labels_pik3ca,
-                           epochs = 15, verbose = 1, validation_data = (valid_image_data, valid_labels_pik3ca),
-                           #callbacks = mcp_save,
+neural_network = model.fit(train_gen, epochs = 100, verbose = 1, validation_data = val_gen,
+                           #callbacks = [mcp_loss, mcp_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
-"""Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
+""" Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 
 posteriormentes para dibujar la gráfica de la 'loss'."""
 loss = neural_network.history['loss']
 val_loss = neural_network.history['val_loss']

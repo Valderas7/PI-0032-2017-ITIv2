@@ -1,5 +1,6 @@
 """ Librerías """
 import pandas as pd
+import itertools
 import numpy as np
 import seaborn as sns  # Para realizar gráficas sobre datos
 import matplotlib.pyplot as plt
@@ -12,10 +13,10 @@ from sklearn.metrics import confusion_matrix
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image/PIK3CA SNV/inference/models/model_image_pik3ca_02_0.64_try1.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/PIK3CA SNV/inference/models/model_image_pik3ca_01_0.68.h5')
 
-test_image_data = np.load('/home/avalderas/img_slides/mutations/image/PIK3CA SNV/inference/test data/test_image_try1.npy')
-test_labels_pik3ca = np.load('/home/avalderas/img_slides/mutations/image/PIK3CA SNV/inference/test data/test_labels_pik3ca_try1.npy')
+test_image_data = np.load('/home/avalderas/img_slides/mutations/image/PIK3CA SNV/inference/test data/normalized/test_image.npy')
+test_labels_pik3ca = np.load('/home/avalderas/img_slides/mutations/image/PIK3CA SNV/inference/test data/normalized/test_labels.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -37,6 +38,43 @@ print("\n'Loss' de las mutaciones SNV del gen PIK3CA en el conjunto de prueba: {
 if results[5] > 0 or results[6] > 0:
     print("Valor-F de las mutaciones SNV del gen PIK3CA en el conjunto de "
           "prueba: {:.2f}".format((2 * results[5] * results[6]) / (results[5] + results[6])))
+
+""" Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
+conjunto de datos de test que se definió anteriormente al repartir los datos.
+Además, se realiza la matriz de confusión sobre todo el conjunto del dataset de test para evaluar la precisión de la
+red neuronal y saber la cantidad de falsos positivos, falsos negativos, verdaderos negativos y verdaderos positivos. """
+def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de confusión', cmap = plt.cm.Blues):
+    """ Imprime y dibuja la matriz de confusión. Se puede normalizar escribiendo el parámetro `normalize=True`. """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes)
+    plt.yticks(tick_marks, classes)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        cm = cm.round(2)
+    else:
+        cm=cm
+
+    thresh = cm.max() / 2.
+    for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "black" if cm[il, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('Clase')
+    plt.xlabel('Predicción')
+
+# Mutaciones
+labels = test_labels_pik3ca
+predictions = np.round(model.predict(test_image_data))
+
+matrix = confusion_matrix(labels, predictions, labels = [0, 1])
+matrix_classes = ['Sin mutación', 'Con mutación']
+
+plot_confusion_matrix(matrix, classes = matrix_classes, title ='Matriz de confusión [SNV PIK3CA]')
+plt.show()
 
 """ Para terminar, se calculan las curvas ROC. """
 # @ravel: Aplana el vector a 1D

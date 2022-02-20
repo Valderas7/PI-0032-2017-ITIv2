@@ -13,10 +13,10 @@ import itertools
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/models/model_image_erbb2_03_0.69.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/models/model_image_erbb')
 
-test_image_data = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/test data/normalized/test_image.npy')
-test_labels_erbb2 = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/test data/normalized/test_labels.npy')
+test_image_data = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/training/test_i')
+test_labels_erbb2 = np.load('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/training/test_labe')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
@@ -24,9 +24,6 @@ la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_image_data, test_labels_erbb2, verbose = 0)
 
-""" -------------------------------------------------------------------------------------------------------------------
-------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
---------------------------------------------------------------------------------------------------------------------"""
 print("\n'Loss' de las mutaciones CNV-A del gen ERBB2 en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
       "CNV-A del gen ERBB2 en el conjunto de prueba: {:.2f}%\n""Precisión de las mutaciones CNV-A del gen ERBB2 en el "
       "conjunto de prueba: {:.2f}%\n""Especificidad de las mutaciones CNV-A del gen ERB2 en el conjunto de prueba: "
@@ -56,10 +53,8 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         cm = cm.round(2)
-        #print("Normalized confusion matrix")
     else:
         cm=cm
-        #print('Confusion matrix, without normalization')
 
     thresh = cm.max() / 2.
     for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
