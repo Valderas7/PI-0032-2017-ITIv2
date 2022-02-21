@@ -56,10 +56,8 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         cm = cm.round(2)
-        #print("Normalized confusion matrix")
     else:
         cm=cm
-        #print('Confusion matrix, without normalization')
 
     thresh = cm.max() / 2.
     for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
