@@ -13,20 +13,17 @@ import itertools
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/data/MYC CNV-A/inference/models/model_data_myc_697_0.62.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/MYC CNV-A/inference/models/model_image_myc_01_0.78.h5')
 
-test_data = np.load('/home/avalderas/img_slides/mutations/data/MYC CNV-A/inference/test data/test_data.npy')
-test_labels = np.load('/home/avalderas/img_slides/mutations/data/MYC CNV-A/inference/test data/test_labels.npy')
+test_image_data = np.load('/home/avalderas/img_slides/mutations/image/MYC CNV-A/inference/test data/normalized/test_image.npy')
+test_labels = np.load('/home/avalderas/img_slides/mutations/image/MYC CNV-A/inference/test data/normalized/test_labels.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_data, test_labels, verbose = 0)
+results = model.evaluate(test_image_data, test_labels, verbose = 0)
 
-""" -------------------------------------------------------------------------------------------------------------------
-------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
---------------------------------------------------------------------------------------------------------------------"""
 print("\n'Loss' de las mutaciones CNV-A del gen MYC en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
       "CNV-A del gen MYC en el conjunto de prueba: {:.2f}%\n""Precisión de las mutaciones CNV-A del gen MYC en el "
       "conjunto de prueba: {:.2f}%\n""Especificidad de las mutaciones CNV-A del gen MYC en el conjunto de prueba: "
@@ -61,20 +58,20 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
 
     thresh = cm.max() / 2.
     for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "white" if cm[il, j] > thresh else "black")
+        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "black" if cm[il, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('Clase verdadera')
     plt.xlabel('Predicción')
 
-# Recidivas
+# Mutaciones
 y_true_myc = test_labels
-y_pred_myc = np.round(model.predict(test_data))
+y_pred_myc = np.round(model.predict(test_image_data))
 
-matrix_erbb2 = confusion_matrix(y_true_myc, y_pred_myc, labels = [0, 1])
-matrix_erbb2_classes = ['Sin mutación', 'Con mutación']
+matrix_myc = confusion_matrix(y_true_myc, y_pred_myc, labels = [0, 1])
+matrix_myc_classes = ['Sin mutación', 'Con mutación']
 
-plot_confusion_matrix(matrix_erbb2, classes = matrix_erbb2_classes, title ='Matriz de confusión [CNV-A MYC]')
+plot_confusion_matrix(matrix_myc, classes = matrix_myc_classes, title = 'Matriz de confusión [CNV-A MYC]')
 plt.show()
 
 """ Para terminar, se calculan las curvas ROC. """
@@ -82,10 +79,10 @@ plt.show()
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
 y_true = test_labels
-y_pred_prob = model.predict(test_data)
+y_pred_prob = model.predict(test_image_data)
 
 # AUC-ROC
-fpr, tpr, thresholds_snv_erbb2 = roc_curve(y_true, y_pred_prob)
+fpr, tpr, thresholds_cnv = roc_curve(y_true, y_pred_prob)
 auc_roc = auc(fpr, tpr)
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label='No Skill')
@@ -97,7 +94,7 @@ plt.legend(loc='best')
 plt.show()
 
 # AUC-PR
-precision, recall, threshold_snv_erbb2 = precision_recall_curve(y_true, y_pred_prob)
+precision, recall, threshold_cnv = precision_recall_curve(y_true, y_pred_prob)
 auc_pr = auc(recall, precision)
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')

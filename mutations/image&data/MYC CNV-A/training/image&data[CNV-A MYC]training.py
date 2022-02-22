@@ -386,8 +386,8 @@ df_all_merge = df_all_merge.rename(columns = {'subtype': 'HER-2 receptor', 'tumo
 
 """ Se dividen los datos tabulares y las imágenes con cáncer en conjuntos de entrenamiento y test con @train_test_split.
 Con @random_state se consigue que en cada ejecución la repartición sea la misma, a pesar de estar barajada: """
-train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['CNV-A ERBB2'])
-train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['CNV-A ERBB2'])
+train_data, test_data = train_test_split(df_all_merge, test_size = 0.20, stratify = df_all_merge['CNV-A MYC'])
+train_data, valid_data = train_test_split(train_data, test_size = 0.15, stratify = train_data['CNV-A MYC'])
 
 """ -------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------- SECCIÓN IMÁGENES -------------------------------------------------------
@@ -436,41 +436,41 @@ for id_img in remove_img_list:
 
 """ Se iguala el número de teselas con mutación y sin mutación CNV-A del gen ERBB2 """
 # Entrenamiento
-train_erbb2_tiles = train_data['CNV-A ERBB2'].value_counts()[1] # Con mutación
-train_no_erbb2_tiles = train_data['CNV-A ERBB2'].value_counts()[0] # Sin mutación
+train_myc_tiles = train_data['CNV-A MYC'].value_counts()[1] # Con mutación
+train_no_myc_tiles = train_data['CNV-A MYC'].value_counts()[0] # Sin mutación
 
-if train_no_erbb2_tiles >= train_erbb2_tiles:
-    difference_train = train_no_erbb2_tiles - train_erbb2_tiles
-    train_data = train_data.sort_values(by = 'CNV-A ERBB2', ascending = False)
+if train_no_myc_tiles >= train_myc_tiles:
+    difference_train = train_no_myc_tiles - train_myc_tiles
+    train_data = train_data.sort_values(by = 'CNV-A MYC', ascending = False)
 else:
-    difference_train = train_erbb2_tiles - train_no_erbb2_tiles
-    train_data = train_data.sort_values(by = 'CNV-A ERBB2', ascending = True)
+    difference_train = train_myc_tiles - train_no_myc_tiles
+    train_data = train_data.sort_values(by = 'CNV-A MYC', ascending = True)
 
 train_data = train_data[:-difference_train]
 
 # Validación
-valid_erbb2_tiles = valid_data['CNV-A ERBB2'].value_counts()[1] # Con mutación
-valid_no_erbb2_tiles = valid_data['CNV-A ERBB2'].value_counts()[0] # Sin mutación
+valid_myc_tiles = valid_data['CNV-A MYC'].value_counts()[1] # Con mutación
+valid_no_myc_tiles = valid_data['CNV-A MYC'].value_counts()[0] # Sin mutación
 
-if valid_no_erbb2_tiles >= valid_erbb2_tiles:
-    difference_valid = valid_no_erbb2_tiles - valid_erbb2_tiles
-    valid_data = valid_data.sort_values(by = 'CNV-A ERBB2', ascending = False)
+if valid_no_myc_tiles >= valid_myc_tiles:
+    difference_valid = valid_no_myc_tiles - valid_myc_tiles
+    valid_data = valid_data.sort_values(by = 'CNV-A MYC', ascending = False)
 else:
-    difference_valid = valid_erbb2_tiles - valid_no_erbb2_tiles
-    valid_data = valid_data.sort_values(by = 'CNV-A ERBB2', ascending = True)
+    difference_valid = valid_myc_tiles - valid_no_myc_tiles
+    valid_data = valid_data.sort_values(by = 'CNV-A MYC', ascending = True)
 
 valid_data = valid_data[:-difference_valid]
 
 # Test
-test_erbb2_tiles = test_data['CNV-A ERBB2'].value_counts()[1] # Con mutación
-test_no_erbb2_tiles = test_data['CNV-A ERBB2'].value_counts()[0] # Sin mutación
+test_myc_tiles = test_data['CNV-A MYC'].value_counts()[1] # Con mutación
+test_no_myc_tiles = test_data['CNV-A MYC'].value_counts()[0] # Sin mutación
 
-if test_no_erbb2_tiles >= test_erbb2_tiles:
-    difference_test = test_no_erbb2_tiles - test_erbb2_tiles
-    test_data = test_data.sort_values(by = 'CNV-A ERBB2', ascending = False)
+if test_no_myc_tiles >= test_myc_tiles:
+    difference_test = test_no_myc_tiles - test_myc_tiles
+    test_data = test_data.sort_values(by = 'CNV-A MYC', ascending = False)
 else:
-    difference_test = test_erbb2_tiles - test_no_erbb2_tiles
-    test_data = test_data.sort_values(by = 'CNV-A ERBB2', ascending = True)
+    difference_test = test_myc_tiles - test_no_myc_tiles
+    test_data = test_data.sort_values(by = 'CNV-A MYC', ascending = True)
 
 test_data = test_data[:-difference_test]
 
@@ -512,9 +512,9 @@ valid_data = valid_data.drop(['img_path', 'ID'], axis = 1)
 test_data = test_data.drop(['img_path', 'ID'], axis = 1)
 
 """ Se extraen los datos de salida de la red neuronal y se guardan los nombres de las columnas de datos """
-train_labels_erbb2 = train_data.pop('CNV-A ERBB2')
-valid_labels_erbb2 = valid_data.pop('CNV-A ERBB2')
-test_labels_erbb2 = test_data.pop('CNV-A ERBB2')
+train_labels_myc = train_data.pop('CNV-A MYC')
+valid_labels_myc = valid_data.pop('CNV-A MYC')
+test_labels_myc = test_data.pop('CNV-A MYC')
 
 train_data_columns = train_data.columns.values
 
@@ -523,9 +523,9 @@ train_data = np.asarray(train_data).astype('float32')
 valid_data = np.asarray(valid_data).astype('float32')
 test_data = np.asarray(test_data).astype('float32')
 
-train_labels_erbb2 = np.asarray(train_labels_erbb2).astype('float32')
-valid_labels_erbb2 = np.asarray(valid_labels_erbb2).astype('float32')
-test_labels_erbb2 = np.asarray(test_labels_erbb2).astype('float32')
+train_labels_myc = np.asarray(train_labels_myc).astype('float32')
+valid_labels_myc = np.asarray(valid_labels_myc).astype('float32')
+test_labels_myc = np.asarray(test_labels_myc).astype('float32')
 
 """ Se borran los dataframes utilizados, puesto que ya no sirven para nada, y se recopila la longitud de las imágenes de
 entrenamiento y validacion para utilizarlas posteriormente en el entrenamiento: """
@@ -537,24 +537,24 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-np.save('test_data', test_data)
-np.save('test_image', test_image_data)
-np.save('test_labels', test_labels_erbb2)
+#np.save('test_data', test_data)
+#np.save('test_image', test_image_data)
+#np.save('test_labels', test_labels_myc)
 
 """ Se mide la importancia de las variables de datos con Random Forest. Se crean grupos de árboles de decisión para
 estimar cuales son las variables que mas influyen en la predicción de la salida y se musetra en un gráfico """
 feature_names = [f"feature {i}" for i in range(train_data.shape[1])]
 forest = RandomForestClassifier(random_state = 0)
-forest.fit(train_data, train_labels_erbb2)
+forest.fit(train_data, train_labels_myc)
 
-result = permutation_importance(forest, train_data, train_labels_erbb2, n_repeats = 30, random_state = 42,
+result = permutation_importance(forest, train_data, train_labels_myc, n_repeats = 30, random_state = 42,
                                 n_jobs = 2)
 forest_importances = pd.Series(result.importances_mean, index = train_data_columns)
 forest_importances_threshold = forest_importances.nlargest(n = 10).dropna()
 
 fig, ax = plt.subplots()
 forest_importances_threshold.plot.barh(ax = ax)
-ax.set_title("Importancia de variables [CNV-A ERBB2]")
+ax.set_title("Importancia de variables [CNV-A MYC]")
 ax.set_ylabel("Reducción de eficacia media")
 fig.tight_layout()
 plt.show()
@@ -624,13 +624,13 @@ model.compile(loss = 'binary_crossentropy', optimizer = keras.optimizers.Adam(le
 model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
-checkpoint_path = '/home/avalderas/img_slides/mutations/image&data/ERBB2 CNV-A/inference/models/model_image&data_erbb2_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/home/avalderas/img_slides/mutations/image&data/MYC CNV-A/inference/models/model_image&data_myc_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_loss = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 mcp_accuracy = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_accuracy', mode = 'max', save_best_only = True)
 
 """ Una vez definido el modelo, se entrena: """
-model.fit(x = [train_data, train_image_data], y = train_labels_erbb2, epochs = 2, verbose = 1,
-          validation_data = ([valid_data, valid_image_data], valid_labels_erbb2),
+model.fit(x = [train_data, train_image_data], y = train_labels_myc, epochs = 2, verbose = 1,
+          validation_data = ([valid_data, valid_image_data], valid_labels_myc),
           steps_per_epoch = (train_image_data_len / batch_dimension),
           validation_steps = (valid_image_data_len / batch_dimension))
 
@@ -651,9 +651,9 @@ model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
 model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
-neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_erbb2, epochs = 50, verbose = 1,
-                           validation_data = ([valid_data, valid_image_data], valid_labels_erbb2),
-                           callbacks = [mcp_loss, mcp_accuracy],
+neural_network = model.fit(x = [train_data, train_image_data], y = train_labels_myc, epochs = 20, verbose = 1,
+                           validation_data = ([valid_data, valid_image_data], valid_labels_myc),
+                           #callbacks = [mcp_loss, mcp_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 

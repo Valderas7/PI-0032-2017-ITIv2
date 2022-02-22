@@ -10,23 +10,22 @@ from tensorflow import keras
 from tensorflow.keras.models import load_model
 from sklearn.metrics import confusion_matrix
 import itertools
+from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/data/MYC CNV-A/inference/models/model_data_myc_697_0.62.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image&data/MYC CNV-A/inference/models/model_image&data_myc_01_0.69.h5')
 
-test_data = np.load('/home/avalderas/img_slides/mutations/data/MYC CNV-A/inference/test data/test_data.npy')
-test_labels = np.load('/home/avalderas/img_slides/mutations/data/MYC CNV-A/inference/test data/test_labels.npy')
+test_data = np.load('/home/avalderas/img_slides/mutations/image&data/MYC CNV-A/inference/test data/normalized/test_data.npy')
+test_image = np.load('/home/avalderas/img_slides/mutations/image&data/MYC CNV-A/inference/test data/normalized/test_image.npy')
+test_labels = np.load('/home/avalderas/img_slides/mutations/image&data/MYC CNV-A/inference/test data/normalized/test_labels.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_data, test_labels, verbose = 0)
+results = model.evaluate([test_data, test_image], test_labels, verbose = 0)
 
-""" -------------------------------------------------------------------------------------------------------------------
-------------------------------------------- SECCIÓN DE EVALUACIÓN  ----------------------------------------------------
---------------------------------------------------------------------------------------------------------------------"""
 print("\n'Loss' de las mutaciones CNV-A del gen MYC en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
       "CNV-A del gen MYC en el conjunto de prueba: {:.2f}%\n""Precisión de las mutaciones CNV-A del gen MYC en el "
       "conjunto de prueba: {:.2f}%\n""Especificidad de las mutaciones CNV-A del gen MYC en el conjunto de prueba: "
@@ -64,28 +63,24 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
         plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "white" if cm[il, j] > thresh else "black")
 
     plt.tight_layout()
-    plt.ylabel('Clase verdadera')
+    plt.ylabel('Clase')
     plt.xlabel('Predicción')
 
-# Recidivas
-y_true_myc = test_labels
-y_pred_myc = np.round(model.predict(test_data))
+# Mutaciones
+labels = test_labels
+predictions = np.round(model.predict([test_data, test_image]))
 
-matrix_erbb2 = confusion_matrix(y_true_myc, y_pred_myc, labels = [0, 1])
-matrix_erbb2_classes = ['Sin mutación', 'Con mutación']
+matrix = confusion_matrix(labels, predictions, labels = [0, 1])
+matrix_classes = ['Sin mutación', 'Con mutación']
 
-plot_confusion_matrix(matrix_erbb2, classes = matrix_erbb2_classes, title ='Matriz de confusión [CNV-A MYC]')
+plot_confusion_matrix(matrix, classes = matrix_classes, title ='Matriz de confusión [CNV-A MYC]')
 plt.show()
 
 """ Para terminar, se calculan las curvas ROC. """
-# @ravel: Aplana el vector a 1D
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
-
-y_true = test_labels
-y_pred_prob = model.predict(test_data)
+predictions_raw = model.predict([test_data, test_image])
 
 # AUC-ROC
-fpr, tpr, thresholds_snv_erbb2 = roc_curve(y_true, y_pred_prob)
+fpr, tpr, thresholds_roc = roc_curve(labels, predictions_raw)
 auc_roc = auc(fpr, tpr)
 plt.figure(1)
 plt.plot([0, 1], [0, 1], 'k--', label='No Skill')
@@ -97,7 +92,7 @@ plt.legend(loc='best')
 plt.show()
 
 # AUC-PR
-precision, recall, threshold_snv_erbb2 = precision_recall_curve(y_true, y_pred_prob)
+precision, recall, threshold_pr = precision_recall_curve(labels, predictions_raw)
 auc_pr = auc(recall, precision)
 plt.figure(2)
 plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
