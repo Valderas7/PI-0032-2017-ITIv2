@@ -234,8 +234,8 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-#np.save('test_image', test_image_data)
-#np.save('test_labels', test_labels_metastasis)
+np.save('test_image', test_image_data)
+np.save('test_labels', test_labels_metastasis)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 10, vertical_flip = True)
@@ -255,8 +255,8 @@ base_model = keras.applications.EfficientNetB7(weights = 'imagenet', input_tenso
 
 all_model = base_model.output
 all_model = layers.Flatten()(all_model)
-all_model = layers.Dense(512, activation = 'relu')(all_model)
-all_model = layers.Dropout(0.2)(all_model)
+#all_model = layers.Dense(512, activation = 'relu')(all_model)
+#all_model = layers.Dropout(0.2)(all_model)
 all_model = layers.Dense(128, activation = 'relu')(all_model)
 all_model = layers.Dropout(0.2)(all_model)
 all_model = layers.Dense(32, activation = 'relu')(all_model)
@@ -320,7 +320,7 @@ model.summary()
 
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = train_gen, epochs = 20, verbose = 1, validation_data = val_gen,
-                           #callbacks = mcp_save,
+                           callbacks = mcp_save,
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
