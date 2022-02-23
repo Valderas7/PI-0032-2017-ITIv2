@@ -13,7 +13,7 @@ import itertools
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/image/FGF19 CNV-A/inference/models/model_image')
+model = load_model('/home/avalderas/img_slides/mutations/image/FGF19 CNV-A/inference/models/model_image_FGF19_01_0.71.h5')
 
 test_image_data = np.load('/home/avalderas/img_slides/mutations/image/FGF19 CNV-A/inference/test data/normalized/test_image.npy')
 test_labels = np.load('/home/avalderas/img_slides/mutations/image/FGF19 CNV-A/inference/test data/normalized/test_labels.npy')
