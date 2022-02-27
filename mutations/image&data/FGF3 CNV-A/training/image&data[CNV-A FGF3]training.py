@@ -537,9 +537,9 @@ batch_dimension = 32
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-np.save('test_data', test_data)
-np.save('test_image', test_image_data)
-np.save('test_labels', test_labels)
+#np.save('test_data', test_data)
+#np.save('test_image', test_image_data)
+#np.save('test_labels', test_labels)
 
 """ Se mide la importancia de las variables de datos con Random Forest. Se crean grupos de árboles de decisión para
 estimar cuales son las variables que mas influyen en la predicción de la salida y se musetra en un gráfico """
@@ -624,7 +624,7 @@ model.compile(loss = 'binary_crossentropy', optimizer = keras.optimizers.Adam(le
 model.summary()
 
 """ Se implementa un callbacks para guardar el modelo cada época. """
-checkpoint_path = '/home/avalderas/img_slides/mutations/image&data/FGF3 CNV-A/inference/models/model_image&data_FGF19_{epoch:02d}_{val_loss:.2f}.h5'
+checkpoint_path = '/home/avalderas/img_slides/mutations/image&data/FGF3 CNV-A/inference/models/model_image&data_FGF3_{epoch:02d}_{val_loss:.2f}.h5'
 mcp_loss = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mode = 'min', save_best_only = True)
 mcp_accuracy = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_accuracy', mode = 'max', save_best_only = True)
 
@@ -653,7 +653,7 @@ model.summary()
 """ Una vez descongelado las capas convolucionales seleccionadas y compilado de nuevo el modelo, se entrena otra vez. """
 neural_network = model.fit(x = [train_data, train_image_data], y = train_labels, epochs = 20, verbose = 1,
                            validation_data = ([valid_data, valid_image_data], valid_labels),
-                           callbacks = [mcp_loss, mcp_accuracy],
+                           #callbacks = [mcp_loss, mcp_accuracy],
                            steps_per_epoch = (train_image_data_len / batch_dimension),
                            validation_steps = (valid_image_data_len / batch_dimension))
 
