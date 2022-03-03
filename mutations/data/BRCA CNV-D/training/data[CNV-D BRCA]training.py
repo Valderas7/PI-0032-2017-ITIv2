@@ -378,7 +378,7 @@ df_all_merge = df_all_merge.rename(columns = {'subtype': 'HER-2 receptor', 'tumo
 df_all_merge['CNV-D BRCA'] = 0
 df_all_merge.loc[(df_all_merge['CNV-D BRCA1'] == 1) | (df_all_merge['CNV-D BRCA2'] == 1), 'CNV-D BRCA'] = 1
 
-""" Se eliminan las columnas de CNV-D de BRCA1 y BRCA2 y se coloca la oclumna creada en su lugar """
+""" Se eliminan las columnas de CNV-D de BRCA1 y BRCA2 y se coloca la columna creada en su lugar """
 df_all_merge = df_all_merge.drop(['CNV-D BRCA1', 'CNV-D BRCA2'], axis = 1)
 cols = df_all_merge.columns.tolist()
 cols = cols[:190] + cols[-1:] + cols[190:-1]
@@ -452,8 +452,8 @@ test_labels = np.asarray(test_labels).astype('float32')
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-np.save('test_data', test_data)
-np.save('test_labels', test_labels)
+#np.save('test_data', test_data)
+#np.save('test_labels', test_labels)
 
 """ Se mide la importancia de las variables de datos con Random Forest. Se crean grupos de árboles de decisión para
 estimar cuales son las variables que mas influyen en la predicción de la salida y se musetra en un gráfico """
@@ -498,7 +498,7 @@ metrics = [keras.metrics.TruePositives(name='tp'), keras.metrics.FalsePositives(
            keras.metrics.BinaryAccuracy(name='accuracy'), keras.metrics.AUC(name='AUC-ROC'),
            keras.metrics.AUC(curve='PR', name='AUC-PR')]
 
-model.compile(loss = 'binary_crossentropy', optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
+model.compile(loss = 'binary_crossentropy', optimizer = keras.optimizers.Adam(learning_rate = 0.00001),
               metrics = metrics)
 model.summary()
 
@@ -508,7 +508,7 @@ mcp_save = ModelCheckpoint(filepath = checkpoint_path, monitor = 'val_loss', mod
 
 """ Una vez definido y compilado el modelo, es hora de entrenarlo. """
 neural_network = model.fit(x = train_data, y = train_labels, epochs = 1000, verbose = 1, batch_size = 32,
-                           callbacks = mcp_save,
+                           #callbacks = mcp_save,
                            validation_data = (valid_data, valid_labels))
 
 """Las métricas del entreno se guardan dentro del método 'history'. Primero, se definen las variables para usarlas 

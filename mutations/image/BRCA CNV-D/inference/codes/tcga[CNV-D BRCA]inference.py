@@ -13,16 +13,16 @@ import itertools
 
 """ Se carga el modelo de red neuronal entrenado y los distintos datos de entrada y datos de salida guardados en formato 
 'numpy' """
-model = load_model('/home/avalderas/img_slides/mutations/data/BRCA CNV-D/inference/models/model_data_BRCA_990_0.65.h5')
+model = load_model('/home/avalderas/img_slides/mutations/image/BRCA CNV-D/inference/models/model_image_BRCA_03_0.69.h5')
 
-test_data = np.load('/home/avalderas/img_slides/mutations/data/BRCA CNV-D/inference/test data/test_data.npy')
-test_labels = np.load('/home/avalderas/img_slides/mutations/data/BRCA CNV-D/inference/test data/test_labels.npy')
+test_image_data = np.load('/home/avalderas/img_slides/mutations/image/BRCA CNV-D/inference/test data/normalized/test_image.npy')
+test_labels = np.load('/home/avalderas/img_slides/mutations/image/BRCA CNV-D/inference/test data/normalized/test_labels.npy')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento. En este caso, se decide mostrar los resultados de la 'loss', la exactitud,
 la sensibilidad y la precisión del conjunto de datos de validación."""
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
-results = model.evaluate(test_data, test_labels, verbose = 0)
+results = model.evaluate(test_image_data, test_labels, verbose = 0)
 
 print("\n'Loss' de las mutaciones CNV-D del gen BRCA en el conjunto de prueba: {:.2f}\n""Sensibilidad de las mutaciones "
       "CNV-D del gen BRCA en el conjunto de prueba: {:.2f}%\n""Precisión de las mutaciones CNV-D del gen BRCA en el "
@@ -58,7 +58,7 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
 
     thresh = cm.max() / 2.
     for il, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "white" if cm[il, j] > thresh else "black")
+        plt.text(j, il, cm[il, j], horizontalalignment = "center", color = "black" if cm[il, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('Clase')
@@ -66,7 +66,7 @@ def plot_confusion_matrix(cm, classes, normalize = False, title = 'Matriz de con
 
 # Matriz de confusión
 y_true_mutation = test_labels
-y_pred_mutation = np.round(model.predict(test_data))
+y_pred_mutation = np.round(model.predict(test_image_data))
 
 matrix_mutation = confusion_matrix(y_true_mutation, y_pred_mutation, labels = [0, 1])
 matrix_mutation_classes = ['Sin mutación', 'Con mutación']
@@ -79,7 +79,7 @@ plt.show()
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
 y_true = test_labels
-y_pred_prob = model.predict(test_data)
+y_pred_prob = model.predict(test_image_data)
 
 # AUC-ROC
 fpr, tpr, thresholds_roc = roc_curve(y_true, y_pred_prob)
