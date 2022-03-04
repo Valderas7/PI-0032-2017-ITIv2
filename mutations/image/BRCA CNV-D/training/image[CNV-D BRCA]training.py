@@ -409,8 +409,8 @@ test_labels = np.asarray(test_labels).astype('float32')
 
 """ Se pueden guardar en formato de 'numpy' las imágenes y las etiquetas de test para usarlas después de entrenar la red
 neuronal convolucional. """
-np.save('test_image', test_image_data)
-np.save('test_labels', test_labels)
+#np.save('test_image', test_image_data)
+#np.save('test_labels', test_labels)
 
 """ Data augmentation """
 train_aug = ImageDataGenerator(horizontal_flip = True, zoom_range = 0.2, rotation_range = 10, vertical_flip = True)
