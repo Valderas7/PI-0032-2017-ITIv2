@@ -105,15 +105,17 @@ especificadas en el proceso de entrenamiento """
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_data, test_labels, verbose = 0)
 
-print("\n'Loss' de mutación CNV-A de ERBB2: {:.2f}\n""Sensibilidad de mutación CNV-A de ERBB2: {:.2f}%\n""Precisión de "
-      "mutación CNV-A de ERBB2: {:.2f}%\n""Especificidad de mutación CNV-A de ERBB2: {:.2f}% \n""Exactitud de mutación "
-      "CNV-A de ERBB2: {:.2f}%\n""AUC-ROC de mutación CNV-A de ERBB2: {:.2f}\n"
-      "AUC-PR de mutación CNV-A de ERBB2: {:.2f}".format(results[0], results[5] * 100, results[6] * 100,
-                                                         (results[3]/(results[3]+results[2])) * 100, results[7] * 100,
-                                                         results[8], results[9]))
+print("\n'Loss' de metástasis a distancia en el conjunto de prueba: {:.2f}\n""Sensibilidad de metástasis a distancia en "
+      "el conjunto de prueba: {:.2f}%\n""Precisión de metástasis a distancia en el conjunto de prueba: {:.2f}%\n"
+      "Especificidad de metástasis a distancia en el conjunto de prueba: {:.2f}% \n""Exactitud de metástasis a distancia "
+      "en el conjunto de prueba: {:.2f}%\n""AUC-ROC de metástasis a distancia en el conjunto de prueba: {:.2f}\nAUC-PR "
+      "de metástasis a distancia en el conjunto de "
+      "prueba: {:.2f}".format(results[0], results[5] * 100, results[6] * 100, (results[3]/(results[3]+results[2])) * 100,
+                              results[7] * 100, results[8], results[9]))
 
 if results[5] > 0 or results[6] > 0:
-    print("Valor-F de mutación CNV-A de ERBB2: {:.2f}".format((2 * results[5] * results[6]) / (results[5] + results[6])))
+    print("Valor-F de metástasis a distancia en el conjunto de "
+          "prueba: {:.2f}".format((2 * results[5] * results[6]) / (results[5] + results[6])))
 
 """ Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
 conjunto de datos de test que se definió anteriormente al repartir los datos.
@@ -167,7 +169,7 @@ plt.plot([0, 1], [0, 1], 'k--', label = 'No Skill')
 plt.plot(fpr, tpr, label='AUC = {:.2f})'.format(auc_roc))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('AUC-ROC curve for CNV-A mutation of ERBB2 gene')
+plt.title('AUC-ROC curve for SNV mutation of TP53 gene')
 plt.legend(loc = 'best')
 plt.show()
 
@@ -181,6 +183,6 @@ plt.plot([0, 1], [0, 0], 'k--', label='No Skill')
 plt.plot(recall, precision, label='AUC = {:.2f})'.format(auc_pr))
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('AUC-PR curve for CNV-A mutation of ERBB2 gene')
+plt.title('AUC-PR curve for SNV mutation of TP53 gene')
 plt.legend(loc = 'best')
 plt.show()
