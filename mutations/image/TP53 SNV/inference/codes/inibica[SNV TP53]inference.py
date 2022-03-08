@@ -96,7 +96,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = score
 
-        if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+        if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.7:
             """ Primero se intenta hallar si hay una línea recta negra que dura todo el ancho de la tesela. Para ello se
             itera sobre todas las filas de los tres canales RGB de la tesela para saber si en algún momento la suma de 
             tres filas correspodientes en los tres canales de la tesela es cero, lo que indicaría que hay una fila 
@@ -124,14 +124,14 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             """ Ahora se lee de nuevo cada tesela de 210x210, convirtiéndolas en un array para pasarlas de formato RGBA 
             a formato RGB con OpenCV. A partir de aquí, se expande la dimensión de la tesela para poder realizarle la
             predicción """
-            if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+            if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.7:
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
                 #sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
                 #sub_img = normalizer.transform(sub_img)
-                cv2.imshow('tile', sub_img)
-                cv2.waitKey(0)
+                #cv2.imshow('tile', sub_img)
+                #cv2.waitKey(0)
                 tile = np.expand_dims(sub_img, axis = 0)
 
                 """ Se va guardando la predicción de los datos anatomopatológicos para cada tesela en su lista 
@@ -179,7 +179,7 @@ plt.tight_layout()
 """ Se crea una máscara para las puntuaciones menores de 0.09 y mayores de 0.9, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
-mask[np.where((tiles_scores_array <= 0.10) | (tiles_scores_array > 0.9))] = True
+mask[np.where((tiles_scores_array <= 0.10) | (tiles_scores_array > 0.7))] = True
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = 'Reds', alpha = 0.2,
