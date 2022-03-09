@@ -84,10 +84,10 @@ data_inibica = data_inibica[data_inibica.columns.drop(list(data_inibica.filter(r
 cols = data_inibica.columns.tolist()
 cols = cols[:2] + cols[5:6] + cols[4:5] + cols[2:3] + cols[3:4] + cols[-18:-11] + cols[-11:] + cols[6:-18]
 data_inibica = data_inibica[cols]
-#data_inibica.to_excel('inference_inibica_SNV_TP53.xlsx')
+#data_inibica.to_excel('inference_inibica_mutations.xlsx')
 
 """ Se carga el Excel de nuevo ya que anteriormente se ha guardado """
-data_inibica_metastasis = pd.read_excel('/home/avalderas/img_slides/mutations/data/TP53 SNV/inference/excel/inference_inibica_SNV_TP53.xlsx', engine='openpyxl')
+data_inibica_metastasis = pd.read_excel('/home/avalderas/img_slides/mutations/data/excels/inference_inibica_mutations.xlsx', engine='openpyxl')
 
 """ Ahora habria que eliminar la columna de pacientes y extraer la columna de la variable de salida. """
 data_inibica = data_inibica.drop(['Paciente'], axis = 1)
@@ -98,7 +98,7 @@ neuronal """
 test_data = np.asarray(data_inibica).astype('float32')
 test_labels = np.asarray(test_labels)
 
-model = load_model('/mutations/data/SNV/TP53 SNV/inference/models/model_data_tp53_525_0.64.h5')
+model = load_model('/home/avalderas/img_slides/mutations/data/SNV/TP53/inference/models/model_data_tp53_525_0.64.h5')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento """
