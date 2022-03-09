@@ -148,7 +148,7 @@ número total de teselas y se multiplica posteriormente por cien, para obtener e
 exista mutación en la WSI. """
 # Mutación
 mutation_classes = ['Con mutación', 'Sin mutación']
-overall_probability_prediction = mutation_list.count(1) / (mutation_list.count(0) + mutation_list.count(1))
+overall_probability_prediction = mutation_list.count(1.0) / (mutation_list.count(0.0) + mutation_list.count(1.0))
 print("La probabilidad de encontrar este gen mutado es del : {:.2}%".format(overall_probability_prediction * 100))
 
 """ Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle después el mapa de calor y lo 
@@ -199,6 +199,6 @@ heatmap.imshow(np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_d
                #extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
 
 """ Se guarda el mapa de calor, eliminando el espacio blanco que sobra en los ejes X e Y de la imagen """
-plt.savefig('/home/avalderas/img_slides/mutations/image/TP53 SNV/inference/heatmaps/CNV-A_ERBB2_{}.png'.format(patient_id),
+plt.savefig('/home/avalderas/img_slides/mutations/image/TP53 SNV/inference/heatmaps/SNV_TP53_{}.png'.format(patient_id),
             bbox_inches = 'tight')
 #plt.show()

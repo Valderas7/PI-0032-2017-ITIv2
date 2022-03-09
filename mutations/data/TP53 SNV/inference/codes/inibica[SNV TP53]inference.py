@@ -84,38 +84,36 @@ data_inibica = data_inibica[data_inibica.columns.drop(list(data_inibica.filter(r
 cols = data_inibica.columns.tolist()
 cols = cols[:2] + cols[5:6] + cols[4:5] + cols[2:3] + cols[3:4] + cols[-18:-11] + cols[-11:] + cols[6:-18]
 data_inibica = data_inibica[cols]
-#data_inibica.to_excel('inference_inibica_CNV-A_ERBB2.xlsx')
+#data_inibica.to_excel('inference_inibica_SNV_TP53.xlsx')
 
 """ Se carga el Excel de nuevo ya que anteriormente se ha guardado """
-data_inibica_metastasis = pd.read_excel('/home/avalderas/img_slides/mutations/data/ERBB2 CNV-A/inference/excel/inference_inibica_CNV-A_ERBB2.xlsx', engine='openpyxl')
+data_inibica_metastasis = pd.read_excel('/home/avalderas/img_slides/mutations/data/TP53 SNV/inference/excel/inference_inibica_SNV_TP53.xlsx', engine='openpyxl')
 
 """ Ahora habria que eliminar la columna de pacientes y extraer la columna de la variable de salida. """
 data_inibica = data_inibica.drop(['Paciente'], axis = 1)
-test_labels = data_inibica.pop('CNV-A ERBB2')
+test_labels = data_inibica.pop('SNV TP53')
 
 """ Se transforman ambos dataframes en formato numpy para que se les pueda aplicar la inferencia del modelo de la red 
 neuronal """
 test_data = np.asarray(data_inibica).astype('float32')
 test_labels = np.asarray(test_labels)
 
-model = load_model('/home/avalderas/img_slides/mutations/data/ERBB2 CNV-A/inference/models/model_data_erbb2_1000_0.60.h5')
+model = load_model('/home/avalderas/img_slides/mutations/data/TP53 SNV/inference/models/model_data_tp53_525_0.64.h5')
 
 """ Una vez entrenado el modelo, se puede evaluar con los datos de test y obtener los resultados de las métricas
 especificadas en el proceso de entrenamiento """
 # @evaluate: Devuelve el valor de la 'loss' y de las métricas del modelo especificadas.
 results = model.evaluate(test_data, test_labels, verbose = 0)
 
-print("\n'Loss' de metástasis a distancia en el conjunto de prueba: {:.2f}\n""Sensibilidad de metástasis a distancia en "
-      "el conjunto de prueba: {:.2f}%\n""Precisión de metástasis a distancia en el conjunto de prueba: {:.2f}%\n"
-      "Especificidad de metástasis a distancia en el conjunto de prueba: {:.2f}% \n""Exactitud de metástasis a distancia "
-      "en el conjunto de prueba: {:.2f}%\n""AUC-ROC de metástasis a distancia en el conjunto de prueba: {:.2f}\nAUC-PR "
-      "de metástasis a distancia en el conjunto de "
-      "prueba: {:.2f}".format(results[0], results[5] * 100, results[6] * 100, (results[3]/(results[3]+results[2])) * 100,
-                              results[7] * 100, results[8], results[9]))
+print("\n'Loss' de mutación SNV de TP53: {:.2f}\n""Sensibilidad de mutación SNV de TP53: {:.2f}%\n""Precisión de "
+      "mutación SNV de TP53: {:.2f}%\n""Especificidad de mutación SNV de TP53: {:.2f}% \n""Exactitud de mutación "
+      "SNV de TP53: {:.2f}%\n""AUC-ROC de mutación SNV de TP53: {:.2f}\n"
+      "AUC-PR de mutación SNV de TP53: {:.2f}".format(results[0], results[5] * 100, results[6] * 100,
+                                                      (results[3]/(results[3]+results[2])) * 100, results[7] * 100,
+                                                      results[8], results[9]))
 
 if results[5] > 0 or results[6] > 0:
-    print("Valor-F de metástasis a distancia en el conjunto de "
-          "prueba: {:.2f}".format((2 * results[5] * results[6]) / (results[5] + results[6])))
+    print("Valor-F de mutación SNV de TP53: {:.2f}".format((2 * results[5] * results[6]) / (results[5] + results[6])))
 
 """ Por último, y una vez entrenada ya la red, también se pueden hacer predicciones con nuevos ejemplos usando el
 conjunto de datos de test que se definió anteriormente al repartir los datos.
@@ -150,7 +148,7 @@ binary_predictions = np.round(model.predict(test_data))
 matrix_mutation = confusion_matrix(true_labels, binary_predictions, labels = [0, 1])
 matrix_mutation_classes = ['Sin mutación', 'Con mutación']
 
-plot_confusion_matrix(matrix_mutation, classes = matrix_mutation_classes, title ='Matriz de confusión [CNV-A ERBB2]')
+plot_confusion_matrix(matrix_mutation, classes = matrix_mutation_classes, title ='Matriz de confusión [SNV TP53]')
 plt.show()
 
 """ Para finalizar, se dibuja el area bajo la curva ROC (curva caracteristica operativa del receptor) para tener un 
