@@ -24,8 +24,7 @@ path = '/home/avalderas/img_slides/mutations/image/TP53 SNV/inference/models/mod
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-#path_wsi = '/media/proyectobdpath/PI0032WEB/P077-HE-029-5_v2.mrxs'
-path_wsi = '/home/avalderas/Descargas/397W_HE_40x.tiff'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P107-HE-297-1_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -128,8 +127,8 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-                #sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
-                #sub_img = normalizer.transform(sub_img)
+                sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
+                sub_img = normalizer.transform(sub_img)
                 #cv2.imshow('tile', sub_img)
                 #cv2.waitKey(0)
                 tile = np.expand_dims(sub_img, axis = 0)
@@ -149,12 +148,12 @@ exista mutación en la WSI. """
 # Mutación
 mutation_classes = ['Con mutación', 'Sin mutación']
 overall_probability_prediction = mutation_list.count(1.0) / (mutation_list.count(0.0) + mutation_list.count(1.0))
-print("La probabilidad de encontrar este gen mutado es del : {:.2}%".format(overall_probability_prediction * 100))
+print("Probabilidad de encontrar este gen mutado: {:.4}%".format(overall_probability_prediction * 100))
 
 """ Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle después el mapa de calor y lo 
 suficientemente alto para que tenga un buen nivel de resolución """
-slide = np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])) # TIFF
-#slide = np.array(wsi.read_region((0, 0), level_map, dimensions_map)) # MRXS
+#slide = np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])) # TIFF
+slide = np.array(wsi.read_region((0, 0), level_map, dimensions_map)) # MRXS
 slide = cv2.cvtColor(slide, cv2.COLOR_RGBA2RGB)
 
 """ El tamaño de las figuras en Python se establece en pulgadas (inches). La fórmula para convertir de píxeles a 
@@ -179,7 +178,7 @@ plt.tight_layout()
 """ Se crea una máscara para las puntuaciones menores de 0.09 y mayores de 0.9, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
-mask[np.where((tiles_scores_array <= 0.10) | (tiles_scores_array > 0.7))] = True
+mask[np.where((tiles_scores_array <= 0.10) | (tiles_scores_array > 0.9))] = True
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = 'Reds', alpha = 0.2,
@@ -193,10 +192,10 @@ colorbar.set_ticklabels(['Sin mutación', 'Con mutación'])
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """
-heatmap.imshow(np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])),
-               aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # TIFF
-#heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
-               #extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
+#heatmap.imshow(np.array(wsi.read_region((0, 0), wsi.level_count - 1, wsi.level_dimensions[wsi.level_count - 1])),
+               #aspect = heatmap.get_aspect(), extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # TIFF
+heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), aspect = heatmap.get_aspect(),
+               extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
 
 """ Se guarda el mapa de calor, eliminando el espacio blanco que sobra en los ejes X e Y de la imagen """
 plt.savefig('/home/avalderas/img_slides/mutations/image/TP53 SNV/inference/heatmaps/SNV_TP53_{}.png'.format(patient_id),

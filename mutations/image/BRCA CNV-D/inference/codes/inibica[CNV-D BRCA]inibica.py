@@ -20,11 +20,11 @@ alto = 210
 canales = 3
 
 """ Se carga el modelo de la red neuronal """
-path = '/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/models/model_image_erbb2_03_0.91.h5'
+path = '/home/avalderas/img_slides/mutations/image/TP53 SNV/inference/models/model_image_tp53_02_0.59.h5'
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P107-HE-297-1_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P158-HE-270-IX_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -95,7 +95,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = score
 
-        if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+        if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.7:
             """ Primero se intenta hallar si hay una línea recta negra que dura todo el ancho de la tesela. Para ello se
             itera sobre todas las filas de los tres canales RGB de la tesela para saber si en algún momento la suma de 
             tres filas correspodientes en los tres canales de la tesela es cero, lo que indicaría que hay una fila 
@@ -123,7 +123,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             """ Ahora se lee de nuevo cada tesela de 210x210, convirtiéndolas en un array para pasarlas de formato RGBA 
             a formato RGB con OpenCV. A partir de aquí, se expande la dimensión de la tesela para poder realizarle la
             predicción """
-            if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
+            if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.7:
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
@@ -147,7 +147,7 @@ número total de teselas y se multiplica posteriormente por cien, para obtener e
 exista mutación en la WSI. """
 # Mutación
 mutation_classes = ['Con mutación', 'Sin mutación']
-overall_probability_prediction = mutation_list.count(1) / (mutation_list.count(0) + mutation_list.count(1))
+overall_probability_prediction = mutation_list.count(1.0) / (mutation_list.count(0.0) + mutation_list.count(1.0))
 print("Probabilidad de encontrar este gen mutado: {:.4}%".format(overall_probability_prediction * 100))
 
 """ Se lee la WSI en un nivel de resolución lo suficientemente bajo para aplicarle después el mapa de calor y lo 
@@ -198,6 +198,6 @@ heatmap.imshow(np.array(wsi.read_region((0, 0), level_map, dimensions_map)), asp
                extent = heatmap.get_xlim() + heatmap.get_ylim(), zorder = 1) # MRXS
 
 """ Se guarda el mapa de calor, eliminando el espacio blanco que sobra en los ejes X e Y de la imagen """
-plt.savefig('/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/heatmaps/CNV-A_ERBB2_{}.png'.format(patient_id),
+plt.savefig('/home/avalderas/img_slides/mutations/image/BRCA CNV-D/inference/heatmaps/CNV-D_BRCA_{}.png'.format(patient_id),
             bbox_inches = 'tight')
 #plt.show()
