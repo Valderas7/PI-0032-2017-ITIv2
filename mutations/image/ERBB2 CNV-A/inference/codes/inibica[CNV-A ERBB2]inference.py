@@ -1,5 +1,7 @@
 """ Programa para hacer una clasificación por teselas de las WSI (.mrxs) del proyecto. Se crean mapas de calor con las
 predicciones de la mutación objetivo.
+                                                MUTADOS ERBB2-A
+P005    P020    P032    P056    P059    P118    P124    P154    P158    P170    P181    P197
 """
 
 """ Se importan librerías """
@@ -24,7 +26,7 @@ path = '/home/avalderas/img_slides/mutations/image/ERBB2 CNV-A/inference/models/
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P107-HE-297-1_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P005-HE-047-6_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 

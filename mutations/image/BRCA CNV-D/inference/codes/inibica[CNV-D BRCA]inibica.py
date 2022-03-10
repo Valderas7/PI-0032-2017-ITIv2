@@ -1,5 +1,8 @@
 """ Programa para hacer una clasificación por teselas de las WSI (.mrxs) del proyecto. Se crean mapas de calor con las
 predicciones de la mutación objetivo.
+                                                MUTADOS BRCA-D
+P007    P015    P018    P022    P027    P029    P030    P043    P047    P051    P056    P057    P072    P078    P079
+P080    P086    P111    P124    P154    P158    P161    P162    P168    P189    P193    P200
 """
 
 """ Se importan librerías """

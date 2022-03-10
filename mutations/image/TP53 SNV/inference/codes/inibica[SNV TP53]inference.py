@@ -1,5 +1,9 @@
 """ Programa para hacer una clasificación por teselas de las WSI (.mrxs) del proyecto. Se crean mapas de calor con las
 predicciones de la mutación objetivo.
+                                                MUTADOS TP53
+P002    P004    P008    P009    P011    P012    P013    P016    P017    P020    P024    P031    P032    P034    P038
+P047    P048    P051    P056    P057    P059    P077    P078    P079    P084    P086    P090    P092    P105    P107
+P124    P126    P150    P154    P168    P169    P170    P178    P189    P195    P197    P202
 """
 
 """ Se importan librerías """
@@ -24,7 +28,7 @@ path = '/home/avalderas/img_slides/mutations/image/TP53 SNV/inference/models/mod
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P107-HE-297-1_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P005-HE-047-6_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
