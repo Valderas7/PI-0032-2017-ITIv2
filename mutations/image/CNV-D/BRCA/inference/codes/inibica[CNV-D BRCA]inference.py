@@ -183,8 +183,14 @@ aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
 mask[np.where((tiles_scores_array <= 0.10) | (tiles_scores_array > 0.9))] = True
 
+""" Implementando colores del mapa de calor """
+c = ["lightcoral", "red", "darkred"]
+v = [0.5, 0.7, 0.9]
+l = list(zip(v,c))
+cmap = LinearSegmentedColormap.from_list('rg', l, N = 256)
+
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = 'Reds', alpha = 0.2,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = cmap, alpha = 0.2,
                       zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False)
 
 """ Se edita la barra leyenda del mapa de calor para que muestre los nombres de las categorías de los tipos histológicos
