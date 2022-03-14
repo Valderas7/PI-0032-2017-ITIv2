@@ -87,15 +87,15 @@ data_inibica = data_inibica[cols]
 #data_inibica.to_excel('inference_inibica_mutations.xlsx')
 
 """ Se carga el Excel de nuevo ya que anteriormente se ha guardado """
-data_inibica_metastasis = pd.read_excel('/home/avalderas/img_slides/mutations/data/excels/inference_inibica_mutations.xlsx', engine='openpyxl')
+data_inibica_v2 = pd.read_excel('/home/avalderas/img_slides/mutations/data/excels/inference_inibica_mutations.xlsx', engine='openpyxl')
 
 """ Ahora habria que eliminar la columna de pacientes y extraer la columna de la variable de salida. """
-data_inibica = data_inibica.drop(['Paciente'], axis = 1)
-test_labels = data_inibica.pop('SNV TP53')
+data_inibica_v2 = data_inibica_v2.drop(['Paciente'], axis = 1)
+test_labels = data_inibica_v2.pop('SNV TP53')
 
 """ Se transforman ambos dataframes en formato numpy para que se les pueda aplicar la inferencia del modelo de la red 
 neuronal """
-test_data = np.asarray(data_inibica).astype('float32')
+test_data = np.asarray(data_inibica_v2).astype('float32')
 test_labels = np.asarray(test_labels)
 
 model = load_model('/home/avalderas/img_slides/mutations/data/SNV/TP53/inference/models/model_data_tp53_525_0.64.h5')
