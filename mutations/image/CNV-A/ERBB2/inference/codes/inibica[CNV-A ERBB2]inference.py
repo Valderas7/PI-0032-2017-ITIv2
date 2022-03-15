@@ -177,13 +177,19 @@ sns.set(style = "white", rc = {'figure.dpi': dpi})
 plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
-""" Se crea una máscara para las puntuaciones menores de 0.09 y mayores de 0.9, de forma que no se pasan datos en 
+""" Se crea una máscara para las puntuaciones menores de 0.1 y mayores de 0.9, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
-mask[np.where((tiles_scores_array <= 0.10) | (tiles_scores_array > 0.9))] = True
+mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9)) and np.where(mutation_scores <= 0.5)] = True
+
+""" Implementando colores del mapa de calor """
+c = ["whitesmoke", "yellow", "darkorange", "red", "darkred"]
+v = [0, 0.5, 0.7, 0.9, 1]
+l = list(zip(v,c))
+cmap = LinearSegmentedColormap.from_list('rg', l, N = 256)
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = 'Reds', alpha = 0.2,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = cmap, alpha = 0.3,
                       zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False)
 
 """ Se edita la barra leyenda del mapa de calor para que muestre los nombres de las categorías de los tipos histológicos

@@ -130,8 +130,8 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
-                sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
-                sub_img = normalizer.transform(sub_img)
+                #sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
+                #sub_img = normalizer.transform(sub_img)
                 #cv2.imshow('tile', sub_img)
                 #cv2.waitKey(0)
                 tile = np.expand_dims(sub_img, axis = 0)
@@ -178,19 +178,19 @@ sns.set(style = "white", rc = {'figure.dpi': dpi})
 plt.subplots(figsize = (pixeles_x/dpi, pixeles_y/dpi))
 plt.tight_layout()
 
-""" Se crea una máscara para las puntuaciones menores de 0.09 y mayores de 0.9, de forma que no se pasan datos en 
+""" Se crea una máscara para las puntuaciones menores de 0.1 y mayores de 0.9, de forma que no se pasan datos en 
 aquellas celdas donde se superan dichas puntuaciones """
 mask = np.zeros_like(tiles_scores_array)
-mask[np.where((tiles_scores_array <= 0.10) | (tiles_scores_array > 0.9))] = True
+mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9)) and np.where(mutation_scores <= 0.5)] = True
 
 """ Implementando colores del mapa de calor """
-c = ["lightcoral", "red", "darkred"]
-v = [0.5, 0.7, 0.9]
+c = ["whitesmoke", "yellow", "darkorange", "red", "darkred"]
+v = [0, 0.5, 0.7, 0.9, 1]
 l = list(zip(v,c))
-cmap = LinearSegmentedColormap.from_list('rg', l, N = 256)
+cmap = LinearSegmentedColormap.from_list('mutation_map', l, N = 256)
 
 """ Se dibuja el mapa de calor """
-heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = cmap, alpha = 0.2,
+heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = cmap, alpha = 0.3,
                       zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False)
 
 """ Se edita la barra leyenda del mapa de calor para que muestre los nombres de las categorías de los tipos histológicos
