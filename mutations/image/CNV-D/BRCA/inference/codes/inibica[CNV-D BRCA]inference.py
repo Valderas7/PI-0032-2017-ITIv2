@@ -184,23 +184,24 @@ mask = np.zeros_like(tiles_scores_array)
 mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9)) and np.where(mutation_scores <= 0.5)] = True
 
 """ Implementando colores del mapa de calor """
-c = ["whitesmoke", "yellow", "darkorange", "red", "darkred"]
+c = ["whitesmoke", "greenyellow", "yellow", "orange", "red"]
 v = [0, 0.5, 0.6, 0.8, 1]
 l = list(zip(v,c))
 cmap = LinearSegmentedColormap.from_list('mutation_map', l, N = 256)
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = cmap, alpha = 0.3,
-                      zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False)
-
-""" Se edita la barra leyenda del mapa de calor. """
-colorbar = heatmap.collections[0].colorbar
-colorbar.set_ticks([0.25, 0.75])
-colorbar.set_ticklabels(['Sin mutación', 'Con mutación'])
+                      zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False, vmin = 0.0,
+                      vmax = 1.0)
 
 """ Se da la probabilidad global de la mutación también en la propia imagen """
 text = "Probabilidad mutación: {:.4}%".format(overall_probability_prediction * 100)
 plt.title(text, fontsize = 40)
+
+""" Se edita la barra leyenda del mapa de calor. """
+colorbar = heatmap.collections[0].colorbar
+colorbar.set_ticks([0, 0.50, 0.60, 0.80, 1])
+colorbar.set_ticklabels(['0% mutación', '50% mutación', ' 60% mutación', '80% mutación', '100% mutación'])
 
 """ Se adapta la imagen de mínima resolución del WSI a las dimensiones del mapa de calor (que anteriormente fue
 redimensionado a las dimensiones de la imagen de mínima resolución del WSI) """

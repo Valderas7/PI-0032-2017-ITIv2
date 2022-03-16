@@ -131,8 +131,6 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
                 sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
                 sub_img = normalizer.transform(sub_img)
-                #cv2.imshow('tile', sub_img)
-                #cv2.waitKey(0)
                 tile = np.expand_dims(sub_img, axis = 0)
 
                 """ Se va guardando la predicción de los datos anatomopatológicos para cada tesela en su lista 
@@ -183,19 +181,20 @@ mask = np.zeros_like(tiles_scores_array)
 mask[np.where((tiles_scores_array <= 0.1) | (tiles_scores_array > 0.9)) and np.where(mutation_scores <= 0.5)] = True
 
 """ Implementando colores del mapa de calor """
-c = ["whitesmoke", "yellow", "darkorange", "red", "darkred"]
+c = ["whitesmoke", "greenyellow", "yellow", "orange", "red"]
 v = [0, 0.5, 0.6, 0.8, 1]
 l = list(zip(v,c))
 cmap = LinearSegmentedColormap.from_list('mutation_map', l, N = 256)
 
 """ Se dibuja el mapa de calor """
 heatmap = sns.heatmap(grid, square = True, linewidths = .5, mask = mask, cbar = True, cmap = cmap, alpha = 0.3,
-                      zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False)
+                      zorder = 2, cbar_kws = {'shrink': 0.2}, yticklabels = False, xticklabels = False, vmin = 0.0,
+                      vmax = 1.0)
 
 """ Se edita la barra leyenda del mapa de calor. """
 colorbar = heatmap.collections[0].colorbar
-colorbar.set_ticks([0.25, 0.75])
-colorbar.set_ticklabels(['Sin mutación', 'Con mutación'])
+colorbar.set_ticks([0, 0.50, 0.60, 0.80, 1])
+colorbar.set_ticklabels(['0% mutación', '50% mutación', ' 60% mutación', '80% mutación', '100% mutación'])
 
 """ Se da la probabilidad global de la mutación también en la propia imagen """
 text = "Probabilidad mutación: {:.4}%".format(overall_probability_prediction * 100)
