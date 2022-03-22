@@ -28,7 +28,7 @@ path = '/home/avalderas/img_slides/mutations/image/SNV/TP53/inference/models/mod
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P170-HE-083-1_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P197-HE-291-III_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -57,7 +57,7 @@ dimensions_map = 0
 level_map = 0
 
 for level in range(levels):
-    if wsi.level_dimensions[level][1] <= 6666:
+    if wsi.level_dimensions[level][1] <= 6700:
         dimensions_map = wsi.level_dimensions[level]
         level_map = level
         break
@@ -70,7 +70,7 @@ normalizer = staintools.StainNormalizer(method = 'vahadane')
 normalizer.fit(target)
 
 """ Se crea un 'array' con forma (alto, ancho), que son el número de filas y el número de columnas, respectivamente, en 
-el que se divide la WSI al dividirla en teselas de 210x210 en el nivel de resolucion máximo, para recopilar asi las 
+el que se divide la WSI al dividirla en teselas de 210x210 en el mejor nivel de resolucion, para recopilar asi las 
 puntuaciones de color (blanco o negro) de cada tesela """
 tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
