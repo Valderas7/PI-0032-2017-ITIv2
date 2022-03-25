@@ -26,7 +26,7 @@ path = '/home/avalderas/img_slides/mutations/image/CNV-A/ERBB2/inference/models/
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P186-HE-283-V_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P005-HE-047-6_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -55,7 +55,7 @@ dimensions_map = 0
 level_map = 0
 
 for level in range(levels):
-    if wsi.level_dimensions[level][1] <= 6666:
+    if wsi.level_dimensions[level][1] <= 6670:
         dimensions_map = wsi.level_dimensions[level]
         level_map = level
         break
@@ -67,9 +67,11 @@ target = staintools.LuminosityStandardizer.standardize(target)
 normalizer = staintools.StainNormalizer(method = 'vahadane')
 normalizer.fit(target)
 
-""" Se crea un 'array' con forma (alto, ancho), que son el número de filas y el número de columnas, respectivamente, en 
-el que se divide la WSI al dividirla en teselas de 210x210 en el nivel de resolucion máximo, para recopilar asi las 
-puntuaciones de color (blanco o negro) de cada tesela """
+""" Se crea un 'array' para recopilar las puntuaciones en blanco y negro de las teselas con forma (alto, ancho), que son 
+el número de filas y el número de columnas, respectivamente, en el que se divide la WSI al dividirla en teselas de 
+(210*factor de reducción)x(210*factor de reducción) en el nivel de resolucion máximo (si 210x210 es el tamaño que 
+interesa en el nivel adecuado, entonces en el nivel de resolución máximo, éste tamaño será mayor, por lo que sus
+dimensiones serán de (210*FRx210*FR píxeles)). """
 tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
 """ Se crea una lista y un array 3D para recopilar las predicciones y las puntuaciones, respectivamente, de la 

@@ -38,7 +38,7 @@ dim = wsi.dimensions
 los pacientes de la provincia de Cádiz tienen su nivel de máxima resolución a una magnificación de 40x. Por lo que si
 se aplica un factor de reducción de 4, se hallará el mejor nivel para una magnificación 10x (40x/4 = 10x), que es la que 
 interesa buscar puesto que es la magnificación con la que se entrenó la red neuronal. """
-best_level = wsi.get_best_level_for_downsample(4)
+best_level = wsi.get_best_level_for_downsample(4) # Nivel 2 probablemente
 
 """ Se averigua cual es el factor de reducción de dicho nivel para usarlo posteriormente al multiplicar las dimensiones
 en la función @read_region """
@@ -56,7 +56,7 @@ dimensions_map = 0
 level_map = 0
 
 for level in range(levels):
-    if wsi.level_dimensions[level][1] <= 6666:
+    if wsi.level_dimensions[level][1] <= 6670:
         dimensions_map = wsi.level_dimensions[level]
         level_map = level
         break
@@ -68,9 +68,11 @@ target = staintools.LuminosityStandardizer.standardize(target)
 normalizer = staintools.StainNormalizer(method = 'vahadane')
 normalizer.fit(target)
 
-""" Se crea un 'array' con forma (alto, ancho), que son el número de filas y el número de columnas, respectivamente, en 
-el que se divide la WSI al dividirla en teselas de 210x210 en el nivel de resolucion máximo, para recopilar asi las 
-puntuaciones de color (blanco o negro) de cada tesela """
+""" Se crea un 'array' para recopilar las puntuaciones en blanco y negro de las teselas con forma (alto, ancho), que son 
+el número de filas y el número de columnas, respectivamente, en el que se divide la WSI al dividirla en teselas de 
+(210*factor de reducción)x(210*factor de reducción) en el nivel de resolucion máximo (si 210x210 es el tamaño que 
+interesa en el nivel adecuado, entonces en el nivel de resolución máximo, éste tamaño será mayor, por lo que sus
+dimensiones serán de (210*FRx210*FR píxeles)). """
 tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
 """ Se crea una lista y un array 3D para recopilar las predicciones y las puntuaciones, respectivamente, de la 
@@ -78,7 +80,7 @@ predicción de la mutación. """
 mutation_list = []
 mutation_scores = np.zeros((int(dim[1] / (alto * scale)), int(dim[0] / (ancho * scale))))
 
-""" Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de reduccion '10x' """
+""" Se itera sobre todas las teselas de tamaño 210x210 de la WSI en el nivel adecuado al factor de magnificación '10x' """
 #@ancho_slide itera de (0 - nºcolumnas) [columnas] y @alto_slide de (0 - nºfilas) [filas]
 for alto_slide in range(int(dim[1]/(alto*scale))):
     for ancho_slide in range(int(dim[0] / (ancho * scale))):
@@ -98,7 +100,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = score
 
-        if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.7:
+        if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
             """ Primero se intenta hallar si hay una línea recta negra que dura todo el ancho de la tesela. Para ello se
             itera sobre todas las filas de los tres canales RGB de la tesela para saber si en algún momento la suma de 
             tres filas correspodientes en los tres canales de la tesela es cero, lo que indicaría que hay una fila 
@@ -126,14 +128,14 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             """ Ahora se lee de nuevo cada tesela de 210x210, convirtiéndolas en un array para pasarlas de formato RGBA 
             a formato RGB con OpenCV. A partir de aquí, se expande la dimensión de la tesela para poder realizarle la
             predicción """
-            if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.7:
+            if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
                 sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
                 sub_img = normalizer.transform(sub_img)
-                #cv2.imshow('tile', sub_img)
-                #cv2.waitKey(0)
+                cv2.imshow('tile', sub_img)
+                cv2.waitKey(0)
                 tile = np.expand_dims(sub_img, axis = 0)
 
                 """ Se va guardando la predicción de los datos anatomopatológicos para cada tesela en su lista 

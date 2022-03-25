@@ -28,7 +28,7 @@ path = '/home/avalderas/img_slides/mutations/image/SNV/TP53/inference/models/mod
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P186-HE-283-V_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P005-HE-047-6_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -69,9 +69,11 @@ target = staintools.LuminosityStandardizer.standardize(target)
 normalizer = staintools.StainNormalizer(method = 'vahadane')
 normalizer.fit(target)
 
-""" Se crea un 'array' con forma (alto, ancho), que son el número de filas y el número de columnas, respectivamente, en 
-el que se divide la WSI al dividirla en teselas de 210x210 en el mejor nivel de resolucion, para recopilar asi las 
-puntuaciones de color (blanco o negro) de cada tesela """
+""" Se crea un 'array' para recopilar las puntuaciones en blanco y negro de las teselas con forma (alto, ancho), que son 
+el número de filas y el número de columnas, respectivamente, en el que se divide la WSI al dividirla en teselas de 
+(210*factor de reducción)x(210*factor de reducción) en el nivel de resolucion máximo (si 210x210 es el tamaño que 
+interesa en el nivel adecuado, entonces en el nivel de resolución máximo, éste tamaño será mayor, por lo que sus
+dimensiones serán de (210*FRx210*FR píxeles)). """
 tiles_scores_array = np.zeros((int(dim[1]/(alto * scale)), int(dim[0] / (ancho * scale))))
 
 """ Se crea una lista y un array 3D para recopilar las predicciones y las puntuaciones, respectivamente, de la 
@@ -99,7 +101,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
         la columna [ancho_slide] """
         tiles_scores_array[alto_slide][ancho_slide] = score
 
-        if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.7:
+        if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
             """ Primero se intenta hallar si hay una línea recta negra que dura todo el ancho de la tesela. Para ello se
             itera sobre todas las filas de los tres canales RGB de la tesela para saber si en algún momento la suma de 
             tres filas correspodientes en los tres canales de la tesela es cero, lo que indicaría que hay una fila 
@@ -127,7 +129,7 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
             """ Ahora se lee de nuevo cada tesela de 210x210, convirtiéndolas en un array para pasarlas de formato RGBA 
             a formato RGB con OpenCV. A partir de aquí, se expande la dimensión de la tesela para poder realizarle la
             predicción """
-            if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.7:
+            if 0.10 <= tiles_scores_array[alto_slide][ancho_slide] < 0.9:
                 sub_img = np.array(wsi.read_region((ancho_slide * (210 * scale), alto_slide * (210 * scale)), best_level,
                                                (ancho, alto)))
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
