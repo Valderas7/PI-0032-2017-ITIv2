@@ -27,7 +27,7 @@ path = '/home/avalderas/img_slides/mutations/image/CNV-D/BRCA/inference/models/m
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P170-HE-083-1_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P086-HE-045-2_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
@@ -134,8 +134,6 @@ for alto_slide in range(int(dim[1]/(alto*scale))):
                 sub_img = cv2.cvtColor(sub_img, cv2.COLOR_RGBA2RGB)
                 sub_img = staintools.LuminosityStandardizer.standardize(sub_img)
                 sub_img = normalizer.transform(sub_img)
-                cv2.imshow('tile', sub_img)
-                cv2.waitKey(0)
                 tile = np.expand_dims(sub_img, axis = 0)
 
                 """ Se va guardando la predicción de los datos anatomopatológicos para cada tesela en su lista 
