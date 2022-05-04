@@ -24,7 +24,7 @@ path = '/home/avalderas/img_slides/mutations/image/CNV-A/MYC/inference/models/mo
 model = load_model(path)
 
 """ Se abre WSI especificada y extraemos el paciente del que se trata """
-path_wsi = '/media/proyectobdpath/PI0032WEB/P181-HE-281-V_v2.mrxs'
+path_wsi = '/media/proyectobdpath/PI0032WEB/P176-HE-087-1_v2.mrxs'
 wsi = openslide.OpenSlide(path_wsi)
 patient_id = path_wsi.split('/')[4][:4]
 
